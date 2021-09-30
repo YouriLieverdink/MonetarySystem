@@ -1,5 +1,6 @@
-Agreements:
+# Agreements
 
+## General
 - Daily stand up at 9.00 AM from monday until friday. If not possible due to lectures, meet at the first possible time. Will be planned the week before.
 - Be on time, a maximun of 5 minutes is waited before starting the appointment/meeting.
 - Come prepared. 
@@ -10,13 +11,11 @@ Agreements:
 - As a group notify changes to the client that affect the client in any way.
 - Keep other group members informed.
 
-
-Sanctions:
+## Sanctions
 - If someone is several times late, a seperate meeting will be made to tackle this issue and make clear it can not happen anymore without reason.
 - Is someone still late often, notify teacher and take action. (Kick the person/take on the open task(s) and divide between members/look for other options)  
 
-
-Communication:
+## Communication
 - Whatsapp group. Making appointments and other basic discussions/communication goes through here. (Whatsapp is an app for mobile device primarily used for text 
 communication or instant messaging)
 - Discord. (An instant messaging platform used for audio and video communication) Group meetings could take place on Discord.
