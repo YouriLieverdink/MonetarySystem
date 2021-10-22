@@ -1,4 +1,4 @@
-| Use case 1                                                                                                                |
+| Use case 1         |                                                                                                      |
 |--------------------|------------------------------------------------------------------------------------------------------|
 | Name               | Wallet setup                                                                                         |
 | Summary            | User needs to be able to create a wallet (obtain public address and private keys)                    |
