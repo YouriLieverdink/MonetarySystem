@@ -1,3 +1,5 @@
+# 1 - Use cases
+
 | Use case 1         |                                                                                                      |
 |--------------------|------------------------------------------------------------------------------------------------------|
 | Name               | Wallet setup                                                                                         |
@@ -35,3 +37,9 @@
 | Result         | Coins move from Wallet A to Wallet B                                                                             |
 | Base scenario  | 1. Wallet A sends coins to Wallet B<br>2. Transaction gets validated<br>3. Wallet B receives coins from Wallet A |
 | Error scenario | 1. Wallet A sends coins to Wallet B<br>2. Transaction gets rejected<br>3. Wallet B doesn't receive coins         |
+
+
+# 2 - Use case diagram
+| ![usecasemodel3](https://user-images.githubusercontent.com/43604037/136422367-8e00fcb2-cf47-41c7-9f3b-d535aad6d75d.PNG) | 
+|:--:| 
+| *Figuur 1 - Use case diagram van de titrium blockchain* |
