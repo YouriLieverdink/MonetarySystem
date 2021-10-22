@@ -2,13 +2,32 @@
 
 ## 1. Inleiding
 
+### 1.1 Doel
+Als project wordt er gewerkt aan een applicatie voor een monetair systeem. Dit systeem kan worden vergeleken met andere monetaire systemen als Bitcoin, Ethereum en andere cryptocurrency. Een cryptomunt heeft een aantal belangrijke eisen waar het aan moet voldoen voor het als geldige cryptocurrency kan worden gebruikt. Dit acceptatieplan is daarom opgesteld om een meetbare basis te leveren voor het testen en accepteren van het geleverde product. Hierin is vastgelegd welke afspraken zijn gemaakt aangaande het testen en accepteren van het opgeleverde monetaire systeem. Tevens zijn in dit document de verantwoordelijkheden van alle betrokken partijen vastgelegd. 
+
+### 1.2 Referenties
+
 ## 2. Verantwoordelijken
 
 ## 3. Criteria
 
 ### 3.1 Performance
+Performance is een belangrijk aspect tijdens de ontwikkeling van elk software product. Ondanks dat een product met een lage performance wel kan werken, is dit zeker niet gewenst. Men wil bijvoorbeeld bij gebruik van een applicatie als Instagram of Thuisbezorgd niet uren wachten totdat de applicatie geladen wordt. Zo zal men in het geval van dit project niet uren willen wachten voordat transacties gevalideerd worden. Daaruit voortvloeiend zijn er acceptatie criteria opgesteld betreffende de performance om zo een meetbare basis te verstrekken waaraan de applicatie moet voldoen.
+
+#### 3.1.1 Transacties
+Elke transactie moet op basis van consensus van de meerderheid gevalideerd worden door een node en toch efficiënt plaatsvinden (geen 'Proof-of-Work' algoritme). Efficiënt in deze zin wil zeggen dat ...
+
 
 ### 3.2 Beheerbaarheid
+
+#### 3.2.1 Unit tests
+Er wordt testcode geschreven voor beheerbaarheid. De tests moeten er voor zorgen dat er een check wordt gedaan op alle criteria. Deze tests moeten eraan voldoen dat bij uitbreiding of verandering er nog steeds gebruik van kan worden gemaakt. 
+
+#### 3.2.2 Documentatie
+Alle code moet worden gedocumenteerd. De documentatie moet bondig en helder zijn voor de lezer. Dit houdt tevens in dat jargon uitgelegd moet worden. Dit creëert leesbare code voor de lezer waardoor de beheerbaarheid bevorderd wordt.
+
+#### 3.2.3 Logging
+Voor en in het systeem moet logging worden toegepast om gebeurtenissen, errors en functionaliteiten vast te leggen. Op deze manier worden incidenten getraceerd en kan de omgeving efficiënt beheerd blijven. De data moet eenduidig en gestructureerd bewaard worden om makkelijk te kunnen worden opgezocht. Dit houdt ook in dat de verschillende gelogde processen gescheiden opgeslagen worden.
 
 ### 3.3 Betrouwbaarheid
 
