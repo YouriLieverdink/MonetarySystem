@@ -30,7 +30,7 @@ belanghebbenden van de Cryptomunt opdracht zijn:
 
 |Belanghebbenderol   |   Vertegenwoordiger   |  Betrokkenheid   |
 |     ---            |        ---            |       ---        |
-| Opdrachtgever      | Jakob de Boer         | Het uiteindelijke programma wordt geschreven voor de opdrachtgever. De opdrachtgever levert het project en de randvoorwaarden. |
+| Opdrachtgever      | Jacob de Boer         | Het uiteindelijke programma wordt geschreven voor de opdrachtgever. De opdrachtgever levert het project en de randvoorwaarden. |
 | Leraar             | Jan Balje             | Begeleid de projectgroep |
 | Productowner       | Youri Lieverdink      | Verantwoordelijk voor het eindproduct. Heeft conact met belanghebbenden. |
 | Scrummaster        | Bart van Poele        | Zorgt dat het team zich houd aan de scrumregels |
