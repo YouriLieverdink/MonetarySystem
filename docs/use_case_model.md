@@ -14,3 +14,9 @@
 | Result        | User sees wallet balance                                       |
 | Base scenario | 1. User requests wallet balance<br>2. App shows wallet balance |
 
+| Use case 3    |                                                                                      |
+|---------------|--------------------------------------------------------------------------------------|
+| Name          | View past transactions                                                               |
+| Summary       | User needs to be able to view all past transactions in which the wallet was involved |
+| Result        | User sees all relevant transactions                                                  |
+| Base scenario | 1. User requests transactions<br>2. App shows relevant transactions                  |
