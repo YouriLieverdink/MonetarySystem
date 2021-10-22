@@ -18,11 +18,9 @@
 
 ### 3.6 Gebruiksvriendelijkheid
 
-### 3.7 Standaarden
+### 3.7 Documentatie
 
-### 3.8 Documentatie
-
-#### 3.8.1 Inline
+#### 3.7.1 Inline
 Inline documentatie zal in dit project worden gebruikt om code te verduidelijken. Deze criteria zal worden toegepast op stukken code die niet zelfstandig te begrijpen zijn door een andere developer. Dit zal er uiteindelijk voor zorgen dat iedereen weet hoe de applicatie in elkaar zit.
 
 **Eigenaar**  
@@ -37,7 +35,7 @@ Tijdens de review van elke pull-request zal deze criteria aan bod komen. De gesc
 **Corrigerende acties**  
 Wanneer een reviewer code onduidelijk vindt, zal deze dat aangeven bij de developer in kwestie om de code te veruidelijken met (betere) inline documentatie.
 
-#### 3.8.2 Api  
+#### 3.7.2 Api  
 Een node binnen het netwerk zal kunnen worden bemiddeld door het gebruik van een api. Deze api biedt mogelijkheden voor de wallet applicatie te communiceren met het netwerk. Deze api moet goed gedocumenteerd zijn om verwarringen te voorkomen.
 
 **Eigenaar**  
@@ -52,7 +50,7 @@ Deze criteria wordt aan het eind van elke sprint uitgevoerd om zo de documentati
 **Corrigerende acties**  
 Wanneer er bepaalde documentatie niet overeenkomt met de implementatie van de api moet eerst worden vastgesteld welke van de twee incorrect is. Vervolgens wordt deze dan aangepast zodat ze weer overeenkomen.
 
-#### 3.8.3 Architectueel  
+#### 3.7.3 Architectueel  
 De architectuur van de hele applicatie zal moeten worden beschreven. Dit houdt in dat er een
 duidelijk beeld van de architectuur moet onstaan door middel van een context diagram, use case
 model en een klassediagram.
