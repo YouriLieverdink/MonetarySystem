@@ -11,19 +11,21 @@
 ### 3.2 Beheerbaarheid
 
 ### 3.3 Betrouwbaarheid
-Een blockchain moet altijd beschikbaar zijn. Het is niet mogelijk om updates te pushen omdat een groot gedeelte van de blockchain omhoog moet blijven om betrouwbaarheid te garanderen. Er wordt wel gebruik gemaakt van versie beheer zodat alle versies beschikbaar zijn en er altijd een mogelijkheid is om daar naar terug te vallen als iets in de nieuwe versies verkeerd gaat.
+Een blockchain moet altijd beschikbaar zijn. Het is niet mogelijk om updates te pushen omdat een groot gedeelte van de blockchain omhoog moet blijven om betrouwbaarheid te garanderen. Er wordt wel gebruik gemaakt van versie beheer zodat alle versies beschikbaar zijn en er altijd een mogelijkheid is om daar naar terug te vallen als iets in de nieuwe versies verkeerd gaat. 
+
+De betrouwbaarheid van de gegevens zelf zal komen met de grote van de blockchain. Een transactie is geaccepteerd als het door meer dan de helft van de blockchain goedgekeurt is. Als de blockchain groot genoeg is kunnen we er vanuit gaan dat een gevalideerde transactie betrouwbaar is.
 
 **Eigenaar**
-De developers zijn verantwoordelijk voor het gebruik van versie beheer en het testen van de betrouwbaarheid van de code.
+De developers zijn verantwoordelijk voor het gebruik van versie beheer en het testen van de betrouwbaarheid van de code. De nodes in de blockchain zorgen voor de betrouwbaarheid van de gegevens.
 
 **Meetmethode**
-Deze criteria zal worden gemeten door het bekijken van de regelmaat van updaten van het versiebeheer. De code zal uitgebreid worden getest. Er mogen geen bugs in de code zitten.
+Deze criteria zal worden gemeten door het bekijken van de regelmaat van updaten van het versiebeheer. De code zal uitgebreid worden getest. Er mogen geen bugs in de code zitten. Het aantal nodes kan worden bijgehouden. 
 
 **Planning**
 Tijdens het schrijven van de code worden er tests geschreven om de werking van de code te testen en betrouwbaarheid te garanderen. 
 
 **Corrigerende acties**
-Als er bugs zijn kan dit voor het uitrollen van de code worden verholpen. 
+Als er bugs zijn kan dit voor het uitrollen van de code worden verholpen. Door het vergroten van de blockchain kunnnen we de kans verkleinen dat iemand meer dan de helft van de nodes weet te verkreigen.
 
 ### 3.4 Beveiliging
 
