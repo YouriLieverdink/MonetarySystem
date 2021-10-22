@@ -13,6 +13,34 @@
 ### 3.3 Betrouwbaarheid
 
 ### 3.4 Beveiliging
+De rekeningnummers worden sleutels van 32 bits. Een sterk wachtwoord bevat letters, cijfers en leestekens en is ten minste 16 tekens lang. Als een wachtwoord 3 verkeerd is ingevoerd kunnen we een ip blokeren voor een bepaalde periode om zo brute-force aanvallen te voorkomen.
+
+**Eigenaar**  
+De developers zijn verantwoordelijk voor het inprogrammeren van beveiligings methoden. 
+
+**Meetmethode**  
+Om de veiligheid te meten is het mogelijk zelf de beveilig proberen te kraken en zwakheden te vinden.
+
+**Planning**  
+Veiligheid is zeer belangrijk en zal bij het implementeren uitgebreid met het team besproken worden.
+
+**Corrigerende acties**  
+Wanneer een zwak punt in de beveiliging is gevonden moet dit zo snelmogelijk verholpen worden. 
+
+#### 3.7.2 Api  
+Een node binnen het netwerk zal kunnen worden bemiddeld door het gebruik van een api. Deze api biedt mogelijkheden voor de wallet applicatie te communiceren met het netwerk. Deze api moet goed gedocumenteerd zijn om verwarringen te voorkomen.
+
+**Eigenaar**  
+Zowel de huidige als de toekomste developers zijn eigenaar van deze criteria.
+
+**Meetmethode**  
+Deze criteria zal worden gemeten op basis van een documentatie review. Eén developer zal worden aangewezen om te controleren of de documentatie overeenkomt met de daadwerkelijke implementatie van de api.
+
+**Planning**  
+Deze criteria wordt aan het eind van elke sprint uitgevoerd om zo de documentatie tijdens het project correct te houden.
+
+**Corrigerende acties**  
+Wanneer er bepaalde documentatie niet overeenkomt met de implementatie van de api moet eerst worden vastgesteld welke van de twee incorrect is. Vervolgens wordt deze dan aangepast zodat ze weer overeenkomen.
 
 ### 3.5 Functionaliteit
 
