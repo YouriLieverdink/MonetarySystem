@@ -28,6 +28,19 @@ Tijdens het schrijven van de code worden er tests geschreven om de werking van d
 Als er bugs zijn kan dit voor het uitrollen van de code worden verholpen. Door het vergroten van de blockchain kunnnen we de kans verkleinen dat iemand meer dan de helft van de nodes weet te verkreigen.
 
 ### 3.4 Beveiliging
+De rekeningnummers worden sleutels van 32 bits. Een sterk wachtwoord bevat letters, cijfers en leestekens en is ten minste 16 tekens lang. Als een wachtwoord 3 verkeerd is ingevoerd kunnen we een ip blokkeren voor een bepaalde periode om zo brute-force aanvallen te voorkomen.
+
+**Eigenaar**  
+De developers zijn verantwoordelijk voor het inprogrammeren van beveiligings methoden. 
+
+**Meetmethode**  
+Om de veiligheid te meten is het mogelijk zelf de beveilig proberen te kraken en zwakheden te vinden.
+
+**Planning**  
+Veiligheid is zeer belangrijk en zal bij het implementeren uitgebreid met het team besproken worden. In de laatste sprint wordt de beveiliging getest. 
+
+**Corrigerende acties**  
+Wanneer een zwak punt in de beveiliging is gevonden moet dit zo snelmogelijk verholpen worden. Met andere of meer beveiligings maatregelen. 
 
 ### 3.5 Functionaliteit
 
