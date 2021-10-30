@@ -5,16 +5,20 @@
 
 ## 2. Positionering
 
-### 2.1 Context
-{{wat is de (business) context van de opdracht?
-(vaak kostenbesparing door verbetering van een proces (efficiënter, goedkoper, minder
-fouten), het kan ook gaan om de ‘marktkans’ van een nieuw product of dienst)}}
+### 2.1 Context  
+De opdracht staat voor het ontwikkelen van een financieel systeem zonder centrale autoriteit. Deze manier van werken heeft verschillende voor- en nadelen. De implementatie van het systeem is een stuk ingewikkelder door de extra cryptografische berekeningen die moeten worden gedaan om het systeem veilig te houden. Echter is het op deze manier wel een stuk veiliger omdat er geen 'single-point-of-failure' meer is.
 
-### 2.1.1 Technische context
+### 2.1.1 Technische context  
 ![contextModel](https://user-images.githubusercontent.com/43604037/136081041-f4097a46-bb12-4d48-9068-cf522c4b4350.PNG)
 
-### 2.2 Scope
-{{is de scope van het project helder?}}
+### 2.2 Scope  
+Het doel van de opdracht is om inzicht te krijgen in de problemen die naar voren komen wanneer een centrale autoriteit ontbreekt. Er zal een implementatie van een systeem moeten komen die vergelijkbaar is met bestaande cryptomunten zoals Bitcoin en Ethereum. Om te opdracht te verkleinen zijn een aantal dingen achterwege gelaten.
+
+- Het Proof-Of-Work algoritme, die het vervalsen van blocks in the chain lastig maakt, hoeft niet te worden geïmplementeerd.
+- De publieke en privé sleutels hoeven niet te bestaan uit 32 bytes maar uit 32 bits.
+- Het aantal nodes in het peer-2-peer netwerk is beperkt. Wel moet het mogelijk blijven om het netwerk op te schalen naar een groot aantal nodes.
+- Binnen het netwerk is het niet noodzakelijk dat de gebruikers anoniem met elkaar kunnen communiceren.
+- De verzonden berichten in het netwerk hoeven niet in binair formaat te staan om de leesbaarheid tijdens het testen te verbeteren.
 
 ### 2.3 Probleemstelling
 {{wat is het probleem, wat zijn de oorzaken van het probleem, voor wie is het een probleem?}}
