@@ -1,53 +1,49 @@
-# Visie
+# Vision
 
-## 1. Inleiding
-{{Geef hier het doel van de Vision aan.}}
+## 1. Introduction  
+This purpose of this vision document is to describe the shared understanding between the client and the development team on the assignment.
 
-## 2. Positionering
+## 2. Position  
 
-### 2.1 Context  
-De opdracht staat voor het ontwikkelen van een financieel systeem zonder centrale autoriteit. Deze manier van werken heeft verschillende voor- en nadelen. De implementatie van het systeem is een stuk ingewikkelder door de extra cryptografische berekeningen die moeten worden gedaan om het systeem veilig te houden. Echter is het op deze manier wel een stuk veiliger omdat er geen 'single-point-of-failure' meer is.
+### 2.1 Business context  
+A popular implementation of a monetary system without a central authority is Bitcoin which was published by Satoshi Nakamoto. To ensure the integrity of the blockchain, a Proof-of-Work (PoW) algorithm is used. This implementation has proven to be highly secure when at least half of the network has good intentions. However, the execution of this PoW algorithm uses many resources. 
 
-### 2.1.1 Technische context  
-![contextModel](https://user-images.githubusercontent.com/43604037/136081041-f4097a46-bb12-4d48-9068-cf522c4b4350.PNG)
+The purpose of this project is to observe and resolve the problems which occur when a monetary systems lacks a central authority. Besides these problems, a solution must be seeked as to how a monetary system can be developed without the use of excessive resources.
 
-### 2.2 Scope  
-Het doel van de opdracht is om inzicht te krijgen in de problemen die naar voren komen wanneer een centrale autoriteit ontbreekt. Er zal een implementatie van een systeem moeten komen die vergelijkbaar is met bestaande cryptomunten zoals Bitcoin en Ethereum. Om te opdracht te verkleinen zijn een aantal dingen achterwege gelaten.
+### 2.2 Problems  
+As aforementioned, Bitcoin uses a PoW algorithm to secure the integrity of the blockchain. This is a cryptographic algorithm which ensures that every block added to the chain must be processed for an average of ten minutes. During these ten minutes, every node who choses to do so, attempts to solve the crypotgraphic problem with costs enormous amounts of resources. A study in September 2021 calculated to whole blockchain industry contributes to 0.5% of the global power usage. This is roughly the same as seven times the power usage of Google. So, Bitcoin contributes immensly to the global warming problems we are facing as a humanity.
 
-- Het Proof-Of-Work algoritme, die het vervalsen van blocks in the chain lastig maakt, hoeft niet te worden geïmplementeerd.
-- De publieke en privé sleutels hoeven niet te bestaan uit 32 bytes maar uit 32 bits.
-- Het aantal nodes in het peer-2-peer netwerk is beperkt. Wel moet het mogelijk blijven om het netwerk op te schalen naar een groot aantal nodes.
-- Binnen het netwerk is het niet noodzakelijk dat de gebruikers anoniem met elkaar kunnen communiceren.
-- De verzonden berichten in het netwerk hoeven niet in binair formaat te staan om de leesbaarheid tijdens het testen te verbeteren.
+### 2.3 Scope  
+The implementation of a monetary systems will look a lot like the popular coin Bitcoin which also uses a blockchain. However, there is only large difference, our implementation will not use a PoW algorithm to secure the integrity of the chain. In addition to the lack of a PoW algorithm, other important differneces are:
+* The size of the public and private keys can be 8 bits instead of the 8 bytes used in Bitcoin.
+* The blockchain must only be able to handle 32 nodes within the network. However, it must be able to scale to 3.2 million if required.
+* Users are not required to be kept anonymous.
+* The transactions stored on the blockchain are not required to be in binary format which allows for an easier development process. 
 
-### 2.3 Probleemstelling
-{{wat is het probleem, wat zijn de oorzaken van het probleem, voor wie is het een probleem?}}
+### 2.4 Risks  
+{{ What are the risks? }}
 
-{{waarom wil de opdrachtgever dit project?}}
+## 3. Stakeholders  
 
-### 2.4 Risico's
-{{wat zijn de risico's?}}
+| Role             | Representative   | Involvement                                                                                         |
+| ---------------- | ---------------- | --------------------------------------------------------------------------------------------------- |
+| Client           | Jacob de Boer    | The final product is being developed for the client. He delivered the project and the requirements. |
+| Lecturer         | Jan Baljé        | Guides the development team during the semester.                                                    |
+| Product owner    | Youri Lieverdink | Responsible for the final product and has contact with the stakeholders.                            |
+| Scrum master     | Bart van Poele   | Ensures the scrum practices are followed and executed correctly.                                    |
+| Development team | Youi Lieverdink  | The development team works on the product. This includes the product owner and the scrum master.    |  |
+| Traders          | -                | Purchase the coins and trade with others.                                                           |
 
-## 3. Belanghebbenden
-Een belanghebbende (stakeholder) is iemand die invloed ondervint of zelf invloed kan heeft op een organisatie.
-belanghebbenden van de Cryptomunt opdracht zijn:
+## 4. Perspective  
 
-| Belanghebbenderol | Vertegenwoordiger | Betrokkenheid                                                                                                                  |
-| ----------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Opdrachtgever     | Jacob de Boer     | Het uiteindelijke programma wordt geschreven voor de opdrachtgever. De opdrachtgever levert het project en de randvoorwaarden. |
-| Leraar            | Jan Baljé         | Begeleid de projectgroep.                                                                                                      |
-| Productowner      | Youri Lieverdink  | Verantwoordelijk voor het eindproduct. Heeft contact met belanghebbenden.                                                      |
-| Scrummaster       | Bart van Poele    | Zorgt dat het team zich houd aan de scrumregels.                                                                               |
-| Teamgenoten       | Youi Lieverdink   | De teamgenoten werken aan het project. In dit project werken de Productowner en de scrummaster ook mee.                        |
-| Node-operators    |                   | De nodes in de blockchain die transacties uit kunnen voeren.                                                                   |
-| Handelaars        |                   | Kunnen de cryptocurrency kopen er in handelen.                                                                                 |
+### 4.1 Tecnical context  
+{{ Describe the technical context using a context diagram }}
 
-## 4. Perspectief
+### 4.2 Proof of concept  
+{{ What are we going to demonstrate with our proof of concept? }}
 
-### 4.1 Proof of Concept
-{{wat ga je aantonen met je PoC?}}
+### 4.3 Acceptation  
+{{ When is the project complete? }}
 
-### 4.2 Acceptatie
-{{wanneer is het project geslaagd?}}
-
-### 4.3 Planning
+### 4.4 Global schedule  
+{{ Roadmap }}
