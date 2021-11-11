@@ -27,12 +27,9 @@ Is it still in progress?  Being implemented?  In production? You may also want t
 ## 3. Architectonisch  
 
 ### 3.1 Context  
-{{
-Use a context diagram (and supporting explanation) to explain the environment in which the system operates and the external entities it interacts with. Briefly define here each of the external entities and the important interactions that the system has with them.
-The context diagram is usually presented as a simple, high-level picture which shows the system’s boundaries and its adjacent external entities. The external entities are typically other systems, but may also be physical devices, “black box” external organisations, or more granular software components. Interactions may be data flows (interfaces) or control flows (eg invoking a service or exposed function).
-You normally present the system itself in the diagram as a single box or component. External entities are also normally presented as single boxes or components, since you often don’t know (or care) about their internal implementations.
-An example context diagram is given below. This uses a “neutral” boxes-and-lines notation; you may want to use a more formal modelling language such as UML instead.
-}}
+![contextDiagram](https://user-images.githubusercontent.com/43604037/140753529-899f4d5a-1215-4f09-9973-55decbb3cae8.jpg)
+
+In the context diagram is visible that the only external party for this system is the user. This is the characteristic of a blockchain. In the wallet application the user can find all transactions of the blockchain and their own amount of currency. It is also possible to control the node witht the wallet aplication. So make transactions on the blockchain. The scope of this project is making nodes that can communicate with eachother and a wallet application that makes control of the node more userfriendly. 
 
 ### 3.2 Functioneel  
 {{
