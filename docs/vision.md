@@ -1,7 +1,7 @@
-# Visie
+# Vision
 
-## 1. Inleiding
-{{Geef hier het doel van de Vision aan.}}
+## 1. Introduction
+This document will provide the vision for this project, along with a description of the end product and its purpose. In addition, this document contains an overview of the stakeholders and their involvement.
 
 ## 2. Positionering
 
@@ -46,3 +46,9 @@ The purpose of the Proof of Concept is to prove to the stakeholders that the pro
 
 ### 4.2 Acceptance
 If all the defined functionality works reliably and the apps meets all requirements, this project will be considered to be a success
+
+### 5. Product features
+This chapter provides the most important product features.
+
+Unlike bitcoin, this crypto currency will not use the Proof-of-Work algorithm but Proof-of-Stake. This is a less resource-consuming way of validating transactions and securing the network. Besides, the network needs to scalable up to a number of 3.2 million nodes, which would consume a lot of energy if it were to use the Proof-of-Work algorithm. 
+In order to create a wallet the user will need to set up a node. Each node needs to keep up the ledger, the history of all transactions, in order to stay up to date and be able to validate transactions. The ledger is publicly visible to anyone plugged into the network. This way other nodes can see if their ledgers match that of others and if there are bad actors.
