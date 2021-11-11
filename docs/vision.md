@@ -38,12 +38,11 @@ belanghebbenden van de Cryptomunt opdracht zijn:
 | Node-operators     |                       | De nodes in de blockchain die transacties uit kunnen voeren. |
 | Handelaars         |                       | Kunnen de cryptocurrency kopen er in handelen. |
 
-## 4. Perspectief
+## 4. Perspective
+This product is supposed to fit in the existing ecosystem of electronic devices like desktops, laptops and smartphones, in order to be accessible at any time and place which would be expected of any currency.
 
 ### 4.1 Proof of Concept
-{{wat ga je aantonen met je PoC?}}
+The purpose of the Proof of Concept is to prove to the stakeholders that the project is feasable. It will first be tested with a small number of nodes before development can be taken further to a growing number of nodes.
 
-### 4.2 Acceptatie
-{{wanneer is het project geslaagd?}}
-
-### 4.3 Planning
+### 4.2 Acceptance
+If all the defined functionality works reliably and the apps meets all requirements, this project will be considered to be a success
