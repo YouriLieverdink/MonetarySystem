@@ -10,9 +10,13 @@
             "*": [
                 "node_modules/*"
             ]
-        }
+        },
+        "rootDir": "./src"
     },
     "include": [
         "src/**/*"
+    ],
+    "exclude": [
+        "dist/**/*"
     ]
 }
