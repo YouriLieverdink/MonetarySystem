@@ -21,8 +21,17 @@ All funtionality will be assessed based on the Use Case Model when implementatio
 The setup and use of the node and wallet have to go as intuitively as possible which requires the least amount of explanation to the user. This means that a clean interface should be used and it should be clear what actions a user could and should perform in order to setup and operate a wallet and a node.
 In addition, the apps on different platforms should resemble eachother so the apps don't seem unrelated.
 
+**Owner**
+Current and future developers are owner of this criterion.
+
 **Measurement method**
-This criterion is met if all team members think the apps feel intuitive and don't require much explanation.
+This criterion is met if other team members think the apps feel intuitive and don't require much explanation.
+
+**Planning**
+During the review of a pull request the usability will be tested by at least one team member.
+
+**Corrective actions**
+In case the implementation requires too much explaination, the work will have to be re-done until it doesn't.
 
 ### 3.7 Standaarden
 
