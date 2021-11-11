@@ -29,7 +29,7 @@ Is it still in progress?  Being implemented?  In production? You may also want t
 ### 3.1 Context  
 ![contextDiagram](https://user-images.githubusercontent.com/43604037/140753529-899f4d5a-1215-4f09-9973-55decbb3cae8.jpg)
 
-In het context diagram is te zien dat de enige externe partij van het systeem de gebruiker is. Dit is het kenmerk van een blockchain. De gebruiker kan via een wallet applicatie de gedane transacties op de blockchain inzien. Zo ook zijn eigen en hoeveel currency hij momenteel bezit. Verder moet met de wallet applicatie ook mogelijk zijn om de node te bedienen. De node kan transacties aanvragen op de blockchain. Het geen dat in de scope ligt is het maken van een node die met andere nodes kan communiceren en het maken van een wallet applicatie voor de gebruiker.
+In the context diagram is visible that the only external party for this system is the user. This is the characteristic of a blockchain. In the wallet application the user can find all transactions of the blockchain and their own amount of currency. It is also possible to control the node witht the wallet aplication. So make transactions on the blockchain. The scope of this project is making nodes that can communicate with eachother and a wallet application that makes control of the node more userfriendly. 
 
 ### 3.2 Functioneel  
 {{
