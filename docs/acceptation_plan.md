@@ -14,12 +14,15 @@
 
 ### 3.4 Beveiliging
 
-### 3.5 Functionaliteit
-De functionaliteit zal bij de afronding van de implementatie worden beoordeeld op basis van de goedgekeurde Use Case Model.
+### 3.5 Functionality
+All funtionality will be assessed based on the Use Case Model when implementation is finished.
 
-### 3.6 Gebruiksvriendelijkheid
-Het opzetten en het gebruik van deze applicaties en het onderliggende netwerk moet zo gebruiksvriendelijk mogelijk verlopen. Om dat proces te vergemakkelijken is het belangrijk dat de eindgebruiker met een minimaal aantal stappen een node en een wallet kan opzetten en deze te gebruiken. 
-Daarnaast is het van belang dat de gebruikersinterfaces van de verschillende apps zoveel mogelijk op elkaar lijken en dezelfde functionaliteiten bevatten en op een logische en begrijpelijke manier is ingedeeld.
+### 3.6 Usability
+The setup and use of the node and wallet have to go as intuitively as possible which requires the least amount of explanation to the user. This means that a clean interface should be used and it should be clear what actions a user could and should perform in order to setup and operate a wallet and a node.
+In addition, the apps on different platforms should resemble eachother so the apps don't seem unrelated.
+
+**Measurement method**
+This criterion is met if all team members think the apps feel intuitive and don't require much explanation.
 
 ### 3.7 Standaarden
 
