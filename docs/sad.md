@@ -1,8 +1,8 @@
-# Software Architectuur Document
+# Software Architecture Document
 
-## 1. Introductie  
+## 1. Introduction  
 
-### 1.1 Doelstelling en domein  
+### 1.1 Purpose and scope  
 {{
 Explain the purpose and scope of the document.
 Primarily this is to document the architecture for the stakeholders, to ensure that it meets their goals and concerns and that the proposed architecture is correct, complete and fit for purpose.
@@ -21,8 +21,10 @@ Explain the current status of the architecture and of this architectural descrip
 Is it still in progress?  Being implemented?  In production? You may also want to describe future plans for the document (eg will be reissued as Definitive after comments received by stakeholders).
 }}
 
-## 2. Vereisten  
-{{Hier moeten we de 3 belangrijkste non-functional requirements beschrijven.}}
+## 2. Architectural Goals
+The three most important non-functional requirements are scalability, security and reliability. 
+Scalability is a large part of the project, as the network must be able to support up to a number of 3.2 million nodes. More nodes also means more decentralization, which can build trust for its users. Another non-functional requirement is the security, which should go without saying. Network participants must not be able to perform actions they're not autorised to do. In addition to these two requirements there's reliability. The network should operate like expected and not in any way that could compromise users' funds or trust in the network in any way.
+
 
 ## 3. Architectonisch  
 
