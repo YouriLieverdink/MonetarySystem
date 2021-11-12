@@ -73,9 +73,9 @@ Hier kan tdd mooi worden beschreven voor het gebruik binnen het project.
 
 - Use of 32 bit keys.
 - Every user can have one or more account numbers.
-- Every account number is unique.
+- Every account hash is unique.
 - Authentication and integerity of transactions have to be guaranteed.
-- Validating needs to be efficient. (No proof of work)
+- Validating needs to be efficient. (Transaction validation uses the Proof-of-Stake algorithm)
 - Transactions that are not verified get deleted from the network.
 - Validated transactions are immutable.
 - Scaling possible up to 3.2 million nodes.
