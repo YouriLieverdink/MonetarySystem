@@ -21,7 +21,7 @@ Explain the current status of the architecture and of this architectural descrip
 Is it still in progress?  Being implemented?  In production? You may also want to describe future plans for the document (eg will be reissued as Definitive after comments received by stakeholders).
 }}
 
-## 2. Architectural Goals
+## 2. Requirements
 The three most important non-functional requirements are scalability, security and reliability. 
 Scalability is a large part of the project, as the network must be able to support up to a number of 3.2 million nodes. More nodes also means more decentralization, which can build trust for its users. Another non-functional requirement is the security, which should go without saying. Network participants must not be able to perform actions they're not autorised to do. In addition to these two requirements there's reliability. The network should operate like expected and not in any way that could compromise users' funds or trust in the network in any way.
 
