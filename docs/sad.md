@@ -72,7 +72,6 @@ Hier kan tdd mooi worden beschreven voor het gebruik binnen het project.
 ### 6.1 Non-Functional Requirements
 
 - Use of 32 bit keys.
-- A VM for verifing smart contracts.
 - Every user can have one or more account numbers.
 - Every account number is unique.
 - Authentication and integerity of transactions have to be guaranteed.
