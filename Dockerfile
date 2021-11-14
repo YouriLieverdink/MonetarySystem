@@ -15,4 +15,4 @@ COPY . .
 
 EXPOSE 3001
 
-CMD [ "node", "./dist/server.js" ]
+CMD [ "node", "./dist/main.js" ]

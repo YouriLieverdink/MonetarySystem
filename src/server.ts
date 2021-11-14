@@ -1,17 +1,30 @@
 import express from 'express';
 import config from './config';
+import { useGossip } from './services/gossip';
+import { Message } from './types/message';
 
-const server = express();
+const app = express();
+const gossip = useGossip();
 
-server
-	.get('/', (request, response) => {
-		// Send back a respone with the host.
-		response.send(`Hi, ${request.headers.host}`);
+app.use(express.json());
+
+app
+	.post('/state', (req, res) => {
+		// Register the message.
+		gossip.handle(req.body);
+
+		res.status(200).end();
 	});
 
-server
-	.listen(config.express.port)
+const server = app
+	.listen(config.port)
+	.on('listening', () => {
+
+		console.log(`Listening on port ${config.port}`);
+	})
 	.on('error', (err) => {
 		// An error occured whilst listening.
 		console.error('Unable to listen', err);
 	});
+
+export { server, gossip };

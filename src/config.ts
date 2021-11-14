@@ -4,25 +4,17 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const config = {
-	// Information on DNS node.
+	// Information on root peer.
 	'dns': {
-		'host': process.env.ROOT_HOST,
-		'port': process.env.PORT,
+		'host': process.env.DNS_HOST || '0.0.0.0',
 	},
-	// Information on this node.
-	'node': {
-		'isRoot': process.env.IS_ROOT,
+	// Information on this peer.
+	'peer': {
+		'name': process.env.NAME || 'Cow',
+		'isDns': process.env.IS_DNS === 'true',
 	},
-	// Information for express.
-	'express': {
-		'host': '127.0.0.1',
-		'port': process.env.LOCAL_PORT,
-	},
-}
-
-if (process.env.ENV === 'production') {
-	// Update host when in production.
-	config.express.host = '0.0.0.0';
+	// Default port.
+	'port': process.env.PORT || 3001,
 }
 
 export default config
