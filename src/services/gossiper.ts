@@ -139,6 +139,8 @@ class Gossiper {
 			else if (error.request) {
 				// The request could not be delivered, remove the node.
 				delete this.cluster[address];
+
+				console.log(`(e) doHandshake: ${error.message}`);
 			}
 			else {
 				// An unknown error occured.
