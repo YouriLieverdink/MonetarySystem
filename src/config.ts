@@ -4,17 +4,16 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const config = {
-	// Information on root peer.
-	'dns': {
-		'host': process.env.DNS_HOST || '0.0.0.0',
+	// Address of the seed node.
+	'seed': {
+		'ip': process.env.SEED_IP || '0.0.0.0',
+		'port': process.env.SEED_PORT || 3001,
 	},
-	// Information on this peer.
-	'peer': {
-		'name': process.env.NAME || 'Cow',
-		'isDns': process.env.IS_DNS === 'true',
+	// Address of this node.
+	'node': {
+		'ip': process.env.IP,
+		'port': process.env.PORT || 3001,
 	},
-	// Default port.
-	'port': process.env.PORT || 3001,
 }
 
 export default config
