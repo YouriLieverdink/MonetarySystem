@@ -4,9 +4,9 @@ This document describes the use cases for this project.
 
 
 # 2 - Use case diagram
-| ![usecasemodel3](https://user-images.githubusercontent.com/43604037/136422367-8e00fcb2-cf47-41c7-9f3b-d535aad6d75d.PNG) | 
+| ![Use case diagram](https://user-images.githubusercontent.com/43604037/141782534-b9de5f01-c4a3-4484-83c7-b63679fcee5e.jpeg) | 
 |:--:| 
-| *Figuur 1 - Use case diagram van de titrium blockchain* |
+| *Figure 1 - Use case diagram of the Tritium network* |
 
 # 3 - Use cases
 
