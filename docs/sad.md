@@ -2,7 +2,7 @@
 
 ## 1. Introductie  
 
-### 1.1 Doelstelling en domein  
+### 1.1 Goal  
 {{
 Explain the purpose and scope of the document.
 Primarily this is to document the architecture for the stakeholders, to ensure that it meets their goals and concerns and that the proposed architecture is correct, complete and fit for purpose.
@@ -15,7 +15,22 @@ While you should avoid presenting a lot of material available elsewhere, it may 
 -	bring together other important information not captured elsewhere
 }}
 
-### 1.2 Status  
+
+The goal of the project is creating an application for a monetary cryptocurrency system. This system can be compared to other cryptocurrency systems like Bitcoin. Ethereum and other cryptocurrency. Creating a new cryptocurrency must meet many requirements before it can be counted as a valid cryptocurrency. In order to tackle all the requirements, ensuring the goals and concerns of the stakeholders is met, complete and relevant, it is of great importance to get a clear overview of the architecture. Hence this document will focus on giving a clear overview of the architecture of the application for the monetary system (cryptocurrency). 
+
+### 1.2 Scope
+The project and Bitcoin have a lot of similarities, however there are some differences as well, these are listed below:
+- no Proof-of-Work algorithm;
+- no large keys;
+- a limited number of nodes;
+- users don't have to stay anonymous;
+- soft forks and backward compatibility is no requirement;
+- messages are not in binary format;
+- a virtual machine for the verifying of smart contracts is not necessary;
+
+These differences also help defining the project. 
+
+### 1.3 Status  
 {{
 Explain the current status of the architecture and of this architectural description.
 Is it still in progress?  Being implemented?  In production? You may also want to describe future plans for the document (eg will be reissued as Definitive after comments received by stakeholders).
