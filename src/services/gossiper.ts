@@ -1,9 +1,10 @@
 import axios, { AxiosError } from 'axios';
 import express from 'express';
-import config from '../config';
 import { Cluster } from '../types/cluster';
+import { Gossip } from '../types/gossip';
+import { State } from '../types/state';
 
-class Gossiper {
+export class Gossiper {
 	/**
 	 * The address on which this node listens.
 	 */
@@ -20,6 +21,11 @@ class Gossiper {
 	private cluster: Cluster;
 
 	/**
+	 * The current state.
+	 */
+	public state: State
+
+	/**
 	 * Class constructor.
 	 *
 	 * @param address The address on which this node listens.
@@ -28,57 +34,101 @@ class Gossiper {
 	constructor(address: string, seedNodes: string[]) {
 		this.address = address;
 
+		// Remove this node from the list of seed nodes if necessary.
+		this.seedNodes = seedNodes.filter((addr) => addr !== this.address);
+
 		// Set the initial cluster.
 		this.cluster = {};
 		this.cluster[address] = '✅';
 
-		// Remove this node from the list of seed nodes if necessary.
-		this.seedNodes = seedNodes.filter((addr) => addr !== this.address);
+		// Set the initial state.
+		this.state = { 'messages': [] };
 
-		this.init();
+		this.initReceiver(address);
+		this.initSender(1000);
+		this.initLogger(50);
 	}
 
 	/**
-	 * Initialise this gossiper.
+	 * Initialise the listener.
+	 *
+	 * @param address The address on which this gossiper should listen.
 	 */
-	private init(): void {
-		// Create the application.
+	private initReceiver(address: string): void {
+		// Create the app.
 		const app = express();
 
+		// Enable Json support.
 		app.use(express.json());
 
-		// Handle incoming gossip.
+		// Endpoint for incoming gossip.
 		app.post('/gossip', (req, res) => {
-			// Handle the incoming gossip.
-			const cluster = this.handleHandshake(req.body);
+			// Determine the gossip to send back.
+			const gossip = this.handleHandshake(req.body);
 
-			// Return the newly updated state information.
-			res.status(200).json(cluster);
+			return res.json(gossip);
 		});
 
-		app.listen(+config.node.port, `${config.node.ip}`, null, () => {
-			// Indicate the node has started.
-			console.info(`(i) Listening at '${this.address}'.`);
-		});
+		// Construct the port and ip from the address.
+		const [ip, port] = address.split(':');
 
-		setInterval(this.doGossip.bind(this), 1000);
+		// Start receiving.
+		app.listen(+port, ip);
+	}
+
+	/**
+	 * Initialise the sender.
+	 *
+	 * @param interval The interval at which to send gossip.
+	 */
+	private initSender(interval: number): void {
+		// Set the interval.
+		setInterval(this.doGossip.bind(this), interval);
+	}
+
+	/**
+	 * Initialise the message logger.
+	 *
+	 * @param interval The interval at which to update the messages.
+	 */
+	private initLogger(interval: number): void {
+		// Retrieve the current length of the messages.
+		let length = this.state.messages.length;
+
+		/**
+		 * Log all the messages when it has been changed.
+		 */
+		const log = () => {
+			// Retrieve the messages from state.
+			const messages = this.state.messages;
+
+			// Check whether any new message has been added.
+			if (length !== messages.length) {
+				// Clear the console and display all the messages.
+				console.clear();
+
+				messages.forEach(
+					(m) => console.log(`${m.address} > ${m.content}`),
+				);
+			}
+
+			// Update the length.
+			length = messages.length;
+		};
+
+		setInterval(log, interval);
 	};
 
 	/**
 	 * Start a gossiping session.
 	 */
 	private async doGossip(): Promise<void> {
-		// Display the current cluster.
-		console.clear();
-		console.log();
-		console.log(JSON.stringify(this.cluster, null, 4));
-
 		// Retrieve the possible nodes.
 		const nodes = this.nodes();
 
 		if (nodes.length > 0) {
 			// Start a gossip with three different nodes.
-			for (let i = 0; i < 3; i++) {
+			for (let i = 0; i < 1; i++) {
 				// Pick a random node.
 				const node = nodes[Math.floor(Math.random() * nodes.length)];
 
@@ -106,21 +156,35 @@ class Gossiper {
 	 */
 	private async doHandshake(address: string, isSeed: boolean = false): Promise<void> {
 		try {
+			// Create the gossip.
+			const gossip: Gossip = {
+				'cluster': this.cluster,
+				'state': this.state,
+			};
+
 			// Attempt to perform a handshake.
 			const response = await axios({
 				'method': 'POST',
 				'url': `http://${address}/gossip`,
-				'data': this.cluster,
+				'data': gossip,
 			});
 
-			// Create a cluster from the return data.
-			const cluster: Cluster = response.data;
+			// Create a new gossip object from the return data.
+			const newGossip: Gossip = response.data;
 
-			Object.entries(cluster).forEach(([addr, status]) => {
-				// Update the outdated states.
+			// Walk through the addresses.
+			Object.entries(newGossip.cluster).forEach(([addr, status]) => {
+				// Update the outdated status.
 				this.cluster[addr] = status;
 			});
 
+			// Create a new list of messages.
+			const messages = [...this.state.messages, ...newGossip.state.messages];
+
+			// Set the messgaes in a chronological order.
+			this.state.messages = messages.sort((a, b) => {
+				return new Date(a.date).getTime() - new Date(b.date).getTime();
+			});
 		} //
 		catch (err) {
 
@@ -139,8 +203,6 @@ class Gossiper {
 				else {
 					// Set the status to inactive.
 					this.cluster[address] = '❌';
-
-					console.log(`(i) doHandshake: Node at ${address} has been set to inactive.`);
 				}
 			}
 			else {
@@ -153,14 +215,14 @@ class Gossiper {
 	/**
 	 * Handle a incoming handshake.
 	 *
-	 * @param cluster The received cluster.
+	 * @param gossip The received gossip.
 	 */
-	private handleHandshake(cluster: Cluster): Cluster {
+	private handleHandshake(gossip: Gossip): Gossip {
 		// Clone the cluster of this node.
 		const tempCluster = { ...this.cluster };
 
 		// Loop through the received cluster.
-		Object.entries(cluster).forEach(([addr, status]) => {
+		Object.entries(gossip.cluster).forEach(([addr, status]) => {
 			// Check if we know this address.
 			const isKnown = !!tempCluster[addr];
 
@@ -188,7 +250,30 @@ class Gossiper {
 			delete tempCluster[addr];
 		});
 
-		return tempCluster;
+		const tempState = { ...this.state };
+
+		// Loop through the received messages.
+		gossip.state.messages.forEach((mess) => {
+			// Check if we know this message.
+			const isKnown = !!tempState.messages.find((m) => {
+				return new Date(m.date).getTime() === new Date(mess.date).getTime();
+			});
+
+			if (!isKnown) {
+				// Add it to the local state.
+				const messages = [...this.state.messages, mess];
+				this.state.messages = messages.sort((a, b) => {
+					return new Date(a.date).getTime() - new Date(b.date).getTime();
+				});
+			}
+
+			// Remove the message from the clone, since the peer already knows it.
+			tempState.messages = tempState.messages.filter((m) => {
+				return new Date(m.date).getTime() !== new Date(mess.date).getTime();
+			});
+		});
+
+		return { 'cluster': tempCluster, 'state': tempState };
 	};
 
 	/**
@@ -203,6 +288,20 @@ class Gossiper {
 			})
 			.map((node) => node[0]);
 	};
+
+	/**
+	 * Adds a new message to the local state.
+	 *
+	 * @param content Content of the message.
+	 */
+	public addMessage(content: string): void {
+		// Push the message.
+		this.state.messages.push({
+			'date': new Date(),
+			'content': content,
+			'address': this.address,
+		});
+	}
 };
 
 /**
