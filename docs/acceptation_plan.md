@@ -9,6 +9,12 @@ During this project there will be worked on building an application for a moneta
 
 ## 2. Responsibilities
 
+| Role    | Responsibilities |
+|   ---   |      ---         |
+| Team    | The team has the responsibility to make the application with the requirements given by the client. They also have to make sure they fulfil the Non-functional requirements like security. They have to document the project so every stakeholder understands the project.|
+| Client  | The client has to give the right requirements and has to read the documentation to check if the team understands the project. |
+| Teacher | The teacher checks if the documents are complete and contain the right information |
+
 ## 3. Criteria
 
 ### 3.1 Performance
