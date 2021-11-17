@@ -2,13 +2,28 @@
 
 ## 1. Inleiding
 
+### 1.1 Doel 
+During this project there will be worked on building an application for a monetary system, in this case a cryptocurrency. This system can be compared with other monetary systems like Bitcoin, Ethereum and other cryptocurrencies. A cryptocoin has several important requirements that it must meet in order for it to be used as a valid cryptocurrency. This acceptationplan is therefore set up to give a measurable basis for the testing and accepting of the delivered product. In this document the agreements regarding the testing and accepting of the delivered cryptocurrency. Also the responsibilities of all the involved parties are captured in this document.
+
+### 1.2 Referenties
+
 ## 2. Verantwoordelijken
 
 ## 3. Criteria
 
 ### 3.1 Performance
+Performance is a very important aspect during the development of every software product. Despite a product with a low performance can work it is certainly not desirable. People do not want to be waiting for hours for pages to load during the use of applications like Instagram or Github. In the case of this project people do not want to wait for hours before transactions are validated and completed. Resulting from this problem there are several criteria set up concerning the performance to provide a measurable basis to which the application must fulfil.
 
 ### 3.2 Beheerbaarheid
+
+#### 3.2.1 Unit tests
+There will be testcode written for manageability. The tests must take care of a check on every aspect of the product and ensure everything works as it should. These test must comply to the requirement that when expanded or change the tests are still usable.
+
+#### 3.2.2 Documentatie
+All code must be documented. The documentation must be concise and clear for the reader. This implies that slang must be explained. This creates readable code for the reader ensuring more advanced manageability.
+
+#### 3.2.3 Logging
+For and in the system logging must be applied to capture events, errors and functionalities. In this way incidents will be traced and the environment will stay efficiently manageable. The data must be saved unambiguously and structured in order to be easily accessed. This also means that the different logged processes need to be saved seperately.
 
 ### 3.3 Betrouwbaarheid
 Een blockchain moet altijd beschikbaar zijn. Het is niet mogelijk om updates te pushen omdat een groot gedeelte van de blockchain omhoog moet blijven om betrouwbaarheid te garanderen. Er wordt wel gebruik gemaakt van versie beheer zodat alle versies beschikbaar zijn en er altijd een mogelijkheid is om daar naar terug te vallen als iets in de nieuwe versies verkeerd gaat. 
