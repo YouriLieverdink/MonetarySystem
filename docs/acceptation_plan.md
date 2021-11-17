@@ -2,8 +2,8 @@
 
 ## 1. Inleiding
 
-### 1.1 Doel
-Als project wordt er gewerkt aan een applicatie voor een monetair systeem. Dit systeem kan worden vergeleken met andere monetaire systemen als Bitcoin, Ethereum en andere cryptocurrency. Een cryptomunt heeft een aantal belangrijke eisen waar het aan moet voldoen voor het als geldige cryptocurrency kan worden gebruikt. Dit acceptatieplan is daarom opgesteld om een meetbare basis te leveren voor het testen en accepteren van het geleverde product. Hierin is vastgelegd welke afspraken zijn gemaakt aangaande het testen en accepteren van het opgeleverde monetaire systeem. Tevens zijn in dit document de verantwoordelijkheden van alle betrokken partijen vastgelegd. 
+### 1.1 Doel 
+During this project there will be worked on building an application for a monetary system, in this case a cryptocurrency. This system can be compared with other monetary systems like Bitcoin, Ethereum and other cryptocurrencies. A cryptocoin has several important requirements that it must meet in order for it to be used as a valid cryptocurrency. This acceptationplan is therefore set up to give a measurable basis for the testing and accepting of the delivered product. In this document the agreements regarding the testing and accepting of the delivered cryptocurrency. Also the responsibilities of all the involved parties are captured in this document.
 
 ### 1.2 Referenties
 
@@ -12,22 +12,18 @@ Als project wordt er gewerkt aan een applicatie voor een monetair systeem. Dit s
 ## 3. Criteria
 
 ### 3.1 Performance
-Performance is een belangrijk aspect tijdens de ontwikkeling van elk software product. Ondanks dat een product met een lage performance wel kan werken, is dit zeker niet gewenst. Men wil bijvoorbeeld bij gebruik van een applicatie als Instagram of Thuisbezorgd niet uren wachten totdat de applicatie geladen wordt. Zo zal men in het geval van dit project niet uren willen wachten voordat transacties gevalideerd worden. Daaruit voortvloeiend zijn er acceptatie criteria opgesteld betreffende de performance om zo een meetbare basis te verstrekken waaraan de applicatie moet voldoen.
-
-#### 3.1.1 Transacties
-Elke transactie moet op basis van consensus van de meerderheid gevalideerd worden door een node en toch efficiënt plaatsvinden (geen 'Proof-of-Work' algoritme). Efficiënt in deze zin wil zeggen dat ...
-
+Performance is a very important aspect during the development of every software product. Despite a product with a low performance can work it is certainly not desirable. People do not want to be waiting for hours for pages to load during the use of applications like Instagram or Github. In the case of this project people do not want to wait for hours before transactions are validated and completed. Resulting from this problem there are several criteria set up concerning the performance to provide a measurable basis to which the application must fulfil.
 
 ### 3.2 Beheerbaarheid
 
 #### 3.2.1 Unit tests
-Er wordt testcode geschreven voor beheerbaarheid. De tests moeten er voor zorgen dat er een check wordt gedaan op alle criteria. Deze tests moeten eraan voldoen dat bij uitbreiding of verandering er nog steeds gebruik van kan worden gemaakt. 
+There will be testcode written for manageability. The tests must take care of a check on every aspect of the product and ensure everything works as it should. These test must comply to the requirement that when expanded or change the tests are still usable.
 
 #### 3.2.2 Documentatie
-Alle code moet worden gedocumenteerd. De documentatie moet bondig en helder zijn voor de lezer. Dit houdt tevens in dat jargon uitgelegd moet worden. Dit creëert leesbare code voor de lezer waardoor de beheerbaarheid bevorderd wordt.
+All code must be documented. The documentation must be concise and clear for the reader. This implies that slang must be explained. This creates readable code for the reader ensuring more advanced manageability.
 
 #### 3.2.3 Logging
-Voor en in het systeem moet logging worden toegepast om gebeurtenissen, errors en functionaliteiten vast te leggen. Op deze manier worden incidenten getraceerd en kan de omgeving efficiënt beheerd blijven. De data moet eenduidig en gestructureerd bewaard worden om makkelijk te kunnen worden opgezocht. Dit houdt ook in dat de verschillende gelogde processen gescheiden opgeslagen worden.
+For and in the system logging must be applied to capture events, errors and functionalities. In this way incidents will be traced and the environment will stay efficiently manageable. The data must be saved unambiguously and structured in order to be easily accessed. This also means that the different logged processes need to be saved seperately.
 
 ### 3.3 Betrouwbaarheid
 
