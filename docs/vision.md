@@ -34,27 +34,19 @@ The implementation of a monetary systems will look a lot like the popular coin B
 | Development team | Youi Lieverdink  | The development team works on the product. This includes the product owner and the scrum master.    |  |
 | Traders          | -                | Purchase the coins and trade with others.                                                           |
 
-## 4. Perspective  
+## 4. Perspective
 
 ### 4.1 Tecnical context  
 {{ Describe the technical context using a context diagram }}
 
-### 4.2 Proof of concept  
-{{ What are we going to demonstrate with our proof of concept? }}
+### 4.2 Proof of Concept
+The purpose of the Proof of Concept is to prove to the stakeholders that the project is feasable. It will first be tested with a small number of nodes before development can be taken further to a growing number of nodes.
 
-### 4.3 Acceptation  
-{{ When is the project complete? }}
+### 4.3 Acceptance
+If all the defined functionality works reliably and the apps meets all requirements, this project will be considered to be a success
 
 ### 4.4 Global schedule  
 {{ Roadmap }}
-## 4. Perspective
-This product is supposed to fit in the existing ecosystem of electronic devices like desktops, laptops and smartphones, in order to be accessible at any time and place which would be expected of any currency.
-
-### 4.1 Proof of Concept
-The purpose of the Proof of Concept is to prove to the stakeholders that the project is feasable. It will first be tested with a small number of nodes before development can be taken further to a growing number of nodes.
-
-### 4.2 Acceptance
-If all the defined functionality works reliably and the apps meets all requirements, this project will be considered to be a success
 
 ### 5. Product features
 This chapter provides the most important product features.
