@@ -5,7 +5,7 @@
 ### 1.1 Goal
 During this project there will be worked on building an application for a monetary system, in this case a cryptocurrency. This system can be compared with other monetary systems like Bitcoin, Ethereum and other cryptocurrencies. A cryptocoin has several important requirements that it must meet in order for it to be used as a valid cryptocurrency. This acceptationplan is therefore set up to give a measurable basis for the testing and accepting of the delivered product. In this document the agreements regarding the testing and accepting of the delivered cryptocurrency. Also the responsibilities of all the involved parties are captured in this document.
 
-### 1.2 Refrences
+### 1.2 References
 
 ## 2. Responsibilities
 
@@ -13,7 +13,7 @@ During this project there will be worked on building an application for a moneta
 |   ---   |      ---         |
 | Team    | The team has the responsibility to make the application with the requirements given by the client. They also have to make sure they fulfil the Non-functional requirements like security. They have to document the project so every stakeholder understands the project.|
 | Client  | The client has to give the right requirements and has to read the documentation to check if the team understands the project. |
-| Teacher | The teacher checks if the documents are complete and contain the right information |
+| Teacher | The teacher checks if the documents are complete and contain the right information. |
 
 ## 3. Criteria
 
@@ -34,7 +34,7 @@ For and in the system logging must be applied to capture events, errors and func
 ### 3.3 Reliability
 A blockchain has to be available at all times to assure the data is not altered. A large part of the blockchain needs to be up to assure integerity. Because of this an update cannot be pushed. It is possible to gradually install updates. The versions will be saved with a vesion control service. So if theres an error in a version the other versions can be used.
 
-The Reliability of the data itself will come with the size of the blockchain. A transaction is accepted when more than 50 percent agrees that the transaction is valid. When the blockchain has a reasenable size we can assume that the transaction is reliable.
+The Reliability of the data itself will come with the size of the blockchain. A transaction is accepted when more than 50 percent agrees that the transaction is valid. When the blockchain has a Reasonable size we can assume that the transaction is reliable.
 
 **Owner**
 The developers are responsible for the use of version control and testing the reliability of the code. The nodes in the blockchain will asure the reliability of the data. 
@@ -46,7 +46,7 @@ This criteria will be measure by looking at the regularity of updating the versi
 During the coding phase the written code will be tested to assure the quality and the reliability. 
 
 **Corrective actions**
-When any bugs occur this can be fixed before deploying the code. By making sure the blockchain has a reasenable size we decrease the chance of someone with bad intensions having any wrong influence.
+When any bugs occur this can be fixed before deploying the code. By making sure the blockchain has a Reasonable size we decrease the chance of someone with bad intensions having any wrong influence.
 
 ### 3.4 Security
 The account numbers will be keys of 32 bits. A strong password contains letts, numbers, symbols and is atleast 16 characters. If a password is wrong 3 times logging in will be blocked for a certain amount of time to prefent brute-force attacks.
