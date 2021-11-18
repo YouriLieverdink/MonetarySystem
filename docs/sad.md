@@ -22,15 +22,15 @@ The assignment gives a few boundaries for the project. These are stated below:
 ### 1.2.2 Size
 The final product needs to implement several features, which together make up the size of the product. These features are stated below:
 
-#### Wallet
+#### 1.2.2.1 Wallet
 The application needs to implement a wallet, which is a web-client that uses services from a network-node. Every wallet, which is interacted with by the user, is connected to exactly one node. Every account number must be unique and users must be able to ask for one or more account numbers. Users do not have to be anonymous. A user must be able to transfer money, receive money and see a history of transactions.
 
-#### Transactions & Ledger
+#### 1.2.2.2 Transactions & Ledger
 Transactions need to have an unique ID and respresented in JSON-format. Transactions have to be authenticated and its integrity checked in order to optimize security. Missing transactions in a chain of transactions have to be detected and be able te requested. New coins should be able to be introduced in the system.
 
 All the transactions have to be placed in the ledger. This ledger is accessible for every node and every node should be able to copy and save that copy of the ledger. The ledger also has to gurantee the integrity of transactions. The validation must be efficient, so validation will be based on proof-of-stake. Validated transaction are final and thus immutable. 
 
-#### P2P network and protocol
+#### 1.2.2.3 P2P network and protocol
 All nodes in the system are peers, which means they are equal and decentralized. Every node is connected to other nodes via a gossip-protocol. When a node is started up there needs to be a root node to find the IP-addresses of several first nodes. A node after starting up will try and get a copy of the ledger. A node keeps a record of all transactions and account numbers that belong to the user of that node. Nodes can sign up and off, can send messages to each other and receive messages. 
 
 ### 1.3 Status  
