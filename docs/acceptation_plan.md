@@ -1,46 +1,67 @@
-# Acceptatieplan
+# Acceptation plan
 
-## 1. Inleiding
+## 1. Introduction
 
-## 2. Verantwoordelijken
+### 1.1 Goal
+During this project there will be worked on building an application for a monetary system, in this case a cryptocurrency. This system can be compared with other monetary systems like Bitcoin, Ethereum and other cryptocurrencies. A cryptocoin has several important requirements that it must meet in order for it to be used as a valid cryptocurrency. This acceptationplan is therefore set up to give a measurable basis for the testing and accepting of the delivered product. In this document the agreements regarding the testing and accepting of the delivered cryptocurrency. Also the responsibilities of all the involved parties are captured in this document.
+
+### 1.2 References
+
+## 2. Responsibilities
+
+| Role    | Responsibilities |
+|   ---   |      ---         |
+| Team    | The team has the responsibility to make the application with the requirements given by the client. They also have to make sure they fulfil the Non-functional requirements like security. They have to document the project so every stakeholder understands the project.|
+| Client  | The client has to give the right requirements and has to read the documentation to check if the team understands the project. |
+| Teacher | The teacher checks if the documents are complete and contain the right information. |
 
 ## 3. Criteria
 
 ### 3.1 Performance
+Performance is a very important aspect during the development of every software product. Despite a product with a low performance can work it is certainly not desirable. People do not want to be waiting for hours for pages to load during the use of applications like Instagram or Github. In the case of this project people do not want to wait for hours before transactions are validated and completed. Resulting from this problem there are several criteria set up concerning the performance to provide a measurable basis to which the application must fulfil.
 
-### 3.2 Beheerbaarheid
+### 3.2 Manageability
 
-### 3.3 Betrouwbaarheid
-Een blockchain moet altijd beschikbaar zijn. Het is niet mogelijk om updates te pushen omdat een groot gedeelte van de blockchain omhoog moet blijven om betrouwbaarheid te garanderen. Er wordt wel gebruik gemaakt van versie beheer zodat alle versies beschikbaar zijn en er altijd een mogelijkheid is om daar naar terug te vallen als iets in de nieuwe versies verkeerd gaat. 
+#### 3.2.1 Unit tests
+There will be testcode written for manageability. The tests must take care of a check on every aspect of the product and ensure everything works as it should. These test must comply to the requirement that when expanded or change the tests are still usable.
 
-De betrouwbaarheid van de gegevens zelf zal komen met de grote van de blockchain. Een transactie is geaccepteerd als het door meer dan de helft van de blockchain goedgekeurt is. Als de blockchain groot genoeg is kunnen we er vanuit gaan dat een gevalideerde transactie betrouwbaar is.
+#### 3.2.2 Documentation
+All code must be documented. The documentation must be concise and clear for the reader. This implies that slang must be explained. This creates readable code for the reader ensuring more advanced manageability.
 
-**Eigenaar**
-De developers zijn verantwoordelijk voor het gebruik van versie beheer en het testen van de betrouwbaarheid van de code. De nodes in de blockchain zorgen voor de betrouwbaarheid van de gegevens.
+#### 3.2.3 Logging
+For and in the system logging must be applied to capture events, errors and functionalities. In this way incidents will be traced and the environment will stay efficiently manageable. The data must be saved unambiguously and structured in order to be easily accessed. This also means that the different logged processes need to be saved seperately.
 
-**Meetmethode**
-Deze criteria zal worden gemeten door het bekijken van de regelmaat van updaten van het versiebeheer. De code zal uitgebreid worden getest. Er mogen geen bugs in de code zitten. Het aantal nodes kan worden bijgehouden. 
+### 3.3 Reliability
+A blockchain has to be available at all times to assure the data is not altered. A large part of the blockchain needs to be up to assure integerity. Because of this an update cannot be pushed. It is possible to gradually install updates. The versions will be saved with a vesion control service. So if theres an error in a version the other versions can be used.
+
+The Reliability of the data itself will come with the size of the blockchain. A transaction is accepted when more than 50 percent agrees that the transaction is valid. When the blockchain has a Reasonable size we can assume that the transaction is reliable.
+
+**Owner**
+The developers are responsible for the use of version control and testing the reliability of the code. The nodes in the blockchain will asure the reliability of the data. 
+
+**easurement method**
+This criteria will be measure by looking at the regularity of updating the version control. The code will be tested thoroughly. It is not acceptable to have devestating bugs in the code. The number of nodes will be monitored. 
 
 **Planning**
-Tijdens het schrijven van de code worden er tests geschreven om de werking van de code te testen en betrouwbaarheid te garanderen. 
+During the coding phase the written code will be tested to assure the quality and the reliability. 
 
-**Corrigerende acties**
-Als er bugs zijn kan dit voor het uitrollen van de code worden verholpen. Door het vergroten van de blockchain kunnnen we de kans verkleinen dat iemand meer dan de helft van de nodes weet te verkreigen.
+**Corrective actions**
+When any bugs occur this can be fixed before deploying the code. By making sure the blockchain has a Reasonable size we decrease the chance of someone with bad intensions having any wrong influence.
 
-### 3.4 Beveiliging
-De rekeningnummers worden sleutels van 32 bits. Een sterk wachtwoord bevat letters, cijfers en leestekens en is ten minste 16 tekens lang. Als een wachtwoord 3 verkeerd is ingevoerd kunnen we een ip blokkeren voor een bepaalde periode om zo brute-force aanvallen te voorkomen.
+### 3.4 Security
+The account numbers will be keys of 32 bits. A strong password contains letts, numbers, symbols and is atleast 16 characters. If a password is wrong 3 times logging in will be blocked for a certain amount of time to prefent brute-force attacks.
 
-**Eigenaar**  
-De developers zijn verantwoordelijk voor het inprogrammeren van beveiligings methoden. 
+**Owner**
+The developers are responsible for programming the security measures.
 
-**Meetmethode**  
-Om de veiligheid te meten is het mogelijk zelf de beveilig proberen te kraken en zwakheden te vinden.
+**easurement method**  
+To measure the security the team will try to break in to their own system and try to find weaknesses.
 
 **Planning**  
 Veiligheid is zeer belangrijk en zal bij het implementeren uitgebreid met het team besproken worden. In de laatste sprint wordt de beveiliging getest. 
 
-**Corrigerende acties**  
-Wanneer een zwak punt in de beveiliging is gevonden moet dit zo snelmogelijk verholpen worden. Met andere of meer beveiligings maatregelen. 
+**Corrective actions**  
+When a weak point in the security is found this has to be fixed as fast as possible. This is possible with different or more security measures.  
 
 ### 3.5 Functionality
 All funtionality will be assessed based on the Use Case Model when implementation is finished.
@@ -61,51 +82,49 @@ During the review of a pull request the usability will be tested by at least one
 **Corrective actions**
 In case the implementation requires too much explaination, the work will have to be re-done until it doesn't.
 
-### 3.7 Documentatie
+### 3.7 Documentation
 
 #### 3.7.1 Inline
-Inline documentatie zal in dit project worden gebruikt om code te verduidelijken. Deze criteria zal worden toegepast op stukken code die niet zelfstandig te begrijpen zijn door een andere developer. Dit zal er uiteindelijk voor zorgen dat iedereen weet hoe de applicatie in elkaar zit.
+Inline documentation will be used in this project to make code more understandable. This criteria will be applied to code that is not understandable on its own. This will make sure that everyone understands how the application works.
 
-**Eigenaar**  
-Zowel de huidige als de toekomstige developers zijn eigenaar van deze criteria.
+**Owner** 
+The current and future developers will be the owners of this criteria.
 
-**Meetmethode**  
-Deze criteria zal worden gemeten door het handmatig doorlopen van de code van andere developers. Wanneer de code, met of zonder inline documentatie, goed te begrijpen is voldoet deze criteria.
+**Measurement method**
+This criteria will be measured by manually run trough the code of other developers. When the code with or without inline documentation is understandable it satisfies this criteria.
 
 **Planning**  
-Tijdens de review van elke pull-request zal deze criteria aan bod komen. De geschreven code wordt door een andere developer, de reviewer, bekeken. 
+This criteria is being audited during the review of every pull-request. The written code will be watched by another developer, the reviewer. 
 
-**Corrigerende acties**  
-Wanneer een reviewer code onduidelijk vindt, zal deze dat aangeven bij de developer in kwestie om de code te veruidelijken met (betere) inline documentatie.
+**Corrective actions**  
+When a reviewer thinks the code is too unclear he will notify the developer in question to clearup the code with better inline documentation.
 
-#### 3.7.2 Api  
-Een node binnen het netwerk zal kunnen worden bemiddeld door het gebruik van een api. Deze api biedt mogelijkheden voor de wallet applicatie te communiceren met het netwerk. Deze api moet goed gedocumenteerd zijn om verwarringen te voorkomen.
+#### 3.7.2 Api 
+A node in the network will be mediated by using the api. This api gives possibilities for the wallet application to cummunicate with the network. This api has to be documented well to prefent confusion. 
 
-**Eigenaar**  
-Zowel de huidige als de toekomste developers zijn eigenaar van deze criteria.
+**Owner**
+Current and future developers are owner of this criterion.
 
-**Meetmethode**  
-Deze criteria zal worden gemeten op basis van een documentatie review. Eén developer zal worden aangewezen om te controleren of de documentatie overeenkomt met de daadwerkelijke implementatie van de api.
+**Measurement method**
+This criteria will be measure based on a documentation review. A developer will be assigned to control if the documentation matches the actual implementation of the api.
 
 **Planning**  
 Deze criteria wordt aan het eind van elke sprint uitgevoerd om zo de documentatie tijdens het project correct te houden.
 
-**Corrigerende acties**  
-Wanneer er bepaalde documentatie niet overeenkomt met de implementatie van de api moet eerst worden vastgesteld welke van de twee incorrect is. Vervolgens wordt deze dan aangepast zodat ze weer overeenkomen.
+**Corrective actions**
+When certain documentation does not match the implementaion of the api it has to be established which of the two is wrong. After that this will be fixed so both the documentation and the api match. 
 
-#### 3.7.3 Architectueel  
-De architectuur van de hele applicatie zal moeten worden beschreven. Dit houdt in dat er een
-duidelijk beeld van de architectuur moet onstaan door middel van een context diagram, use case
-model en een klassediagram.
+#### 3.7.3 Architectural
+The architecture of the whole application has to be described. This means that there has to be a clear picture of the architecutre by using different diagrams like: Context diagram, Use case diagram and a class diagram.
 
-**Eigenaar**  
-Zowel de huidge als de toekomstige developers zijn eigenaar van deze criteria.
+**Owner**
+Current and future developers are owner of this criterion.
 
-**Meetmethode**  
-Deze criteria zal worden gemeten op basis van het begrijpen van de architectuur door de opdrachtgever.
+**Measurement method**  
+This criteria will be measured based on the clients understanding of the architecture.
 
 **Planning**  
-Tijdens elke sprintdemo zal de architectuur van de huidige applicatie worden besproken om te controleren of de opdrachtgever een goed beeld heeft van de architectuur van de applicatie.
+During every spinrtdemo the architecture of the current application will be discussed to control if the client has a good image of the applications architecture.
 
-**Corrigerende acties**  
-Waneer de architectuur van de applicatie niet geheel duidelijk is zullen de developers samen gaan brainstormen over waarom het niet duidelijk is. Dit kan zijn door een onduidelijk diagram of een onlogische opbouw van de architectuur zelf. Wanneer het probleem naar voren is gekomen wordt er een passende oplossing toegepast.
+**Corrective actions** 
+When the architecture of the application is not completely clear the decelopers will brainstorm about why it is unclear. This can be because of a diagram being too unclear or a illogical structure of the architecture itself. When the problem occurs there will be acted acordingly. 
