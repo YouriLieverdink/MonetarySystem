@@ -37,7 +37,7 @@ The implementation of a monetary systems will look a lot like the popular coin B
 ## 4. Perspective
 
 ### 4.1 Tecnical context  
-{{ Describe the technical context using a context diagram }}
+<img width="644" alt="Screenshot 2021-11-18 at 10 22 24" src="https://user-images.githubusercontent.com/89806453/142391169-d4cf42e0-6bc1-4b8b-8a22-b5ebedca19fd.png">
 
 ### 4.2 Proof of Concept
 The purpose of the Proof of Concept is to prove to the stakeholders that the project is feasable. It will first be tested with a small number of nodes before development can be taken further to a growing number of nodes.
@@ -46,7 +46,7 @@ The purpose of the Proof of Concept is to prove to the stakeholders that the pro
 If all the defined functionality works reliably and the apps meets all requirements, this project will be considered to be a success
 
 ### 4.4 Global schedule  
-{{ Roadmap }}
+![Product RoadMap-3](https://user-images.githubusercontent.com/89806453/142391091-d5ceb127-30fe-4bb4-a398-7bd15686575f.png)
 
 ### 5. Product features
 This chapter provides the most important product features.
