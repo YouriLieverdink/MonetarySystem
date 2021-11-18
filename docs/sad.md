@@ -2,20 +2,38 @@
 
 ## 1. Introduction  
 
-### 1.1 Purpose and scope  
-{{
-Explain the purpose and scope of the document.
-Primarily this is to document the architecture for the stakeholders, to ensure that it meets their goals and concerns and that the proposed architecture is correct, complete and fit for purpose.
-While you should avoid presenting a lot of material available elsewhere, it may also be useful to do some or all of the following in the AD:
--	summarise the project context, goals and objectives
--	confirm scope and exclusions
--	present an overview of goals and drivers, requirements etc
--	record important decisions made and their rationale
--	present alternatives considered and their reasons for rejection
--	bring together other important information not captured elsewhere
-}}
+### 1.1 Goal  
+The goal of the project is creating an application for a monetary cryptocurrency system. This system can be compared to other cryptocurrency systems like Bitcoin. Ethereum and other cryptocurrency. Creating a new cryptocurrency must meet many requirements before it can be counted as a valid cryptocurrency. In order to tackle all the requirements, ensuring the goals and concerns of the stakeholders is met, complete and relevant, it is of great importance to get a clear overview of the architecture. Hence this document will focus on giving a clear overview of the architecture of the application for the monetary system (cryptocurrency). 
 
-### 1.2 Status  
+### 1.2 Scope
+The scope of the project is defined in this section. It is important to get a clear view of the scope of the project in order to get an idea of what is in the project and what is not, and what the product should accomplish and what not. While doing this, there must be taken into account that the scope will not get to large, which would make the project unfeasible, and neither too small, which would lead to an insufficient basis for tackling all the requirements. A wrong scope would lead to delays and unrealizable affairs. Therefore the scope is established in this section in order to define the boundaries and the size of the project.
+
+### 1.2.1 Boundaries
+The assignment gives a few boundaries for the project. These are stated below:
+
+- no Proof-of-Work algorithm;
+- no large keys;
+- a limited number of nodes;
+- users don't have to stay anonymous;
+- soft forks and backward compatibility is no requirement;
+- messages are not in binary format;
+- a virtual machine for the verifying of smart contracts is not necessary;
+
+### 1.2.2 Size
+The final product needs to implement several features, which together make up the size of the product. These features are stated below:
+
+#### Wallet
+The application needs to implement a wallet, which is a web-client that uses services from a network-node. Every wallet, which is interacted with by the user, is connected to exactly one node. Every account number must be unique and users must be able to ask for one or more account numbers. Users do not have to be anonymous. A user must be able to transfer money, receive money and see a history of transactions.
+
+#### Transactions & Ledger
+Transactions need to have an unique ID and respresented in JSON-format. Transactions have to be authenticated and its integrity checked in order to optimize security. Missing transactions in a chain of transactions have to be detected and be able te requested. New coins should be able to be introduced in the system.
+
+All the transactions have to be placed in the ledger. This ledger is accessible for every node and every node should be able to copy and save that copy of the ledger. The ledger also has to gurantee the integrity of transactions. The validation must be efficient, so validation will be based on proof-of-stake. Validated transaction are final and thus immutable. 
+
+#### P2P network and protocol
+All nodes in the system are peers, which means they are equal and decentralized. Every node is connected to other nodes via a gossip-protocol. When a node is started up there needs to be a root node to find the IP-addresses of several first nodes. A node after starting up will try and get a copy of the ledger. A node keeps a record of all transactions and account numbers that belong to the user of that node. Nodes can sign up and off, can send messages to each other and receive messages. 
+
+### 1.3 Status  
 {{
 Explain the current status of the architecture and of this architectural description.
 Is it still in progress?  Being implemented?  In production? You may also want to describe future plans for the document (eg will be reissued as Definitive after comments received by stakeholders).
@@ -24,7 +42,6 @@ Is it still in progress?  Being implemented?  In production? You may also want t
 ## 2. Requirements
 The three most important non-functional requirements are scalability, security and reliability. 
 Scalability is a large part of the project, as the network must be able to support up to a number of 3.2 million nodes. More nodes also means more decentralization, which can build trust for its users. Another non-functional requirement is the security, which should go without saying. Network participants must not be able to perform actions they're not autorised to do. In addition to these two requirements there's reliability. The network should operate like expected and not in any way that could compromise users' funds or trust in the network in any way.
-
 
 ## 3. Architectural Views  
 
