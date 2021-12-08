@@ -2,6 +2,7 @@ import { ApiService } from "./api";
 import { CliService } from "./cli";
 import { ConsensusService } from "./consensus";
 import { GossipService } from "./gossip";
+import { StateService } from "./state";
 import { StorageService } from "./storage";
 
 /**
@@ -31,6 +32,13 @@ export const useConsensus = () => new ConsensusService();
  * @returns An instance of the gossip service.
  */
 export const useGossip = () => new GossipService();
+
+/**
+ * Use the state service.
+ * 
+ * @returns An instance of the state service.
+ */
+export const useState = () => new StateService();
 
 /**
  * Use the storage service.
