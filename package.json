@@ -15,7 +15,9 @@
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "node-upnp": "^1.2.0",
-    "public-ip": "^4.0.4"
+    "public-ip": "^4.0.4",
+    "reflect-metadata": "^0.1.13",
+    "typedi": "^0.10.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",
