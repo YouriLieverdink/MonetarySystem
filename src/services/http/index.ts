@@ -1,4 +1,4 @@
 import { Service } from 'typedi';
 
 @Service()
-export class ApiService {}
+export class HttpService {}
