@@ -1,7 +1,4 @@
-import 'reflect-metadata';
 
-const main = async () => {
+export const main = (): void => {
 	//
 };
-
-main();
