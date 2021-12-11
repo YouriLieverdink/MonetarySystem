@@ -1,4 +1,4 @@
 import { Service } from 'typedi';
 
 @Service()
-export class StorageService {}
+export class CommandController {}
