@@ -1,10 +1,11 @@
 {
   "main": "./dist/index.js",
   "scripts": {
-    "prebuild": "eslint . --ext .ts",
+    "lint": "eslint . --ext .ts",
+    "test": "jest",
+    "prebuild": "npm run lint",
     "build": "tsc",
     "postbuild": "npm run test",
-    "test": "jest",
     "prestart": "npm run build",
     "start": "node .",
     "dev:build": "tsc -w",
