@@ -3,7 +3,7 @@
  */
 export type NetworkNode = {
     // The IP address of a node in the network
-    IP: string;
+    Host: string;
     // The name that is attached to the node
     Name: string;
 }

@@ -3,9 +3,9 @@
  */
 export type Event = {
     // When the message was created.
-    EventType: 'TRANSACTION'|'JOIN'|'STATE';
+    Type: 'TRANSACTION'|'JOIN'|'STATE';
     // The content of the message.
-    Data: JSON;
+    Data: Object;
     // The hash of the user who received the message.
     SelfParent: string;
     // The hash of the user who received the message.
