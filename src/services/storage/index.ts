@@ -1,9 +1,5 @@
-import { Addresses } from './modules/addresses';
 import { Database } from 'sqlite3';
-import { Events } from './modules/events';
-import { Nodes } from './modules/nodes';
 import { Service } from 'typedi';
-import { States } from './modules/states';
 
 @Service()
 export class StorageService {
@@ -13,37 +9,31 @@ export class StorageService {
 	private database: Database;
 
 	/**
-	 * The addresses module.
+	 * The address methods.
 	 */
-	public readonly addresses: Addresses;
+	public readonly addresses = {};
 
 	/**
-	 * The events module.
+	 * The events methods.
 	 */
-	public readonly events: Events;
+	public readonly events = {};
 
 	/**
-	 * The nodes module.
+	 * The node methods.
 	 */
-	public readonly nodes: Nodes;
+	public readonly nodes = {};
 
 	/**
-	 * The states module.
+	 * The state methods.
 	 */
-	public readonly states: States;
-	
+	public readonly states = {};
+
 	/**
 	 * Class constructor.
 	 */
 	constructor() {
 		this.database = new Database('db.sqlite3');
 		this.constructTables();
-
-		// Initialise the modules.
-		this.addresses = new Addresses(this.database);
-		this.events = new Events(this.database);
-		this.nodes = new Nodes(this.database);
-		this.states = new States(this.database);
 	}
 
 	/**
@@ -53,7 +43,8 @@ export class StorageService {
 		this.database.run(`
 			CREATE TABLE IF NOT EXISTS addresses (
 				public_key VARCHAR(32),
-				private_key VARCHAR(32)
+				private_key VARCHAR(32),
+				is_default BOOLEAN
 			)
 		`);
 
