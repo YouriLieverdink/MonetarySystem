@@ -3,15 +3,15 @@
  */
 export type Event = {
     // When the message was created.
-    Type: 'TRANSACTION'|'JOIN'|'STATE';
+    type: 'TRANSACTION'|'JOIN'|'STATE';
     // The content of the message.
-    Data: Object;
+    data: Object;
     // The hash of the user who received the message.
-    SelfParent: string;
+    selfParent: string;
     // The hash of the user who received the message.
-    OtherParent: string;
+    otherParent: string;
     // The signature of the user who originally send the message.
-    Signature: string;
+    signature: string;
     // When the message was created.
-    Date: Date;
+    date: Date;
 };
