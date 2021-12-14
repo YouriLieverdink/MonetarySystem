@@ -6,9 +6,9 @@ export type Event = {
     type: 'TRANSACTION'|'JOIN'|'STATE';
     // The content of the message.
     data: Object;
-    // The hash of the user who received the message.
+    // The hash of the last event of the user.
     selfParent: string;
-    // The hash of the user who received the message.
+    // The hash of the origin event.
     otherParent: string;
     // The signature of the user who originally send the message.
     signature: string;
