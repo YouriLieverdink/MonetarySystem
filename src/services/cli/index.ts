@@ -53,6 +53,7 @@ export class CliService {
 			case 'balance':
 			case 'create-transaction':
 			case 'mirror':
+			case 'default':
 				this.error(`not yet implemented: '${command}'`);
 				break;
 			default:
@@ -60,7 +61,7 @@ export class CliService {
 		}
 	}
 
-	private error(message: string) {
+	private error(message: string): void {
 		this.response.error('\x1b[31m', message, '\x1b[0m');
 	}
 
@@ -71,20 +72,26 @@ export class CliService {
 
 	private help() {
 		this.response.log('Commands:' +
-			'\n    help			Displays all possible commands' +
 			'\n' +
+			'\nWallet setup:' +
 			'\n    import <private_key>	Import private key + public keys' +
 			'\n    remove <public_key>		Removes public + private key locally' +
 			'\n' +
+			'\nWallet operations:' +
 			'\n    list 			Lists all public keys' +
 			'\n    balance			Shows cumulative balance of imported public keys' +
 			'\n    balance <public_key>	Shows balance of specific public key' +
 			'\n    transactions		Lists all transactions for imported public keys' +
 			'\n    transactions <public_key>	Lists all transactions for a specific public keys' +
-			'\n' +
-			'\n    mirror enable|disable	Enables or disables the mirroring option' +
-			'\n' +
 			'\n    create-transaction <sender_public_key> <receiver_public_key> <amount> 	Send funds from A to B' +
-			'');
+			'\n    create-transaction <receiver_public_key> <amount> 				Send funds from default address to B' +
+			'\n' +
+			'\nNode Configuration:' +
+			'\n    mirror enable|disable	Enables or disables the mirroring option' +
+			'\n    default <public_key>	Set default address for spending' +
+			'\n' +
+			'\n    help			Displays all commands' +
+			'\n    exit|quit 			Exits the application' +
+			'\n');
 	}
 }
