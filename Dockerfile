@@ -4,7 +4,8 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 COPY tsconfig.json ./
-COPY tslint.json ./
+COPY .eslintrc ./
+COPY tests ./
 
 COPY src ./src
 
@@ -15,4 +16,4 @@ COPY . .
 
 EXPOSE 3001
 
-CMD [ "node", "./dist/main.js" ]
+CMD [ "node", "./dist/index.js" ]
