@@ -5,7 +5,7 @@ export type Event = {
     // When the message was created.
     type: 'TRANSACTION'|'JOIN'|'STATE';
     // The content of the message.
-    data: Object;
+    data: Record<string, unknown>;
     // The hash of the last event of the user.
     selfParent: string;
     // The hash of the origin event.
