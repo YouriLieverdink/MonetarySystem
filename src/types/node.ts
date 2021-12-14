@@ -1,9 +1,15 @@
 /**
- * A Node in the network
+ * A node within the network.
  */
 export type Node = {
-    // The IP + port address of a node in the network [IP:PORT]
+    /**
+     * The host location of the node.
+     * 
+     * This is formatted as: [IP:PORT]
+     */
     host: string;
-    // The name that is attached to the node
+    /**
+     * The name associated with the node.
+     */
     name: string;
 }
