@@ -31,7 +31,7 @@ export class StorageService {
 	 * The states module.
 	 */
 	public readonly states: States;
-	
+
 	/**
 	 * Class constructor.
 	 */
