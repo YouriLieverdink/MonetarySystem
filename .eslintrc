@@ -14,7 +14,7 @@
 		"camelcase": "warn",
 		"eqeqeq": "error",
 		"no-console": "warn",
-		"brace-style": ["error", "stroustrup"],
+		"brace-style": ["error", "1tbs"],
 		"object-curly-spacing": ["warn", "always"],
 		"semi": ["warn", "always"],
 		"comma-dangle": ["warn", "always-multiline"],
