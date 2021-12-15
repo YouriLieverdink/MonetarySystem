@@ -1,14 +1,19 @@
-import { Service } from 'typedi';
+import { Container, Service } from 'typedi';
+import { CommandController } from '../../controllers';
+import { State } from '../../types/state';
+import { Transaction } from '../../types/transaction';
 
 @Service()
 export class CliService {
-	/**
-	 * The response for the output.
-	 */
+
+	/** CommandController service injection. */
+	private commandController = Container.get(CommandController);
+
+	/** The response for the output. */
 	private response: Console;
 
 	/**
-	 * Display the start.
+	 * Display the welcome message.
 	 *  
 	 * @param response The response object.
 	 */
@@ -34,151 +39,143 @@ export class CliService {
 		const command = request.trim().split(' ');
 		this.response = response;
 
-		switch (command.shift()) {
-			case 'exit':
-			case 'quit':
-				this.commands.exit();
-				break;
-			case 'clear':
-				this.response.clear();
-				break;
-			case 'help':
-				this.commands.help();
-				break;
-			case 'import':
-				this.commands.import(command);
-				break;
-			case 'remove':
-				this.commands.remove(command);
-				break;
-			case 'generate':
-				this.commands.generate(command);
-				break;
-			case 'list':
-				this.commands.list(command);
-				break;
-			case 'transactions':
-				this.commands.transactions(command);
-				break;
-			case 'balance':
-				this.commands.balance(command);
-				break;
-			case 'create-transaction':
-				this.commands.createTransaction(command);
-				break;
-			case 'mirror':
-				this.commands.mirror(command);
-				break;
-			case 'default':
-				this.commands.default(command)
-				break;
+		try {
+			switch (command.shift()) {
+				case 'exit':
+				case 'quit':
+					this.commands.exit();
+					break;
+				case 'clear':
+					this.response.clear();
+					break;
+				case 'help':
+					this.commands.help();
+					break;
+				case 'import':
+					this.commands.import(command);
+					break;
+				case 'remove':
+					this.commands.remove(command);
+					break;
+				case 'generate':
+					this.commands.generate(command);
+					break;
+				case 'list':
+					this.commands.list(command);
+					break;
+				case 'transactions':
+					this.commands.transactions(command);
+					break;
+				case 'balance':
+					this.commands.balance(command);
+					break;
+				case 'create-transaction':
+					this.commands.createTransaction(command);
+					break;
+				case 'mirror':
+					this.commands.mirror(command);
+					break;
+				case 'default':
+					this.commands.default(command)
+					break;
 
-			default:
-				this.error(`'${request}' is not a command`);
+				default:
+					response.log(this.errorText(`'${request}' is not a command`));
+			}
+		} catch (e: any) {
+			response.log(this.errorText(e.message))
 		}
 	}
 
+	/** CLI command interpreters */
 	private commands = {
 		import: (args: string[]): void => {
-			if (args.length === 1) {
-				const privateKey: string = args[0];
-				// todo remove private_key
-				// todo check if already imported && is valid key
-				this.response.log(`  importing private key: ${privateKey}`)
+			if (args.length !== 1)
+				return this.response.log(this.badRequest);
 
-			} else this.bad_request();
+			const privateKey: string = args[0];
+			if (this.commandController.addresses.import(privateKey))
+				this.response.log(`  Successfully imported wallet ${privateKey}`);
 		},
 		remove: (args: string[]): void => {
-			if (args.length === 1) {
-				const publicKey: string = args[0];
-				// todo check if imported && is valid key
-				// todo remove public_key
-				this.response.log(`  removing public key: ${publicKey}`)
+			if (args.length !== 1)
+				return this.response.log(this.badRequest);
 
-			} else this.bad_request();
+			const publicKey: string = args[0];
+
+			if (this.commandController.addresses.remove(publicKey))
+				this.response.log('Successfully removed keys removed from this device');
 		},
 		generate: (args: string[]): void => {
-			if (args.length === 0) {
-				// todo response.log('You already have a pair of keys');
-				this.response.log(`  generated key pair:\n    private_key:	qwerty\n    public_key: x`); //generate key pair
+			if (args.length !== 0)
+				return this.response.log(this.badRequest);
 
-			} else this.bad_request();
+			const keyPair = this.commandController.addresses.create();
+			this.response.log(`  Generated new key pair! \n  Important Note: Don't lose the private key. No keys no cheese!\n\n  Private key: 	${keyPair.privateKey}\n  Public key: ${keyPair.publicKey}`)
 		},
 		list: (args: string[]): void => {
-			if (args.length === 0) {
-				// todo show all public keys
-				this.response.log(`  public_key: x (default)\n  public_key: y`);
+			const showPrivateKeys = args.includes('--private');
 
-			} else if (args.includes('--private')) {
-				// todo show all key pairs
-				this.response.log(`  private_key: qwerty	public_key: x (default)\n  private_key: wertyu	public_key: y`);
+			if ((args.length !== 1 && showPrivateKeys) || (args.length == 1 && !showPrivateKeys))
+				return this.response.log(this.badRequest);
 
-			} else this.bad_request();
+			const addresses = this.commandController.addresses.getAll();
+			this.response.log(`  Your key(s):\n` + addresses.map((address, index) =>
+				`  ${index+1}. Public key: ${address.publicKey}${(showPrivateKeys) ? `		Private key: ${address.privateKey}` : ''}\n`)
+			);
 		},
 		transactions: (args: string[]): void => {
-			if (args.length === 0) {
-				// todo check if there is any wallet
-				// todo show all transactions of imported wallets
-				this.response.log(`  transaction count: 2\n  IN	2T 	from y	to x\n  IN	3T 	from z	to q`);
+			if (args.length > 1)
+				return this.response.log(this.badRequest);
 
-			} else if (args.length === 1) {
-				const publicKey: string = args[0];
-				// todo show all transactions of public_key
-				this.response.log(`  transaction count for ${publicKey}: 2\n  IN	2T 	from ${publicKey}	to x\n  IN	3T 	from y	to ${publicKey}`)
+			const transactions: Transaction[] = (args.length === 1)
+				? this.commandController.transactions.getAll(args[0])
+				: this.commandController.addresses.getAll().flatMap(address =>
+					this.commandController.transactions.getAll(address.publicKey));
 
-			} else this.bad_request();
+			this.response.log(`  Found ${transactions.length} transactions${(args.length === 1) ? ` for ${args[0]}`: ''}:\n`
+				+ transactions.map((tx, index) =>
+					`  ${index+1}. Sender: ${tx.from}	Receiver: ${tx.to}	Amount: ${tx.amount} \n`)
+					.toString().replace(',', '')
+			);
 		},
 		balance: (args: string[]): void => {
-			if (args.length === 0) {
-				// todo check if there is any wallet
-				// todo show all balances of imported wallets
-				this.response.log(`  total balance: 10T\n  balance: 5T	| address: x (default)\n  balance: 5T	| address: y`);
+			if (args.length > 1)
+				return this.response.log(this.badRequest);
 
-			} else if (args.length === 1) {
-				const publicKey: string = args[0];
-				// todo show balance of public_key
-				this.response.log(`  address ${publicKey} balance: 10T`);
+			const balances: State[] = (args.length === 1)
+				? [this.commandController.balances.get(args[0])]
+				: this.commandController.addresses.getAll().flatMap(address =>
+					this.commandController.balances.get(address.publicKey));
 
-			} else this.bad_request();
+			this.response.log(`  Total balance: ${balances.reduce((sum, state) => sum + state.amount, 0)} transactions${(args.length === 1) ? ` for ${args[0]}`: ''}:\n`
+				+ balances.map(state =>
+				`  Address: ${state.publicKey}	Balance: ${state.amount} \n`
+				).toString().replace(',', '')
+			);
 		},
 		createTransaction: (args: string[]): void => {
-			// todo check if there is any wallet
+			if (args.length !== 3)
+				return this.response.log(this.badRequest);
 
-			if (args.length === 3) {
-				const sender: string = args[0];
-				const receiver: string = args[1];
-				const amount: number = parseInt(args[2]);
-				// todo check if both keys are valid key & is valid amount
-				this.response.log(`  sending ${amount} tritium from ${sender} to ${receiver}`);
+			const sender: string = args[0];
+			const receiver: string = args[1];
+			const amount: number = parseInt(args[2]);
 
-			} else if (args.length === 2) {
-				const receiver: string = args[0];
-				const amount: number = parseInt(args[1]);
-				// todo check if is valid key & is valid amount
-				this.response.log(`  sending ${amount} tritium to ${receiver}`)
-
-			} else this.bad_request();
+			this.commandController.transactions.create(sender, receiver, amount);
 		},
 		mirror: (args: string[]): void => {
-			if (args.length === 1 && ['on', 'off'].includes(args[0])) {
-				const toggle = args[0] === 'on';
-				// todo set mirroring enabled/disabled
-				this.response.log(`  turning mirroring ${args[0]}`);
+			if (args.length !== 1 || !['on', 'off'].includes(args[0]))
+				return this.response.log(this.badRequest);
 
-			} else this.bad_request();
+			const enabled = args[0] === 'on';
+			this.commandController.mirror.set(enabled);
 		},
 		default: (args: string[]): void => {
-			if (args.length === 0) {
-				// todo check if there already are public_keys
-				// todo show default public_key
-				this.response.log(`  default address: x`);
+			if (args.length > 1)
+				return this.response.log(this.badRequest);
 
-			} else if (args.length === 1) {
-				const publicKey: string = args[0];
-				// todo set public_key as default
-				this.response.log(`  setting default address to ${publicKey}`);
-
-			} else this.bad_request();
+			throw new Error('Not implemented')
 		},
 		exit: (): void => {
 			this.response.log('exiting...');
@@ -198,11 +195,11 @@ export class CliService {
 				'\n    transactions		Lists all transactions for imported public keys' +
 				'\n    transactions <public_key>	Lists all transactions for a specific public keys' +
 				'\n    create-transaction <sender_public_key> <receiver_public_key> <amount> 	Send funds from A to B' +
-				'\n    create-transaction <receiver_public_key> <amount> 				Send funds from default address to B' +
+				// '\n    create-transaction <receiver_public_key> <amount> 				Send funds from default address to B' +
 				'\n' +
 				'\nNode Configuration:' +
 				'\n    mirror on|off		Enables or disables the mirroring option' +
-				'\n    default <public_key>	Set default address for spending' +
+				// '\n    default <public_key>	Set default address for spending' +
 				'\n' +
 				'\n    help			Displays all commands' +
 				'\n    exit|quit 			Exits the application' +
@@ -210,12 +207,14 @@ export class CliService {
 		}
 	}
 
-	private bad_request(): void {
-		this.response.error('  wrong syntax');
-		this.response.log('  Enter \'help\' to display command line options.');
-	}
+	/**
+	 * Makes text foreground red
+	 *
+	 * @param msg The error string.
+	 * @return string in red.
+	 */
+	private errorText = msg => `\x1b[31m${msg}\x1b[0m`;
 
-	private error(message: string): void {
-		this.response.error('\x1b[31m', message, '\x1b[0m');
-	}
+	private badRequest: string = this.errorText('wrong syntax') + '\n  Enter \'help\' to display command line options.';
+
 }
