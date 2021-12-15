@@ -116,7 +116,7 @@ export class CliService {
 		list: (args: string[]): void => {
 			const showPrivateKeys = args.includes('--private');
 
-			if ((args.length !== 1 && showPrivateKeys) || (args.length == 1 && !showPrivateKeys))
+			if ((args.length !== 1 && showPrivateKeys) || (args.length === 1 && !showPrivateKeys))
 				return this.response.log(this.badRequest);
 
 			const addresses = this.commandController.addresses.getAll();
