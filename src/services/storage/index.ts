@@ -17,14 +17,15 @@ export class StorageService {
          * Insert, update, and delete queries.
          * 
          * @param sql The query.
+         * @param params Parameters used in the query.
          * @returns A promise.
          */
-        run: (sql: string) => {
+        run: (sql: string, ...params: unknown[]): Promise<void> => {
             return new Promise((resolve, reject) => {
-                this.database.run(sql, (err) => {
+                this.database.run(sql, params, (err) => {
                     if (err) reject(err);
 
-                    resolve(true);
+                    resolve();
                 });
             });
         },
@@ -35,7 +36,7 @@ export class StorageService {
          * @param params Parameters used in the query.
          * @returns A promise.
          */
-        get: (sql: string, ...params: unknown[]) => {
+        get: <T>(sql: string, ...params: unknown[]): Promise<T> => {
             return new Promise((resolve, reject) => {
                 if (params === undefined) params = [];
 
@@ -53,7 +54,7 @@ export class StorageService {
          * @param params Parameters used in the query.
          * @returns A promise.
          */
-        all: (sql: string, ...params: unknown[]) => {
+        all: <T>(sql: string, ...params: unknown[]): Promise<T[]> => {
             return new Promise((resolve, reject) => {
                 if (params === undefined) params = [];
 
