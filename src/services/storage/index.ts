@@ -17,11 +17,12 @@ export class StorageService {
          * Insert, update, and delete queries.
          * 
          * @param sql The query.
+         * @param params Parameters used in the query.
          * @returns A promise.
          */
-        run: (sql: string): Promise<void> => {
+        run: (sql: string, ...params: unknown[]): Promise<void> => {
             return new Promise((resolve, reject) => {
-                this.database.run(sql, (err) => {
+                this.database.run(sql, params, (err) => {
                     if (err) reject(err);
 
                     resolve();
