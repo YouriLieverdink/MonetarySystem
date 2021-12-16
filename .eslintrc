@@ -19,7 +19,6 @@
 		"semi": ["warn", "always"],
 		"comma-dangle": ["warn", "always-multiline"],
 		"quotes": ["warn", "single"],
-		"sort-imports": "warn",
 		"no-unused-vars": "off",
 		"@typescript-eslint/no-unused-vars": ["warn", {
 			"argsIgnorePattern": "_"

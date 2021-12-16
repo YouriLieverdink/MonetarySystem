@@ -15,7 +15,7 @@ export class StorageService {
     private readonly query = {
         /**
          * Insert, update, and delete queries.
-         *
+         * 
          * @param sql The query.
          * @returns A promise.
          */
@@ -30,7 +30,7 @@ export class StorageService {
         },
         /**
          * Read single row.
-         *
+         * 
          * @param sql The query.
          * @param params Parameters used in the query.
          * @returns A promise.
@@ -48,7 +48,7 @@ export class StorageService {
         },
         /**
          * All rows.
-         *
+         * 
          * @param sql The query.
          * @param params Parameters used in the query.
          * @returns A promise.
@@ -72,7 +72,7 @@ export class StorageService {
     public readonly addresses = {
         /**
          * Display a listing of the resource.
-         *
+         * 
          * @throws {Error} When an exception occurs.
          */
         index: async (): Promise<Address[]> => {
@@ -81,9 +81,9 @@ export class StorageService {
         },
         /**
          * Display the specified resource.
-         *
+         * 
          * @param publicKey The public key of the address.
-         *
+         * 
          * @throws {Error} When an exception occurs.
          */
         read: (publicKey: string): Address => {
@@ -92,11 +92,11 @@ export class StorageService {
         },
         /**
          * Store a newly created resource in storage.
-         *
+         * 
          * @param publicKey The public key of the address.
          * @param privateKey The private key of the address.
          * @param isDefault Whether the address should be used as default.
-         *
+         * 
          * @throws {Error} When an exception occurs.
          */
         create: (publicKey: string, privateKey: string, isDefault = true): void => {
@@ -105,10 +105,10 @@ export class StorageService {
         },
         /**
          * Update the specified resource in storage.
-         *
+         * 
          * @param publicKey The public key of the address.
          * @param isDefault Whether the address should be used as default.
-         *
+         * 
          * @throws {Error} When an exception occurs.
          */
         update: (publicKey: string, isDefault: boolean): void => {
@@ -117,9 +117,9 @@ export class StorageService {
         },
         /**
          * Remove the specified resource from storage.
-         *
+         * 
          * @param publicKey The public key of the address.
-         *
+         * 
          * @throws {Error} When an exception occurs.
          */
         destroy: (publicKey: string): void => {
