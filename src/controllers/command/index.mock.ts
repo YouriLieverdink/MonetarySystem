@@ -3,13 +3,13 @@ import { Address } from '../../types/address';
 import { State } from '../../types/state';
 import { Transaction } from '../../types/transaction';
 
-const mock_addresses: Address[] = [{
+const mockAddresses: Address[] = [{
     publicKey: 'public_key1',
     privateKey: 'private_key1',
     isDefault: true
 }]
 
-const mock_transactions: Transaction[] = [{
+const mockTransactions: Transaction[] = [{
     amount: 10,
     from: 'public_key_sender1',
     to: 'public_key_receiver2',
@@ -27,7 +27,7 @@ const mock_transactions: Transaction[] = [{
     }
 }]
 
-const mock_states: State[] = [{
+const mockStates: State[] = [{
     publicKey: 'public_key1',
     amount: 5,
     date: new Date()
@@ -35,23 +35,23 @@ const mock_states: State[] = [{
 
 export const commandControllerMock: CommandController = {
     addresses: {
-        getAll: (): Address[] => mock_addresses,
-        create: (): Address => mock_addresses[0],
-        import: (privateKey: string): boolean => true,
-        remove: (publicKey: string): boolean => true,
+        getAll: (): Address[] => mockAddresses,
+        create: (): Address => mockAddresses[0],
+        import: (_privateKey: string): boolean => true,
+        remove: (_publicKey: string): boolean => true,
     },
 
     transactions: {
-        getAll: (publicKey: string): Transaction[] => mock_transactions,
-        create: (publicKeySender: string, publicKeyReceiver: string, amount: number): boolean => true,
+        getAll: (_publicKey: string): Transaction[] => mockTransactions,
+        create: (_publicKeySender: string, _publicKeyReceiver: string, _amount: number): boolean => true,
     },
 
     balances: {
-        getAll: (): State[] => mock_states,
-        get: (publicKey: string): State => mock_states[0],
+        getAll: (): State[] => mockStates,
+        get: (_publicKey: string): State => mockStates[0],
     },
 
     mirror: {
-        set: (value: boolean): boolean => true,
+        set: (_value: boolean): boolean => true,
     },
 }
