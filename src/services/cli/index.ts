@@ -66,7 +66,7 @@ export class CliService {
 				case 'mirror':
 					return this.commands.mirror(command);
 				case 'default':
-					return this.commands.default(command)
+					return this.commands.default(command);
 				default:
 					response.log(this.errorText('Unknown command'));
 					return false;
@@ -103,7 +103,7 @@ export class CliService {
 				return this.badRequest();
 
 			const keyPair = this.commandController.addresses.create();
-			return this.success(`Generated new key pair! \n  Important Note: Don't lose the private key. No keys no cheese!\n\n  Private key: 	${keyPair.privateKey}\n  Public key: ${keyPair.publicKey}`)
+			return this.success(`Generated new key pair! \n  Important Note: Don't lose the private key. No keys no cheese!\n\n  Private key: 	${keyPair.privateKey}\n  Public key: ${keyPair.publicKey}`);
 		},
 		list: (args: string[]): boolean => {
 			const showPrivateKeys = args.includes('--private');
@@ -111,7 +111,7 @@ export class CliService {
 			if ((args.length !== 1 && showPrivateKeys) || (args.length === 1 && !showPrivateKeys))
 				return this.badRequest();
 
-			return this.success(`Your key(s):\n` + this.commandController.addresses.getAll()
+			return this.success('Your key(s):\n' + this.commandController.addresses.getAll()
 				.map((address, index) =>
 				`  ${index+1}. Public key: ${address.publicKey}${
 					(showPrivateKeys) ? `		Private key: ${address.privateKey}` : ''
@@ -171,7 +171,7 @@ export class CliService {
 			if (args.length > 1)
 				return this.badRequest();
 
-			throw new Error('Not implemented')
+			throw new Error('Not implemented');
 		},
 		exit: (): true => {
 			this.response.log('exiting...');
@@ -202,18 +202,18 @@ export class CliService {
 				'\n    help			Displays all commands' +
 				'\n    exit|quit 			Exits the application' +
 				'\n');
-		}
-	}
+		},
+	};
 
 	private errorText = (msg) => `  \x1b[31m${msg}\x1b[0m`;
 
 	private badRequest = (): false => {
 		this.response?.log(this.errorText('wrong syntax') + '\n  Enter \'help\' to display command line options.');
 		return false;
-	}
+	};
 
 	private success = (msg): true => {
 		this.response?.log(`  ${msg}`);
 		return true;
-	}
+	};
 }

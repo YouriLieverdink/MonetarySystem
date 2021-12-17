@@ -6,8 +6,8 @@ import { Transaction } from '../../types/transaction';
 const mockAddresses: Address[] = [{
     publicKey: 'public_key1',
     privateKey: 'private_key1',
-    isDefault: true
-}]
+    isDefault: true,
+}];
 
 const mockTransactions: Transaction[] = [{
     amount: 10,
@@ -15,23 +15,23 @@ const mockTransactions: Transaction[] = [{
     to: 'public_key_receiver2',
     node: {
         host: 'ip:port',
-        name: 'node1'
-    }
+        name: 'node1',
+    },
 }, {
     amount: 5,
     from: 'public_key_sender1',
     to: 'public_key_receiver3',
     node: {
         host: 'ip:port',
-        name: 'node1'
-    }
-}]
+        name: 'node1',
+    },
+}];
 
 const mockStates: State[] = [{
     publicKey: 'public_key1',
     amount: 5,
-    date: new Date()
-}]
+    date: new Date(),
+}];
 
 export const commandControllerMock: CommandController = {
     addresses: {
@@ -54,4 +54,4 @@ export const commandControllerMock: CommandController = {
     mirror: {
         set: (_value: boolean): boolean => true,
     },
-}
+};
