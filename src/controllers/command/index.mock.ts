@@ -5,7 +5,8 @@ import { Transaction } from '../../types/transaction';
 
 const mock_addresses: Address[] = [{
     publicKey: 'public_key1',
-    privateKey: 'private_key1'
+    privateKey: 'private_key1',
+    isDefault: true
 }]
 
 const mock_transactions: Transaction[] = [{
