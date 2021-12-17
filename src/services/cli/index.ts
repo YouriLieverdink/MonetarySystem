@@ -1,4 +1,4 @@
-import { Container, Service } from 'typedi';
+import { Container, Inject, Service } from 'typedi';
 import { CommandController } from '../../controllers';
 import { State } from '../../types/state';
 import { Transaction } from '../../types/transaction';
@@ -10,7 +10,7 @@ export class CliService {
 	private commandController = Container.get(CommandController);
 
 	/** The response for the output. */
-	private response: Console;
+	static response: Console;
 
 	/**
 	 * Display the welcome message.
@@ -30,14 +30,14 @@ export class CliService {
 	}
 
 	/**
-	 * Handle incoming requests.
+	 * Handle incoming CLI commands.
 	 * 
 	 * @param request The received string.
 	 * @param response The response object.
 	 */
-	public handle(request: string, response: Console): void {
+	public handle(request: string, response: Console): boolean {
 		const command = request.trim().split(' ');
-		this.response = response;
+		CliService.response = response;
 
 		try {
 			switch (command.shift()) {
@@ -46,7 +46,7 @@ export class CliService {
 					this.commands.exit();
 					break;
 				case 'clear':
-					this.response.clear();
+					response.clear();
 					break;
 				case 'help':
 					this.commands.help();
@@ -80,115 +80,126 @@ export class CliService {
 					break;
 
 				default:
-					response.log(this.errorText(`'${request}' is not a command`));
+					response.log(CliService.errorText('Unknown command'));
+					return false;
 			}
 		} catch (e: any) {
-			response.log(this.errorText(e.message))
+			response.log(CliService.errorText(e.message));
+			return false;
 		}
+		return true;
 	}
 
 	/** CLI command interpreters */
-	private commands = {
-		import: (args: string[]): void => {
+	public commands = {
+		import: (args: string[]): boolean => {
 			if (args.length !== 1)
-				return this.response.log(this.badRequest);
+				return CliService.badRequest();
 
 			const privateKey: string = args[0];
 			if (this.commandController.addresses.import(privateKey))
-				this.response.log(`  Successfully imported wallet ${privateKey}`);
+				return CliService.success(`Successfully imported wallet ${privateKey}`);
+			return false;
 		},
-		remove: (args: string[]): void => {
+		remove: (args: string[]): boolean => {
 			if (args.length !== 1)
-				return this.response.log(this.badRequest);
+				return CliService.badRequest();
 
 			const publicKey: string = args[0];
 
 			if (this.commandController.addresses.remove(publicKey))
-				this.response.log('Successfully removed keys removed from this device');
+				return CliService.success('Successfully removed keys removed from this device');
+			return false;
 		},
-		generate: (args: string[]): void => {
+		generate: (args: string[]): boolean => {
 			if (args.length !== 0)
-				return this.response.log(this.badRequest);
+				return CliService.badRequest();
 
 			const keyPair = this.commandController.addresses.create();
-			this.response.log(`  Generated new key pair! \n  Important Note: Don't lose the private key. No keys no cheese!\n\n  Private key: 	${keyPair.privateKey}\n  Public key: ${keyPair.publicKey}`)
+			return CliService.success(`Generated new key pair! \n  Important Note: Don't lose the private key. No keys no cheese!\n\n  Private key: 	${keyPair.privateKey}\n  Public key: ${keyPair.publicKey}`)
 		},
-		list: (args: string[]): void => {
+		list: (args: string[]): boolean => {
 			const showPrivateKeys = args.includes('--private');
 
 			if ((args.length !== 1 && showPrivateKeys) || (args.length === 1 && !showPrivateKeys))
-				return this.response.log(this.badRequest);
+				return CliService.badRequest();
 
-			const addresses = this.commandController.addresses.getAll();
-			this.response.log(`  Your key(s):\n` + addresses.map((address, index) =>
-				`  ${index+1}. Public key: ${address.publicKey}${(showPrivateKeys) ? `		Private key: ${address.privateKey}` : ''}\n`)
+			return CliService.success(`Your key(s):\n` + this.commandController.addresses.getAll()
+				.map((address, index) =>
+				`  ${index+1}. Public key: ${address.publicKey}${
+					(showPrivateKeys) ? `		Private key: ${address.privateKey}` : ''
+				}\n`)
 			);
 		},
-		transactions: (args: string[]): void => {
+		transactions: (args: string[]): boolean => {
 			if (args.length > 1)
-				return this.response.log(this.badRequest);
+				return CliService.badRequest();
 
 			const transactions: Transaction[] = (args.length === 1)
 				? this.commandController.transactions.getAll(args[0])
 				: this.commandController.addresses.getAll().flatMap(address =>
 					this.commandController.transactions.getAll(address.publicKey));
 
-			this.response.log(`  Found ${transactions.length} transactions${(args.length === 1) ? ` for ${args[0]}`: ''}:\n`
+			return CliService.success(`Found ${transactions.length} transactions${(args.length === 1) ? ` for ${args[0]}`: ''}:\n`
 				+ transactions.map((tx, index) =>
 					`  ${index+1}. Sender: ${tx.from}	Receiver: ${tx.to}	Amount: ${tx.amount} \n`)
 					.toString().replace(',', '')
 			);
 		},
-		balance: (args: string[]): void => {
+		balance: (args: string[]): boolean => {
 			if (args.length > 1)
-				return this.response.log(this.badRequest);
+				return CliService.badRequest();
 
 			const balances: State[] = (args.length === 1)
 				? [this.commandController.balances.get(args[0])]
 				: this.commandController.addresses.getAll().flatMap(address =>
 					this.commandController.balances.get(address.publicKey));
 
-			this.response.log(`  Total balance: ${balances.reduce((sum, state) => sum + state.amount, 0)} transactions${(args.length === 1) ? ` for ${args[0]}`: ''}:\n`
+			return CliService.success(`  Total balance: ${balances.reduce((sum, state) => sum + state.amount, 0)} transactions${(args.length === 1) ? ` for ${args[0]}`: ''}:\n`
 				+ balances.map(state =>
 				`  Address: ${state.publicKey}	Balance: ${state.amount} \n`
 				).toString().replace(',', '')
 			);
 		},
-		createTransaction: (args: string[]): void => {
-			if (args.length !== 3)
-				return this.response.log(this.badRequest);
+		createTransaction: (args: string[]): boolean => {
+			if (args.length !== 3 || isNaN(Number(args.slice(-1)[0])))
+				return CliService.badRequest();
 
 			const sender: string = args[0];
 			const receiver: string = args[1];
 			const amount: number = parseInt(args[2]);
 
-			this.commandController.transactions.create(sender, receiver, amount);
+			if (this.commandController.transactions.create(sender, receiver, amount))
+				return CliService.success('Created transaction!');
+			return false;
 		},
-		mirror: (args: string[]): void => {
+		mirror: (args: string[]): boolean => {
 			if (args.length !== 1 || !['on', 'off'].includes(args[0]))
-				return this.response.log(this.badRequest);
+				return CliService.badRequest();
 
 			const enabled = args[0] === 'on';
-			this.commandController.mirror.set(enabled);
+			return this.commandController.mirror.set(enabled);
 		},
-		default: (args: string[]): void => {
+		default: (args: string[]): boolean => {
 			if (args.length > 1)
-				return this.response.log(this.badRequest);
+				return CliService.badRequest();
 
 			throw new Error('Not implemented')
 		},
-		exit: (): void => {
-			this.response.log('exiting...');
+		exit: (): true => {
+			CliService.response.log('exiting...');
 			process.exit(0);
+			return true;
 		},
-		help: (): void => {
-			this.response.log('Commands:' +
+		help: (): true => {
+			return CliService.success('Commands:' +
 				'\n' +
-				'\nWallet setup:' +
-				'\n    import <private_key>	Import private key + public keys' +
-				'\n    remove <public_key>		Removes public + private key locally' +
+				'\n  Wallet setup:' +
+				'\n    generate			Generate new key pair' +
+				'\n    import <private_key>	Import key pair' +
+				'\n    remove <public_key>		Removes key pair locally' +
 				'\n' +
-				'\nWallet operations:' +
+				'\n  Wallet operations:' +
 				'\n    list 			Lists all public keys' +
 				'\n    balance			Shows cumulative balance of imported public keys' +
 				'\n    balance <public_key>	Shows balance of specific public key' +
@@ -197,7 +208,7 @@ export class CliService {
 				'\n    create-transaction <sender_public_key> <receiver_public_key> <amount> 	Send funds from A to B' +
 				// '\n    create-transaction <receiver_public_key> <amount> 				Send funds from default address to B' +
 				'\n' +
-				'\nNode Configuration:' +
+				'\n  Node Configuration:' +
 				'\n    mirror on|off		Enables or disables the mirroring option' +
 				// '\n    default <public_key>	Set default address for spending' +
 				'\n' +
@@ -207,14 +218,15 @@ export class CliService {
 		}
 	}
 
-	/**
-	 * Makes text foreground red
-	 *
-	 * @param msg The error string.
-	 * @return string in red.
-	 */
-	private errorText = msg => `\x1b[31m${msg}\x1b[0m`;
+	private static errorText = msg => `  \x1b[31m${msg}\x1b[0m`;
 
-	private badRequest: string = this.errorText('wrong syntax') + '\n  Enter \'help\' to display command line options.';
+	private static badRequest = (): false => {
+		CliService.response?.log(CliService.errorText('wrong syntax') + '\n  Enter \'help\' to display command line options.');
+		return false;
+	}
 
+	private static success = (msg): true => {
+		CliService.response?.log(`  ${msg}`);
+		return true;
+	}
 }

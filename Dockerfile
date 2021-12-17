@@ -5,7 +5,6 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 COPY tsconfig.json ./
 COPY .eslintrc ./
-COPY tests ./
 
 COPY src ./src
 
