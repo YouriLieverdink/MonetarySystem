@@ -3,7 +3,7 @@
   "scripts": {
     "preserve": "tsc",
     "serve": "node .",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint . --ext .ts --fix",
     "test": "jest",
     "build": "tsc",
     "start": "node ."
