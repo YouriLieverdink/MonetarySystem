@@ -90,7 +90,7 @@ export class StorageService {
          * @throws {Error} When an exception occurs.
          */
         read: (publicKey: string): Promise<Address> => {
-            return this.query.get<Address>('SELECT * FROM addresses WHERE public_key = ?', publicKey);
+            return this.query.get<Address>('SELECT * FROM addresses WHERE publicKey = ?', publicKey);
         },
         /**
          * Store a newly created resource in storage.
@@ -101,7 +101,7 @@ export class StorageService {
          *
          * @throws {Error} When an exception occurs.
          */
-        create: (publicKey: string, privateKey: string, isDefault = true): Promise<void> => {
+        create: (publicKey: string, privateKey: string, isDefault: boolean | 0 | 1): Promise<void> => {
             return this.query.run('INSERT INTO addresses VALUES (?, ?, ?)', publicKey, privateKey, isDefault);
         },
         /**
@@ -112,7 +112,7 @@ export class StorageService {
          *
          * @throws {Error} When an exception occurs.
          */
-        update: (publicKey: string, isDefault: boolean): Promise<void> => {
+        update: (publicKey: string, isDefault: boolean | 0 | 1): Promise<void> => {
             return this.query.run('UPDATE addresses SET isDefault=? WHERE publicKey=?', isDefault, publicKey);
         },
         /**
