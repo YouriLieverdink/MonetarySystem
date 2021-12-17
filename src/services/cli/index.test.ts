@@ -8,6 +8,10 @@ describe('CliService', () => {
     const cliService: CliService = new CliService();
     const handle = jest.spyOn(cliService, 'handle');
 
+    beforeEach(() => {
+        jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    });
+
     describe('Reject unknown commands', () => {
 
         it('command: \'test\'', () => {
