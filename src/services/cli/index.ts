@@ -71,7 +71,7 @@ export class CliService {
 					response.log(this.errorText('Unknown command'));
 					return false;
 			}
-		} catch (e: any) {
+		} catch (e) {
 			response.log(this.errorText(e.message));
 			return false;
 		}
