@@ -14,4 +14,10 @@ export type Address = {
 	 * Used to sign events and transfer funds.
 	 */
 	privateKey: string;
+	/**
+	 * Whether the address should be used as default.
+	 * 
+	 * Used when creating a transaction.
+	 */
+	isDefault: boolean | 0 | 1;
 };
