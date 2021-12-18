@@ -39,46 +39,25 @@ export class CliService {
 		const command = request.trim().split(' ');
 		this.response = response;
 
+		const key = command.shift();
+
 		try {
-			switch (command.shift()) {
-				case 'exit':
-				case 'quit':
-					return this.commands.exit();
-				case 'clear':
-					response.clear();
-					break;
-				case 'help':
-					return this.commands.help();
-				case 'import':
-					return this.commands.import(command);
-				case 'remove':
-					return this.commands.remove(command);
-				case 'generate':
-					return this.commands.generate(command);
-				case 'list':
-					return this.commands.list(command);
-				case 'transactions':
-					return this.commands.transactions(command);
-				case 'balance':
-					return this.commands.balance(command);
-				case 'create-transaction':
-					return this.commands.createTransaction(command);
-				case 'mirror':
-					return this.commands.mirror(command);
-				case 'default':
-					return this.commands.default(command);
-				default:
-					response.log(this.errorText('Unknown command'));
-					return false;
+			// Check whether the command exists
+			if (Object.keys(this.commands).includes(key)) {
+				return this.commands[key](command);
 			}
-		} catch (e) {
-			response.log(this.errorText(e.message));
-			return false;
+
+			response.log(this.errorText('Unknown command'));
 		}
+		catch (e) {
+			response.log(this.errorText(e.message));
+		}
+
+		return false;
 	}
 
 	/** CLI command interpreters */
-	public commands = {
+	private readonly commands = {
 		import: (args: string[]): boolean => {
 			if (args.length !== 1)
 				return this.badRequest();
@@ -113,9 +92,8 @@ export class CliService {
 
 			return this.success('Your key(s):\n' + this.commandController.addresses.getAll()
 				.map((address, index) =>
-				`  ${index+1}. Public key: ${address.publicKey}${
-					(showPrivateKeys) ? `		Private key: ${address.privateKey}` : ''
-				}\n`)
+					`  ${index + 1}. Public key: ${address.publicKey}${(showPrivateKeys) ? `		Private key: ${address.privateKey}` : ''
+					}\n`)
 			);
 		},
 		transactions: (args: string[]): boolean => {
@@ -127,9 +105,9 @@ export class CliService {
 				: this.commandController.addresses.getAll().flatMap(address =>
 					this.commandController.transactions.getAll(address.publicKey));
 
-			return this.success(`Found ${transactions.length} transactions${(args.length === 1) ? ` for ${args[0]}`: ''}:\n`
+			return this.success(`Found ${transactions.length} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
 				+ transactions.map((tx, index) =>
-					`  ${index+1}. Sender: ${tx.from}	Receiver: ${tx.to}	Amount: ${tx.amount} \n`)
+					`  ${index + 1}. Sender: ${tx.from}	Receiver: ${tx.to}	Amount: ${tx.amount} \n`)
 					.toString().replace(',', '')
 			);
 		},
@@ -142,13 +120,13 @@ export class CliService {
 				: this.commandController.addresses.getAll().flatMap(address =>
 					this.commandController.balances.get(address.publicKey));
 
-			return this.success(`  Total balance: ${balances.reduce((sum, state) => sum + state.amount, 0)} transactions${(args.length === 1) ? ` for ${args[0]}`: ''}:\n`
+			return this.success(`  Total balance: ${balances.reduce((sum, state) => sum + state.amount, 0)} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
 				+ balances.map(state =>
-				`  Address: ${state.publicKey}	Balance: ${state.amount} \n`
+					`  Address: ${state.publicKey}	Balance: ${state.amount} \n`
 				).toString().replace(',', '')
 			);
 		},
-		createTransaction: (args: string[]): boolean => {
+		transfer: (args: string[]): boolean => {
 			if (args.length !== 3 || isNaN(Number(args.slice(-1)[0])))
 				return this.badRequest();
 
@@ -192,7 +170,7 @@ export class CliService {
 				'\n    balance <public_key>	Shows balance of specific public key' +
 				'\n    transactions		Lists all transactions for imported public keys' +
 				'\n    transactions <public_key>	Lists all transactions for a specific public keys' +
-				'\n    create-transaction <sender_public_key> <receiver_public_key> <amount> 	Send funds from A to B' +
+				'\n    transfer <sender_public_key> <receiver_public_key> <amount> 	Transfer funds from A to B' +
 				// '\n    create-transaction <receiver_public_key> <amount> 				Send funds from default address to B' +
 				'\n' +
 				'\n  Node Configuration:' +
