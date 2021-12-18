@@ -11,7 +11,6 @@ const env = {
 	},
 	// Address of this node.
 	'node': {
-		'ip': process.env.IP || '0.0.0.0',
 		'port': process.env.PORT || 3001,
 	},
 };
