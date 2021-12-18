@@ -6,7 +6,7 @@ import { InternalController } from './controllers/internal';
 
 const main = (): void => {
 	// Setup dependencies.
-	Container.set(Database, new Database('db.sqlite3'));
+	Container.set(Database, new Database(env.database.path));
 
 	// Start.
 	new InternalController({

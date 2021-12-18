@@ -13,6 +13,10 @@ const env = {
 	'node': {
 		'port': process.env.PORT || 3001,
 	},
+	// Database configuration.
+	'database': {
+		'path': process.env.DATABASE_PATH || 'db.sqlite3',
+	},
 };
 
 export default env;
