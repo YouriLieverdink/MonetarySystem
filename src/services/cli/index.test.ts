@@ -1,12 +1,16 @@
 import { Container } from 'typedi';
 import { CommandController } from '../../controllers';
-import { commandControllerMock } from '../../controllers/index.mock';
+import { commandControllerMock } from '../../controllers/command/index.mock';
 import { CliService } from './';
 
-describe ('CliService',() => {
+describe('CliService', () => {
     Container.set<CommandController>(CommandController, commandControllerMock);
     const cliService: CliService = new CliService();
     const handle = jest.spyOn(cliService, 'handle');
+
+    beforeEach(() => {
+        jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    });
 
     describe('Reject unknown commands', () => {
 
@@ -71,7 +75,7 @@ describe ('CliService',() => {
         });
 
         describe('command: list', () => {
-            const command ='list';
+            const command = 'list';
 
             it('Accept if no arguments', () => {
                 cliService.handle(command);
