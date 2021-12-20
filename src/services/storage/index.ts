@@ -1,9 +1,6 @@
 import { Database } from 'sqlite3';
 import Container, { Service } from 'typedi';
-import { Address } from '../../types/address';
-import { Event } from '../../types/event';
-import { Node } from '../../types/node';
-import { State } from '../../types/state';
+import { Address, Event, Node, State } from '../../types';
 
 @Service()
 export class StorageService {

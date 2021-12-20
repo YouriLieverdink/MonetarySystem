@@ -1,7 +1,5 @@
-import { Address } from '../../types/address';
 import { Service } from 'typedi';
-import { State } from '../../types/state';
-import { Transaction } from '../../types/transaction';
+import { Address, State, Transaction } from '../../types';
 
 @Service()
 export class CommandController {
