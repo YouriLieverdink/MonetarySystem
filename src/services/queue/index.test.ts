@@ -49,7 +49,7 @@ describe('QueueService', () => {
 		queue.push(...items);
 
 		const item = queue.pop();
-		expect(item.at(0)).toBe(items[0]);
+		expect(item[0]).toBe(items[0]);
 	});
 
 	it('returns all the items when the number in pop is 0', () => {
