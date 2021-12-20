@@ -1,7 +1,6 @@
 import { Container, Service } from 'typedi';
 import { CommandController } from '../../controllers';
-import { State } from '../../types/state';
-import { Transaction } from '../../types/transaction';
+import { State, Transaction } from '../../types';
 
 @Service()
 export class CliService {

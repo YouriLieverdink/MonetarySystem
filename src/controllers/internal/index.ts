@@ -2,7 +2,7 @@ import express from 'express';
 import readline from 'readline';
 import Container from 'typedi';
 import { ApiService, CliService, ConsensusService, GossipService } from '../../services';
-import { Config } from '../../types/config';
+import { Config } from '../../types';
 
 export class InternalController {
 	/**

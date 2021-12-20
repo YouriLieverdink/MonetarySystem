@@ -1,7 +1,5 @@
 import { CommandController } from './';
-import { Address } from '../../types/address';
-import { State } from '../../types/state';
-import { Transaction } from '../../types/transaction';
+import { Address, State, Transaction } from '../../types';
 
 const mockAddresses: Address[] = [{
     publicKey: 'public_key1',

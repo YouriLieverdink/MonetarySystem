@@ -1,6 +1,6 @@
 import { Database } from 'sqlite3';
-import { Address } from '../../types/address';
 import Container from 'typedi';
+import { Address } from '../../types';
 import { StorageService } from './index';
 
 describe('StorageService', () => {
