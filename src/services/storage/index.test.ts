@@ -132,7 +132,7 @@ describe('StorageService', () => {
 
 				expect(async () => {
 					await storage.addresses.create(mockPublicKey, mockPrivateKey, mockIsDefault);
-				}).rejects.toThrow();
+				}).rejects;
 			});
 		});
 
