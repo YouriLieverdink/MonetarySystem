@@ -1,194 +1,242 @@
-import { Container } from 'typedi';
-import { CommandController } from '../../controllers';
-import { commandControllerMock } from '../../controllers/command/index.mock';
-import { CliService } from './';
+import Container from 'typedi';
+import { CliService } from '.';
+import { CommandController } from '../../controllers/command';
 
 describe('CliService', () => {
-    Container.set<CommandController>(CommandController, commandControllerMock);
-    const cliService: CliService = new CliService();
-    const handle = jest.spyOn(cliService, 'handle');
+    //
+    let command: CommandController;
+    let cliService: CliService;
+
+    const mockPublicKey = 'mock-public-key';
+    const mockPrivateKey = 'mock-private-key';
+    const mockIsDefault = 0;
 
     beforeEach(() => {
+        command = new CommandController();
+        Container.set(CommandController, command);
+
+        // Initialiase a new cli for every test.
+        cliService = new CliService();
+    });
+
+    beforeAll(() => {
+        // Disable the console.log's.
         jest.spyOn(console, 'log').mockImplementation(() => undefined);
     });
 
-    describe('Reject unknown commands', () => {
+    it('rejects unknown commands', () => {
+        const result = cliService.handle('unknown');
+        expect(result).toBeFalsy();
+    });
 
-        it('command: \'test\'', () => {
-            cliService.handle('test');
-            expect(handle).toHaveReturnedWith(false);
+    describe('command: import', () => {
+
+        it('is rejected with no arguments', () => {
+            const result = cliService.handle('import');
+            expect(result).toBeFalsy();
+        });
+
+        it('is accepted with one argument', () => {
+            jest.spyOn(command.addresses, 'import').mockReturnValue(true);
+
+            const result = cliService.handle(`import ${mockPrivateKey}`);
+            expect(result).toBeTruthy();
+        });
+
+        it('is rejected with more than one argument', () => {
+            const result = cliService.handle(`import ${mockPrivateKey} ${mockPublicKey}`);
+            expect(result).toBeFalsy();
         });
     });
 
-    describe('Evaluate number of arguments', () => {
+    describe('command: remove', () => {
 
-        describe('command: import', () => {
-            const command = 'import';
-
-            it('Accept if 1 argument', () => {
-                cliService.handle(`${command} example_private_key`);
-                expect(handle).toHaveReturnedWith(true);
-            });
-
-            it('Reject if > 1 argument', () => {
-                cliService.handle(`${command} example_private_key additional_argument`);
-                expect(handle).toHaveReturnedWith(false);
-            });
-
-            it('Reject if no arguments', () => {
-                cliService.handle(command);
-                expect(handle).toHaveReturnedWith(false);
-            });
+        it('is rejected with no arguments', () => {
+            const result = cliService.handle('remove');
+            expect(result).toBeFalsy();
         });
 
-        describe('command: remove', () => {
-            const command = 'remove';
+        it('is accepted with one argument', () => {
+            jest.spyOn(command.addresses, 'remove').mockReturnValue(true);
 
-            it('Accept if 1 argument', () => {
-                cliService.handle(`${command} example_public_key`);
-                expect(handle).toHaveReturnedWith(true);
-            });
-
-            it('Reject if > 1 argument', () => {
-                cliService.handle(`${command} example_public_key additional_argument`);
-                expect(handle).toHaveReturnedWith(false);
-            });
-
-            it('Reject if no arguments', () => {
-                cliService.handle(command);
-                expect(handle).toHaveReturnedWith(false);
-            });
+            const result = cliService.handle(`remove ${mockPublicKey}`);
+            expect(result).toBeTruthy();
         });
 
-        describe('command: generate', () => {
-            const command = 'generate';
+        it('is rejected with more than one argument', () => {
+            const result = cliService.handle(`remove ${mockPublicKey} ${mockPrivateKey}`);
+            expect(result).toBeFalsy();
+        });
+    });
 
-            it('Accept if no arguments', () => {
-                cliService.handle(command);
-                expect(handle).toHaveReturnedWith(true);
+    describe('command: generate', () => {
+
+        it('is accepted with no arguments', () => {
+            jest.spyOn(command.addresses, 'create').mockReturnValue({
+                'publicKey': mockPublicKey,
+                'privateKey': mockPrivateKey,
+                'isDefault': mockIsDefault,
             });
 
-            it('Reject if any arguments', () => {
-                cliService.handle(`${command} argument`);
-                expect(handle).toHaveReturnedWith(false);
-            });
+            const result = cliService.handle('generate');
+            expect(result).toBeTruthy();
         });
 
-        describe('command: list', () => {
-            const command = 'list';
-
-            it('Accept if no arguments', () => {
-                cliService.handle(command);
-                expect(handle).toHaveReturnedWith(true);
-            });
-
-            it('Accept if argument is \'--private\'', () => {
-                cliService.handle(`${command} --private`);
-                expect(handle).toHaveReturnedWith(true);
-            });
-
-            it('Reject if arguments are different than \'--private\'', () => {
-                cliService.handle(`${command} --private argument`);
-                expect(handle).toHaveReturnedWith(false);
-            });
+        it('is rejected with one argument', () => {
+            const result = cliService.handle(`generate ${mockPublicKey}`);
+            expect(result).toBeFalsy();
         });
 
-        describe('command: transactions', () => {
-            const command = 'transactions';
+        it('is rejected with one or more arguments', () => {
+            const result = cliService.handle(`generate ${mockPublicKey} ${mockPrivateKey}`);
+            expect(result).toBeFalsy();
+        });
+    });
 
-            it('Accept if no arguments', () => {
-                cliService.handle(command);
-                expect(handle).toHaveReturnedWith(true);
-            });
+    describe('command: list', () => {
 
-            it('Accept if 1 argument', () => {
-                cliService.handle(`${command} example_public_key`);
-                expect(handle).toHaveReturnedWith(true);
-            });
+        it('is accepted with no arguments', () => {
+            jest.spyOn(command.addresses, 'getAll').mockReturnValue([]);
 
-            it('Reject if > 1 arguments', () => {
-                cliService.handle(`${command} example_public_key additional_argument`);
-                expect(handle).toHaveReturnedWith(false);
-            });
+            const result = cliService.handle('list');
+            expect(result).toBeTruthy();
         });
 
-        describe('command: balance', () => {
-            const command = 'balance';
-
-            it('Accept if no arguments', () => {
-                cliService.handle(command);
-                expect(handle).toHaveReturnedWith(true);
-            });
-
-            it('Accept if 1 argument', () => {
-                cliService.handle(`${command} example_public_key`);
-                expect(handle).toHaveReturnedWith(true);
-            });
-
-            it('Reject if > 1 arguments', () => {
-                cliService.handle(`${command} example_public_key additional_argument`);
-                expect(handle).toHaveReturnedWith(false);
-            });
+        it('is rejected with argument --private', () => {
+            const result = cliService.handle('list --private');
+            expect(result).toBeFalsy();
         });
 
-        describe('command: create-transaction', () => {
-            const command = 'create-transaction';
+        it('is rejected with arguments other than --private', () => {
+            const result = cliService.handle('list -public');
+            expect(result).toBeFalsy();
+        });
+    });
 
-            it('Reject if no arguments', () => {
-                cliService.handle(command);
-                expect(handle).toHaveReturnedWith(false);
-            });
+    describe('command: transactions', () => {
 
-            it('Reject if < 3 arguments', () => {
-                cliService.handle(`${command} receiver 10`);
-                expect(handle).toHaveReturnedWith(false);
-            });
+        it('is accepted with no arguments', () => {
+            jest.spyOn(command.addresses, 'getAll').mockReturnValue([]);
+            jest.spyOn(command.transactions, 'getAll').mockReturnValue([]);
 
-            it('Reject if > 3 arguments', () => {
-                cliService.handle(`${command} sender receiver 10 additional_argument`);
-                expect(handle).toHaveReturnedWith(false);
-            });
-
-            it('Reject if 3rd argument not Number', () => {
-                cliService.handle(`${command} sender receiver ten`);
-                expect(handle).toHaveReturnedWith(false);
-            });
-
-            it('Accept if 3 arguments & last is Number', () => {
-                cliService.handle(`${command} example_public_key1 example_public_key2 10`);
-                expect(handle).toHaveReturnedWith(true);
-            });
+            const result = cliService.handle('transactions');
+            expect(result).toBeTruthy();
         });
 
-        describe('command: mirror', () => {
-            const command = 'mirror';
+        it('is accepted with one argument', () => {
+            jest.spyOn(command.transactions, 'getAll').mockReturnValue([]);
 
-            it('Reject if no arguments', () => {
-                cliService.handle(command);
-                expect(handle).toHaveReturnedWith(false);
+            const result = cliService.handle(`transactions ${mockPublicKey}`);
+            expect(result).toBeTruthy();
+        });
+
+        it('is rejected with more then one argument', () => {
+            const result = cliService.handle(`transactions ${mockPublicKey} ${mockPrivateKey}`);
+            expect(result).toBeFalsy();
+        });
+    });
+
+    describe('command: balance', () => {
+
+        it('is accepted with no arguments', () => {
+            jest.spyOn(command.addresses, 'getAll').mockReturnValue([]);
+            jest.spyOn(command.balances, 'get').mockReturnValue({
+                'publicKey': mockPublicKey,
+                'date': new Date(),
+                'amount': 10,
             });
 
-            it('Reject if > 1 arguments', () => {
-                cliService.handle(`${command} on off`);
-                expect(handle).toHaveReturnedWith(false);
+            const result = cliService.handle('balance');
+            expect(result).toBeTruthy();
+        });
+
+        it('is accepted with one argument', () => {
+            jest.spyOn(command.balances, 'get').mockReturnValue({
+                'publicKey': mockPublicKey,
+                'date': new Date(),
+                'amount': 10,
             });
 
-            it('Reject if invalid argument', () => {
-                cliService.handle(`${command} enable`);
-                expect(handle).toHaveReturnedWith(false);
+            const result = cliService.handle(`balance ${mockPublicKey}`);
+            expect(result).toBeTruthy();
+        });
+
+        it('is rejected with one or more arguments', () => {
+            const result = cliService.handle(`balance ${mockPublicKey} ${mockPrivateKey}`);
+            expect(result).toBeFalsy();
+        });
+    });
+
+    describe('command: transfer', () => {
+
+        it('is rejected with no arguments', () => {
+            const result = cliService.handle('transfer');
+            expect(result).toBeFalsy();
+        });
+
+        it('is rejected with less than three arguments', () => {
+            const result = cliService.handle(`transfer ${mockPublicKey} ${mockPublicKey}`);
+            expect(result).toBeFalsy();
+        });
+
+        it('is accepted with three arguments', () => {
+            jest.spyOn(command.transactions, 'create').mockReturnValue(true);
+
+            const result = cliService.handle(`transfer ${mockPublicKey} ${mockPrivateKey} ${5}`);
+            expect(result).toBeTruthy();
+        });
+
+        it('is rejected with more than three arguments', () => {
+            const result = cliService.handle(`transfer ${mockPublicKey} ${mockPrivateKey} ${5} ${5}`);
+            expect(result).toBeFalsy();
+        });
+
+        it('is rejected if the third argument is not a number', () => {
+            const result = cliService.handle(`transfer ${mockPublicKey} ${mockPublicKey} vijf`);
+            expect(result).toBeFalsy();
+        });
+
+        it('is rejected if the last argument is negative', () => {
+            jest.spyOn(command.transactions, 'create').mockImplementation((_, __, ___) => {
+                throw Error('Amount can not be negative.');
             });
 
-            it('Accept if argument \'on\'', () => {
-                cliService.handle(`${command} on`);
-                expect(handle).toHaveReturnedWith(true);
-            });
+            const result = cliService.handle(`transfer ${mockPublicKey} ${mockPublicKey} ${-5}`);
+            expect(result).toBeFalsy();
+        });
+    });
 
-            it('Accept if argument \'off\'', () => {
-                cliService.handle(`${command} off`);
-                expect(handle).toHaveReturnedWith(true);
-            });
+    describe('command: mirror', () => {
+
+        it('is rejected with no arguments', () => {
+            const result = cliService.handle('mirror');
+            expect(result).toBeFalsy();
+        });
+
+        it('is accepted if argument is on', () => {
+            jest.spyOn(command.mirror, 'set').mockReturnValue(true);
+
+            const result = cliService.handle('mirror on');
+            expect(result).toBeTruthy();
+        });
+
+        it('is accepted if argument is on', () => {
+            jest.spyOn(command.mirror, 'set').mockReturnValue(true);
+
+            const result = cliService.handle('mirror off');
+            expect(result).toBeTruthy();
+        });
+
+        it('is rejected if argument is any other than on or off', () => {
+            jest.spyOn(command.mirror, 'set').mockReturnValue(true);
+
+            const result = cliService.handle('mirror maybe');
+            expect(result).toBeFalsy();
+        });
+
+        it('is rejected with more than one argument', () => {
+            const result = cliService.handle('mirror on 10min');
+            expect(result).toBeFalsy();
         });
     });
 });
-
-
