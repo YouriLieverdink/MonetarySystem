@@ -3,7 +3,7 @@ import { Event } from '../../types';
 
 describe('QueueService', () => {
 	//
-	let queue: QueueService;
+	let queue: QueueService<Event>;
 
 	beforeEach(() => {
 		// Initialite a new queue for every test.
