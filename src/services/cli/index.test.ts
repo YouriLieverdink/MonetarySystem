@@ -1,8 +1,12 @@
+import { Database } from 'sqlite3';
 import Container from 'typedi';
 import { CliService } from '.';
 import { CommandController } from '../../controllers';
+import { StorageService } from '../storage';
 
 describe('CliService', () => {
+    let database: Database;
+    let storage: StorageService;
     let command: CommandController;
     let cliService: CliService;
 
@@ -11,6 +15,12 @@ describe('CliService', () => {
     const mockIsDefault = 0;
 
     beforeEach(() => {
+        database = new Database(':memory:');
+        Container.set(Database, database);
+
+        storage = new StorageService()
+        Container.set(StorageService, storage);
+
         command = new CommandController();
         Container.set(CommandController, command);
 
@@ -101,9 +111,9 @@ describe('CliService', () => {
             expect(result).toBeTruthy();
         });
 
-        it('is rejected with argument --private', async () => {
+        it('is accepted with argument --private', async () => {
             const result = await cliService.handle('list --private');
-            expect(result).toBeFalsy();
+            expect(result).toBeTruthy();
         });
 
         it('is rejected with arguments other than --private', async () => {
