@@ -123,7 +123,7 @@ export class CliService {
 			);
 		},
 		transfer: async (args: string[]): Promise<boolean> => {
-			if (args.length !== 3 || isNaN(Number(args.slice(-1)[0])))
+			if (args.length !== 3 || isNaN(Number(args[2])) || Number(args[2]) <= 0)
 				return this.badRequest();
 
 			const sender: string = args[0];
