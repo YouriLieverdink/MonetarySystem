@@ -72,9 +72,15 @@ export class CliService {
 
 			const publicKey: string = args[0];
 
-			if (await this.commandController.addresses.remove(publicKey))
-				return this.success('Successfully removed keys removed from this device');
-			return false;
+			let response;
+			await this.commandController.addresses.remove(publicKey)
+				.then(() => response = true)
+				.catch(() => response = false)
+
+			if (response)
+				return this.success('Successfully removed keys removed from this device')
+			return false
+
 		},
 		generate: async (args: string[]): Promise<boolean> => {
 			if (args.length !== 0)
@@ -92,7 +98,11 @@ export class CliService {
 			const table = (await this.commandController.addresses.getAll())
 				.map((address, index) => `  ${index + 1}. Public key: ${address.publicKey}${(showPrivateKeys) ? `		Private key: ${address.privateKey}` : ''}\n`)
 
-			return this.success('Your key(s):\n' + table);
+			if (table.length > 0)
+				return this.success('Your key(s):\n' + table);
+
+			this.response.log(this.errorText('Please import your keys first, or generate a pair using \'generate\''));
+			return true;
 		},
 		transactions: async (args: string[]): Promise<boolean> => {
 			if (args.length > 1)
@@ -102,11 +112,14 @@ export class CliService {
 				? await this.commandController.transactions.getAll(args[0])
 				: await this.commandController.transactions.getAllImported();
 
-			return this.success(`Found ${transactions.length} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
-				+ transactions.map((tx, index) =>
-					`  ${index + 1}. Sender: ${tx.from}	Receiver: ${tx.to}	Amount: ${tx.amount} \n`)
-					.toString().replace(',', '')
-			);
+			if (transactions.length > 0)
+				return this.success(`Found ${transactions.length} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
+					+ transactions.map((tx, index) =>
+						`  ${index + 1}. Sender: ${tx.from}	Receiver: ${tx.to}	Amount: ${tx.amount} \n`)
+						.toString().replace(',', '')
+				);
+			this.response.log(this.errorText('No transactions found'));
+			return true;
 		},
 		balance: async (args: string[]): Promise<boolean> => {
 			if (args.length > 1)
