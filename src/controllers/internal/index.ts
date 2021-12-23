@@ -42,7 +42,6 @@ export class InternalController {
 	 * Initialise the cli handling.
 	 */
 	private initCli(): void {
-		//
 		const cli = Container.get(CliService);
 		const rl = readline.createInterface({
 			'input': process.stdin,
@@ -51,10 +50,9 @@ export class InternalController {
 
 		const ask = () => rl.question(
 			'\x1b[0mtritium> ',
-			(command) => {
-				cli.handle(command);
-				ask();
-			}
+			command => cli
+				.handle(command)
+				.then(ask)
 		);
 
 		cli.start(console);
