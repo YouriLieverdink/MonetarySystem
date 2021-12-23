@@ -17,14 +17,8 @@ export class CommandController {
 		 * 
 		 * @returns A list of addresses.
 		 */
-		getAll: async (): Promise<Address[]> => {
-			/**
-			 * Steps:
-			 * 1. Retrieve the addresses from the database.
-			 * 2. Return the addresses.
-			 */
-			return new Promise<Address[]>((resolve => resolve(this.storageService.addresses.index())))
-		},
+		getAll: (): Promise<Address[]> => this.storageService.addresses.index(),
+
 		/**
 		 * Creates a new address.
 		 * 
@@ -37,7 +31,10 @@ export class CommandController {
 			 * 2. Store the address in the database.
 			 * 3. Return the address.
 			 */
-			// todo return this.storageService.addresses.create()
+			// todo generate key pair and store it in the database
+			// return this.storageService.addresses.create()
+			// 	.then(() => address)
+			// 	.catch(() => null)
 			throw Error('Not implemented');
 		},
 		/**
@@ -53,7 +50,10 @@ export class CommandController {
 			 * 2. Store the address in the database.
 			 * 3. Return true.
 			 */
-			// todo return this.storageService.addresses.create()
+			// todo derive public key from privat key and store them in the database
+			// return this.storageService.addresses.create()
+			// 	.then(() => true)
+			// 	.catch(() => false)
 			throw Error('Not implemented');
 		},
 		/**
@@ -62,15 +62,8 @@ export class CommandController {
 		 * @param publicKey The public key of the address to remove.
 		 * @returns Whether the operation was successfull.
 		 */
-		remove: async (publicKey: string): Promise<boolean> => {
-			/**
-			 * Steps:
-			 * 1. Remove the address from the database.
-			 * 2. Return true.
-			 */
-			await this.storageService.addresses.destroy(publicKey)
-			return true;
-		},
+		remove: async (publicKey: string): Promise<boolean> =>
+			this.storageService.addresses.destroy(publicKey).then(() => true).catch(() => false),
 	};
 
 	/**
@@ -90,21 +83,17 @@ export class CommandController {
 			 */
 			throw Error('Not implemented');
 		},
+
 		/**
 		 * Gets all the stored transactions for the users' addresses.
 		 *
 		 * @returns A list of transactions.
 		 */
-		getAllImported: async (): Promise<Transaction[]> => {
-			/**
-			 * Steps:
-			 * 1. Retrieve all transactions of the imported addresses.
-			 * 2. Return the transactions.
-			 */
-			return (await Promise.all((await this.addresses.getAll())
+		getAllImported: async (): Promise<Transaction[]> =>
+			(await Promise.all((await this.addresses.getAll())
 				.flatMap(address => this.transactions.getAll(address.publicKey))))
-				.flatMap(tx => tx)
-		},
+				.flatMap(tx => tx),
+
 		/**
 		 * Create a new transaction.
 		 * 
@@ -135,39 +124,23 @@ export class CommandController {
 		 * 
 		 * @returns A list of states.
 		 */
-		getAll: async (): Promise<State[]> => {
-			return this.storageService.states.index()
-		},
+		getAll: (): Promise<State[]> => this.storageService.states.index(),
+
 		/**
 		 * Gets the state for a given address.
 		 * 
 		 * @param publicKey The public key of the address.
 		 * @returns A state.
 		 */
-		get: async (publicKey: string): Promise<State> => {
-			/**
-			 * Steps:
-			 * 1. Retrieve the state for the given public key from the database.
-			 * 2. Return the state.
-			 */
-			return this.storageService.states.read(publicKey)
-		},
+		get: (publicKey: string): Promise<State> => this.storageService.states.read(publicKey),
+
 		/**
 		 * Gets all the states of the imported addresses.
 		 *
 		 * @returns A list of states.
 		 */
-		getAllImported: async (): Promise<State[]> => {
-			/**
-			 * Steps:
-			 * 1. Retrieve all states for addresses imported to the database.
-			 * 2. Return the states.
-			 */
-			return (await Promise.all(
-				(await this.addresses.getAll())
-				.flatMap(address => this.balances.get(address.publicKey))))
-				.flatMap(state => state)
-		},
+		getAllImported: async (): Promise<State[]> =>
+			Promise.all((await this.addresses.getAll()).flatMap(address => this.balances.get(address.publicKey))),
 	};
 
 	/**
