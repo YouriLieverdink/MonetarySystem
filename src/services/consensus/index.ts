@@ -26,14 +26,11 @@ export class ConsensusService {
 	/**
 	 * Initiate a new Consensus calculation.
 	 */
-	public doConsensus(): void {
+	public doConsensus(): {'round': number,'event': Event,'witness': boolean, 'famous': boolean, 'consensusTimestamp': Date}[] {
 		const events: Event[] = this.queue.pop(0);
 		const divided = this.divideRounds(events);
 		const decided = this.decideFame(divided);
-		const ordered = this.findOrder(decided);
-
-		this.updateStates(ordered);
-		throw Error('Not implemented');
+		return this.findOrder(decided);
 	}
 
 	/**
@@ -41,7 +38,7 @@ export class ConsensusService {
 	 * @param events All events in the queue that
 	 * @returns returns all events with a round number
 	 */
-	private divideRounds(events: Event[]): {'round': number,'event': Event,'witness': boolean} {
+	private divideRounds(events: Event[]): {'round': number,'event': Event,'witness': boolean}[] {
 		/**
 		 * Steps for all events in the list:
 		 * 1. Determine event round
@@ -54,10 +51,10 @@ export class ConsensusService {
 	/**
 	 *  Decide if the first events by each member in each round (the “witnesses”) are famous or not
 	 *
-	 * @param devided All events divided in a round
+	 * @param divided All events divided in a round
 	 * @returns returns all events with a boolean if the event is famous or not
 	 */
-	private decideFame(devided): {'round': number,'event': Event,'witness': boolean, 'famous': boolean} {
+	private decideFame(divided): {'round': number,'event': Event,'witness': boolean, 'famous': boolean}[] {
 		/**
 		 * Steps for all events that are a witness:
 		 * 1. Vote for every other events
@@ -75,28 +72,13 @@ export class ConsensusService {
 	 * @param decided All events decided if they are famous or not
 	 * @returns returns all events ordered by round and timestamp
 	 */
-	private findOrder(decided): {'round': number,'event': Event,'witness': boolean, 'famous': boolean, 'consensusTimestamp': Date} {
+	private findOrder(decided): {'round': number,'event': Event,'witness': boolean, 'famous': boolean, 'consensusTimestamp': Date}[] {
 		/**
 		 * Steps:
 		 * 1. unique famous witnesses assign a consensus timestamp
 		 * 2. timestamp is median of timestamp when each witness received the event
 		 * 3. sort by round
 		 * 4. sort by timestamp
-		 */
-
-		throw Error('Not implemented');
-	}
-
-	/**
-	 * Update all states based on events where consensus over has been reached
-	 *
-	 * @param ordered All events where over consensus has been reached
-	 */
-	private updateStates(ordered): void {
-		/**
-		 * Steps:
-		 * 1. Loop through all events
-		 * 2. Update the right states with the right amount
 		 */
 
 		throw Error('Not implemented');
@@ -113,7 +95,7 @@ export class ConsensusService {
 		 * @param y event
 		 * @returns boolean true if event y is an ancestor of event x
 		 */
-		ancestor: (x, y): boolean => {
+		ancestor: (x: Event, y: Event): boolean => {
 
 			throw Error('Not implemented');
 		},
@@ -125,7 +107,7 @@ export class ConsensusService {
 		 * @param y event
 		 * @returns boolean true if y is a self-ancestor of x
 		 */
-		selfAncestor: (x, y): boolean => {
+		selfAncestor: (x: Event, y: Event): boolean => {
 
 			throw Error('Not implemented');
 		},
@@ -137,7 +119,7 @@ export class ConsensusService {
 		 * @param y event
 		 * @returns boolean true if x sees y
 		 */
-		see: (x, y): boolean => {
+		see: (x: Event, y: Event): boolean => {
 
 			throw Error('Not implemented');
 		},
@@ -150,7 +132,7 @@ export class ConsensusService {
 		 * @param set list of events of a round
 		 * @returns boolean true if x strongly sees y
 		 */
-		stronglySee: (x, y, set): boolean => {
+		stronglySee: (x: Event, y: Event, set: Event[]): boolean => {
 
 			throw Error('Not implemented');
 		},

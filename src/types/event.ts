@@ -30,4 +30,8 @@ export type Event = {
      * When the event was created.
      */
     date: Date;
+    /**
+     * If consensus about the event is reached.
+     */
+    consensusReached: boolean;
 };
