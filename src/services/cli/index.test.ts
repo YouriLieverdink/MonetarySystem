@@ -2,6 +2,33 @@ import Container from 'typedi';
 import { CliService } from '.';
 import { CommandController } from '../../controllers';
 
+jest.mock('../../controllers', () => ({
+    __esModule: true,
+    CommandController: jest.fn().mockImplementation(() => {
+        return {
+            'addresses': {
+                'getAll': jest.fn(),
+                'create': jest.fn(),
+                'import': jest.fn(),
+                'remove': jest.fn(),
+            },
+            'transactions': {
+                'getAll': jest.fn(),
+                'getAllImported': jest.fn(),
+                'create': jest.fn(),
+            },
+            'balances': {
+                'getAll': jest.fn(),
+                'get': jest.fn(),
+                'getAllImported': jest.fn(),
+            },
+            'mirror': {
+                'set': jest.fn(),
+            },
+        };
+    }),
+}));
+
 describe('CliService', () => {
     let command: CommandController;
     let cliService: CliService;
@@ -71,7 +98,7 @@ describe('CliService', () => {
     describe('command: generate', () => {
 
         it('is accepted with no arguments', async () => {
-            jest.spyOn(command.addresses, 'create').mockReturnValue(new Promise (resolve => resolve({
+            jest.spyOn(command.addresses, 'create').mockReturnValue(new Promise(resolve => resolve({
                 'publicKey': mockPublicKey,
                 'privateKey': mockPrivateKey,
                 'isDefault': mockIsDefault,
@@ -115,8 +142,8 @@ describe('CliService', () => {
     describe('command: transactions', () => {
 
         it('is accepted with no arguments', async () => {
-            jest.spyOn(command.addresses, 'getAll').mockReturnValue(new Promise(resolve => resolve([])));
-            jest.spyOn(command.transactions, 'getAll').mockReturnValue(new Promise(resolve => resolve([])));
+            jest.spyOn(command.transactions, 'getAllImported').mockResolvedValue([]);
+            jest.spyOn(command.transactions, 'getAll').mockResolvedValue([]);
 
             const result = await cliService.handle('transactions');
             expect(result).toBeTruthy();
@@ -138,7 +165,7 @@ describe('CliService', () => {
     describe('command: balance', () => {
 
         it('is accepted with no arguments', async () => {
-            jest.spyOn(command.addresses, 'getAll').mockReturnValue(new Promise(resolve => resolve([])));
+            jest.spyOn(command.balances, 'getAllImported').mockReturnValue(new Promise(resolve => resolve([])));
             jest.spyOn(command.balances, 'get').mockReturnValue(new Promise(resolve => resolve({
                 'publicKey': mockPublicKey,
                 'date': new Date(),
