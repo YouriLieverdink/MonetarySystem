@@ -26,7 +26,7 @@ export class ConsensusService {
 	/**
 	 * Initiate a new Consensus calculation.
 	 */
-	public doConsensus(): {'round': number,'event': Event,'witness': boolean, 'famous': boolean, 'consensusTimestamp': Date}[] {
+	public doConsensus(): Event[] {
 		const events: Event[] = this.queue.pop(0);
 		const divided = this.divideRounds(events);
 		const decided = this.decideFame(divided);
@@ -72,7 +72,7 @@ export class ConsensusService {
 	 * @param decided All events decided if they are famous or not
 	 * @returns returns all events ordered by round and timestamp
 	 */
-	private findOrder(decided): {'round': number,'event': Event,'witness': boolean, 'famous': boolean, 'consensusTimestamp': Date}[] {
+	private findOrder(decided): Event[]{
 		/**
 		 * Steps:
 		 * 1. unique famous witnesses assign a consensus timestamp
