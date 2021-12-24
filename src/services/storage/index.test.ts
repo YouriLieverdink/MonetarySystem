@@ -1,5 +1,4 @@
 import { Database } from 'sqlite3';
-import Container from 'typedi';
 import { Address } from '../../types';
 import { StorageService } from './index';
 
@@ -11,9 +10,7 @@ describe('StorageService', () => {
 	beforeEach(() => {
 		// Initialise a new in-memory datbase for every test.
 		database = new Database(':memory:');
-		Container.set(Database, database);
-
-		storage = new StorageService();
+		storage = new StorageService(database);
 	});
 
 	describe('addresses', () => {
