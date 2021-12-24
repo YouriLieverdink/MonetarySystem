@@ -1,4 +1,5 @@
 import { CommandController } from '../../controllers';
+import { State, Transaction } from '../../types';
 
 export class CliService {
 	/**
@@ -60,36 +61,39 @@ export class CliService {
 		return false;
 	}
 
-	/**
-	 * The core commands.
-	 */
+	/** CLI command interpreters */
 	private readonly core = {
-		import: (args: string[]): boolean => {
+		import: async (args: string[]): Promise<boolean> => {
 			if (args.length !== 1)
 				return this.badRequest();
 
 			const privateKey: string = args[0];
-			if (this.commandController.addresses.import(privateKey))
+			if (await this.commandController.addresses.import(privateKey))
 				return this.success(`Successfully imported wallet ${privateKey}`);
-			return false;
+			return false; //new Promise(reject => false);
 		},
-		remove: (args: string[]): boolean => {
+		remove: async (args: string[]): Promise<boolean> => {
 			if (args.length !== 1)
 				return this.badRequest();
 
 			const publicKey: string = args[0];
 
-			if (this.commandController.addresses.remove(publicKey))
+			let response;
+			await this.commandController.addresses.remove(publicKey)
+				.then(() => response = true)
+				.catch(() => response = false);
+
+			if (response)
 				return this.success('Successfully removed keys removed from this device');
 			return false;
-		},
-		generate: (args: string[]): boolean => {
-			return false;
-			// if (args.length !== 0)
-			// 	return this.badRequest();
 
-			// const keyPair = this.commandController.addresses.create();
-			// return this.success(`Generated new key pair! \n  Important Note: Don't lose the private key. No keys no cheese!\n\n  Private key: 	${keyPair.privateKey}\n  Public key: ${keyPair.publicKey}`);
+		},
+		generate: async (args: string[]): Promise<boolean> => {
+			if (args.length !== 0)
+				return this.badRequest();
+
+			const keyPair = await this.commandController.addresses.create();
+			return this.success(`Generated new key pair! \n  Important Note: Don't lose the private key. No keys no cheese!\n\n  Private key: 	${keyPair.privateKey}\n  Public key: ${keyPair.publicKey}`);
 		},
 		list: async (args: string[]): Promise<boolean> => {
 			const showPrivateKeys = args.includes('--private');
@@ -97,36 +101,39 @@ export class CliService {
 			if ((args.length !== 1 && showPrivateKeys) || (args.length === 1 && !showPrivateKeys))
 				return this.badRequest();
 
-			return this.success('Your key(s):\n' + (await this.commandController.addresses.getAll())
-				.map((address, index) =>
-					`  ${index + 1}. Public key: ${address.publicKey}${(showPrivateKeys) ? `		Private key: ${address.privateKey}` : ''
-					}\n`)
-			);
+			const table = (await this.commandController.addresses.getAll())
+				.map((address, index) => `  ${index + 1}. Public key: ${address.publicKey}${(showPrivateKeys) ? `		Private key: ${address.privateKey}` : ''}\n`);
+
+			if (table.length > 0)
+				return this.success('Your key(s):\n' + table);
+
+			this.response.log(this.errorText('Please import your keys first, or generate a pair using \'generate\''));
+			return true;
 		},
 		transactions: async (args: string[]): Promise<boolean> => {
-			return false;
-			// if (args.length > 1)
-			// 	return this.badRequest();
+			if (args.length > 1)
+				return this.badRequest();
 
-			// const transactions: Transaction[] = await ((args.length === 1)
-			// 	? (this.commandController.transactions.getAll(args[0]))
-			// 	: (await (this.commandController.addresses.getAll())).flatMap(async (address) => (await this.commandController.transactions.getAll(address.publicKey))));
+			const transactions: Transaction[] = (args.length === 1)
+				? await this.commandController.transactions.getAll(args[0])
+				: await this.commandController.transactions.getAllImported();
 
-			// return this.success(`Found ${transactions.length} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
-			// 	+ transactions.map((tx, index) =>
-			// 		`  ${index + 1}. Sender: ${tx.from}	Receiver: ${tx.to}	Amount: ${tx.amount} \n`)
-			// 		.toString().replace(',', '')
-			// );
+			if (transactions.length > 0)
+				return this.success(`Found ${transactions.length} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
+					+ transactions.map((tx, index) =>
+						`  ${index + 1}. Sender: ${tx.from}	Receiver: ${tx.to}	Amount: ${tx.amount} \n`)
+						.toString().replace(',', '')
+				);
+			this.response.log(this.errorText('No transactions found'));
+			return true;
 		},
-		balance: (args: string[]): boolean => {
-			return false;
-			// if (args.length > 1)
-			// 	return this.badRequest();
+		balance: async (args: string[]): Promise<boolean> => {
+			if (args.length > 1)
+				return this.badRequest();
 
-			// const balances: State[] = (args.length === 1)
-			// 	? [this.commandController.balances.get(args[0])]
-			// 	: this.commandController.addresses.getAll().flatMap(address =>
-			// 		this.commandController.balances.get(address.publicKey));
+			const balances: State[] = (args.length === 1)
+				? [await this.commandController.balances.get(args[0])]
+				: await this.commandController.balances.getAllImported();
 
 			// return this.success(`  Total balance: ${balances.reduce((sum, state) => sum + state.amount, 0)} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
 			// 	+ balances.map(state =>
@@ -134,25 +141,24 @@ export class CliService {
 			// 	).toString().replace(',', '')
 			// );
 		},
-		transfer: (args: string[]): boolean => {
-			if (args.length !== 3 || isNaN(Number(args.slice(-1)[0])))
+		transfer: async (args: string[]): Promise<boolean> => {
+			if (args.length !== 3 || isNaN(Number(args[2])) || Number(args[2]) <= 0)
 				return this.badRequest();
 
 			const sender: string = args[0];
 			const receiver: string = args[1];
 			const amount: number = parseInt(args[2]);
 
-			if (this.commandController.transactions.create(sender, receiver, amount))
+			if (await this.commandController.transactions.create(sender, receiver, amount))
 				return this.success('Created transaction!');
 			return false;
 		},
-		mirror: (args: string[]): boolean => {
-			return false;
-			// if (args.length !== 1 || !['on', 'off'].includes(args[0]))
-			// 	return this.badRequest();
+		mirror: async (args: string[]): Promise<boolean> => {
+			if (args.length !== 1 || !['on', 'off'].includes(args[0]))
+				return this.badRequest();
 
-			// const enabled = args[0] === 'on';
-			// return this.commandController.mirror.set(enabled);
+			const enabled = args[0] === 'on';
+			return await this.commandController.mirror.set(enabled);
 		},
 		default: (args: string[]): boolean => {
 			if (args.length > 1)

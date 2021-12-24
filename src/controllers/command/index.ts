@@ -1,10 +1,9 @@
 import { Express } from 'express';
 import readline from 'readline';
-import { Inject, Service } from 'typedi';
+import { Inject } from 'typedi';
 import { ApiService, CliService, QueueService, StorageService } from '../../services';
 import { Address, State, Transaction } from '../../types';
 
-@Service()
 export class CommandController {
 	/**
 	 * The express application used to handle api requests.
@@ -71,12 +70,8 @@ export class CommandController {
 		 * 
 		 * @returns A list of addresses.
 		 */
-		getAll: async (): Promise<Address[]> => {
-			/**
-			 * Steps:
-			 * 1. Retrieve the addresses from the database.
-			 * 2. Return the addresses.
-			 */
+		getAll: (): Promise<Address[]> => {
+			//
 			throw Error('Not implemented');
 		},
 		/**
@@ -85,12 +80,7 @@ export class CommandController {
 		 * @returns The private key of the address.
 		 */
 		create: async (): Promise<Address> => {
-			/**
-			 * Steps:
-			 * 1. Create a new public/private key combination.
-			 * 2. Store the address in the database.
-			 * 3. Return the address.
-			 */
+			//
 			throw Error('Not implemented');
 		},
 		/**
@@ -99,13 +89,8 @@ export class CommandController {
 		 * @param privateKey The private key of the address to add.
 		 * @returns Whether the operation was successfull.
 		 */
-		import: async (_privateKey: string): Promise<boolean> => {
-			/**
-			 * Steps:
-			 * 1. Figure out the public key using the private key.
-			 * 2. Store the address in the database.
-			 * 3. Return true.
-			 */
+		import: async (privateKey: string): Promise<boolean> => {
+			//
 			throw Error('Not implemented');
 		},
 		/**
@@ -114,12 +99,8 @@ export class CommandController {
 		 * @param publicKey The public key of the address to remove.
 		 * @returns Whether the operation was successfull.
 		 */
-		remove: async (_publicKey: string): Promise<boolean> => {
-			/**
-			 * Steps:
-			 * 1. Remove the address from the database.
-			 * 2. Return true.
-			 */
+		remove: async (publicKey: string): Promise<boolean> => {
+			//
 			throw Error('Not implemented');
 		},
 	};
@@ -131,15 +112,25 @@ export class CommandController {
 		/**
 		 * Gets all the stored transactions for a given address.
 		 * 
-		 * @returns A list of addresses.
+		 * @returns A list of transactions.
 		 */
-		getAll: async (_publicKey: string): Promise<Transaction[]> => {
+		getAll: async (publicKey: string): Promise<Transaction[]> => {
 			/**
 			 * Steps:
 			 * 1. Retrieve all transactions for the given public key from the database.
 			 * 2. Return the transactions.
 			 */
 			throw Error('Not implemented');
+		},
+		/**
+		 * Gets all the stored transactions for the users' addresses.
+		 *
+		 * @returns A list of transactions.
+		 */
+		getAllImported: async (): Promise<Transaction[]> => {
+			return (await Promise.all((await this.addresses.getAll())
+				.flatMap(address => this.transactions.getAll(address.publicKey))))
+				.flatMap(tx => tx);
 		},
 		/**
 		 * Create a new transaction.
@@ -149,7 +140,7 @@ export class CommandController {
 		 * @param amount The amount to transfer.
 		 * @returns Whether the operation was successfull.
 		 */
-		create: async (_publicKeySender: string, _publicKeyReceiver: string, _amount: number): Promise<boolean> => {
+		create: async (publicKeySender: string, publicKeyReceiver: string, amount: number): Promise<boolean> => {
 			/**
 			 * Steps:
 			 * 1. Create a transaction object.
@@ -176,17 +167,21 @@ export class CommandController {
 			throw Error('Not implemented');
 		},
 		/**
+		 * Gets all the states of the imported addresses.
+		 *
+		 * @returns A list of states.
+		 */
+		getAllImported: async (): Promise<State[]> => {
+			return Promise.all((await this.addresses.getAll()).flatMap(address => this.balances.get(address.publicKey)));
+		},
+		/**
 		 * Gets the state for a given address.
 		 * 
 		 * @param publicKey The public key of the address.
 		 * @returns A state.
 		 */
-		get: async (_publicKey: string): Promise<State> => {
-			/**
-			 * Steps:
-			 * 1. Retrieve the state for the given public key from the database.
-			 * 2. Return the state.
-			 */
+		get: async (publicKey: string): Promise<State> => {
+			//
 			throw Error('Not implemented');
 		},
 	};
@@ -199,9 +194,9 @@ export class CommandController {
 		 * Sets the mirroring option.
 		 * 
 		 * @param value The value to set.
-		 * @returns Whether the operation was successfull.
+		 * @returns Whether the operation was successful.
 		 */
-		set: async (_value: boolean): Promise<boolean> => {
+		set: async (value: boolean): Promise<boolean> => {
 			/**
 			 * Steps:
 			 * 1. Update the value in the database.
