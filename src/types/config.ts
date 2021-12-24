@@ -16,4 +16,8 @@ export type Config = {
 	 * Format: [IP:PORT]
 	 */
 	seed: string;
+	/**
+	 * The output handler.
+	 */
+	response: Console;
 };

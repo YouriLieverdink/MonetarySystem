@@ -1,7 +1,6 @@
-import Container, { Service } from 'typedi';
+import Container from 'typedi';
 import { StorageService } from '..';
 
-@Service()
 export class ConsensusService {
 	/**
 	 * The storage service.

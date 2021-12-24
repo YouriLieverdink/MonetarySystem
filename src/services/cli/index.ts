@@ -1,22 +1,27 @@
-import { Container, Service } from 'typedi';
 import { CommandController } from '../../controllers';
-import { State, Transaction } from '../../types';
 
-@Service()
 export class CliService {
+	/**
+	 * The instance which should receive all commands.
+	 */
+	private commandController: CommandController;
 
-	/** CommandController service injection. */
-	private commandController = Container.get(CommandController);
-
-	/** The response for the output. */
+	/**
+	 * The object for handling output.
+	 */
 	private response: Console;
 
 	/**
-	 * Display the welcome message.
-	 *  
-	 * @param response The response object.
+	 * Class constructor.
 	 */
-	public start(response: Console): void {
+	constructor(
+		commandController: CommandController,
+		response: Console,
+	) {
+		this.commandController = commandController;
+		this.response = response;
+
+		// Display a welcome message.
 		response.clear();
 		response.log('\n' +
 			'████████╗ ██████╗  ██╗ ████████╗ ██╗ ██╗   ██╗ ███╗   ███╗\n' +
@@ -34,7 +39,7 @@ export class CliService {
 	 * @param request The received string.
 	 * @param response The response object.
 	 */
-	public handle(request: string, response: Console = console): boolean {
+	public async handle(request: string, response: Console = console): Promise<boolean> {
 		const command = request.trim().split(' ');
 		this.response = response;
 
@@ -42,8 +47,8 @@ export class CliService {
 
 		try {
 			// Check whether the command exists
-			if (Object.keys(this.commands).includes(key)) {
-				return this.commands[key](command);
+			if (Object.keys(this.core).includes(key)) {
+				return this.core[key](command);
 			}
 
 			response.log(this.errorText('Unknown command'));
@@ -55,8 +60,10 @@ export class CliService {
 		return false;
 	}
 
-	/** CLI command interpreters */
-	private readonly commands = {
+	/**
+	 * The core commands.
+	 */
+	private readonly core = {
 		import: (args: string[]): boolean => {
 			if (args.length !== 1)
 				return this.badRequest();
@@ -77,53 +84,55 @@ export class CliService {
 			return false;
 		},
 		generate: (args: string[]): boolean => {
-			if (args.length !== 0)
-				return this.badRequest();
+			return false;
+			// if (args.length !== 0)
+			// 	return this.badRequest();
 
-			const keyPair = this.commandController.addresses.create();
-			return this.success(`Generated new key pair! \n  Important Note: Don't lose the private key. No keys no cheese!\n\n  Private key: 	${keyPair.privateKey}\n  Public key: ${keyPair.publicKey}`);
+			// const keyPair = this.commandController.addresses.create();
+			// return this.success(`Generated new key pair! \n  Important Note: Don't lose the private key. No keys no cheese!\n\n  Private key: 	${keyPair.privateKey}\n  Public key: ${keyPair.publicKey}`);
 		},
-		list: (args: string[]): boolean => {
+		list: async (args: string[]): Promise<boolean> => {
 			const showPrivateKeys = args.includes('--private');
 
 			if ((args.length !== 1 && showPrivateKeys) || (args.length === 1 && !showPrivateKeys))
 				return this.badRequest();
 
-			return this.success('Your key(s):\n' + this.commandController.addresses.getAll()
+			return this.success('Your key(s):\n' + (await this.commandController.addresses.getAll())
 				.map((address, index) =>
 					`  ${index + 1}. Public key: ${address.publicKey}${(showPrivateKeys) ? `		Private key: ${address.privateKey}` : ''
 					}\n`)
 			);
 		},
-		transactions: (args: string[]): boolean => {
-			if (args.length > 1)
-				return this.badRequest();
+		transactions: async (args: string[]): Promise<boolean> => {
+			return false;
+			// if (args.length > 1)
+			// 	return this.badRequest();
 
-			const transactions: Transaction[] = (args.length === 1)
-				? this.commandController.transactions.getAll(args[0])
-				: this.commandController.addresses.getAll().flatMap(address =>
-					this.commandController.transactions.getAll(address.publicKey));
+			// const transactions: Transaction[] = await ((args.length === 1)
+			// 	? (this.commandController.transactions.getAll(args[0]))
+			// 	: (await (this.commandController.addresses.getAll())).flatMap(async (address) => (await this.commandController.transactions.getAll(address.publicKey))));
 
-			return this.success(`Found ${transactions.length} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
-				+ transactions.map((tx, index) =>
-					`  ${index + 1}. Sender: ${tx.from}	Receiver: ${tx.to}	Amount: ${tx.amount} \n`)
-					.toString().replace(',', '')
-			);
+			// return this.success(`Found ${transactions.length} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
+			// 	+ transactions.map((tx, index) =>
+			// 		`  ${index + 1}. Sender: ${tx.from}	Receiver: ${tx.to}	Amount: ${tx.amount} \n`)
+			// 		.toString().replace(',', '')
+			// );
 		},
 		balance: (args: string[]): boolean => {
-			if (args.length > 1)
-				return this.badRequest();
+			return false;
+			// if (args.length > 1)
+			// 	return this.badRequest();
 
-			const balances: State[] = (args.length === 1)
-				? [this.commandController.balances.get(args[0])]
-				: this.commandController.addresses.getAll().flatMap(address =>
-					this.commandController.balances.get(address.publicKey));
+			// const balances: State[] = (args.length === 1)
+			// 	? [this.commandController.balances.get(args[0])]
+			// 	: this.commandController.addresses.getAll().flatMap(address =>
+			// 		this.commandController.balances.get(address.publicKey));
 
-			return this.success(`  Total balance: ${balances.reduce((sum, state) => sum + state.amount, 0)} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
-				+ balances.map(state =>
-					`  Address: ${state.publicKey}	Balance: ${state.amount} \n`
-				).toString().replace(',', '')
-			);
+			// return this.success(`  Total balance: ${balances.reduce((sum, state) => sum + state.amount, 0)} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
+			// 	+ balances.map(state =>
+			// 		`  Address: ${state.publicKey}	Balance: ${state.amount} \n`
+			// 	).toString().replace(',', '')
+			// );
 		},
 		transfer: (args: string[]): boolean => {
 			if (args.length !== 3 || isNaN(Number(args.slice(-1)[0])))
@@ -138,11 +147,12 @@ export class CliService {
 			return false;
 		},
 		mirror: (args: string[]): boolean => {
-			if (args.length !== 1 || !['on', 'off'].includes(args[0]))
-				return this.badRequest();
+			return false;
+			// if (args.length !== 1 || !['on', 'off'].includes(args[0]))
+			// 	return this.badRequest();
 
-			const enabled = args[0] === 'on';
-			return this.commandController.mirror.set(enabled);
+			// const enabled = args[0] === 'on';
+			// return this.commandController.mirror.set(enabled);
 		},
 		default: (args: string[]): boolean => {
 			if (args.length > 1)

@@ -1,19 +1,44 @@
-import Container, { Service } from 'typedi';
-import { Request, Response } from 'express';
-import { StorageService } from '..';
+import { Express, Request, Response } from 'express';
+import { Inject } from 'typedi';
+import { QueueService, StorageService } from '..';
+import { Event } from '../../types';
 
-@Service()
 export class GossipService {
 	/**
-	 * The storage service.
+	 * Stores incoming events which have to be processed.
 	 */
-	private storage: StorageService;
+	private eventsQueue: QueueService<Event>;
+
+	/**
+	 * The express application used to handle api requests.
+	 */
+	@Inject('express')
+	private express: Express;
+
+	/**
+	 * Used to store events which contain a consensus timestamp.
+	 */
+	@Inject('storage')
+	private storageService: StorageService;
 
 	/**
 	 * Class constructor.
+	 * 
+	 * @param eventsQueue The events queue.
 	 */
-	constructor() {
-		this.storage = Container.get(StorageService);
+	constructor(
+		eventsQueue: QueueService<Event>,
+	) {
+		this.eventsQueue = eventsQueue;
+
+		this.initApi();
+	}
+
+	/**
+	 * Initialise the api handling.
+	 */
+	private initApi(): void {
+		this.express.get('/gossip/*', this.handle);
 	}
 
 	/**
@@ -23,14 +48,6 @@ export class GossipService {
 	 * @param response The object used to send a response.
 	 */
 	public handle(request: Request, response: Response): void {
-		//
-		throw Error('Not implemented');
-	}
-
-	/**
-	 * Initiate a new Gossip sync with another node.
-	 */
-	public doGossip(): void {
 		//
 		throw Error('Not implemented');
 	}

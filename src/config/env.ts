@@ -17,6 +17,8 @@ const env = {
 	'database': {
 		'path': process.env.DATABASE_PATH || 'db.sqlite3',
 	},
+	// Interval configuration.
+	'interval': process.env.INTERVAL || 500,
 };
 
 export default env;

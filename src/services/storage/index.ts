@@ -1,13 +1,60 @@
 import { Database } from 'sqlite3';
-import Container, { Service } from 'typedi';
 import { Address, Event, Node, State } from '../../types';
 
-@Service()
 export class StorageService {
     /**
      * The database.
      */
     private database: Database;
+
+    /**
+     * Class constructor.
+     * 
+     * @param database The database.
+     */
+    constructor(
+        database: Database,
+    ) {
+        this.database = database;
+
+        this.database.serialize(() => {
+            // Create the tables.
+            this.database.run(`
+                CREATE TABLE IF NOT EXISTS addresses (
+                    publicKey VARCHAR(32) PRIMARY KEY,
+                    privateKey VARCHAR(32),
+                    isDefault BOOLEAN
+                )
+            `);
+
+            this.database.run(`
+                CREATE TABLE IF NOT EXISTS events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    type VARCHAR(16),
+                    data BLOB,
+                    otherParent TEXT,
+                    selfParent TEXT,
+                    signature TEXT,
+                    date DATETIME
+                )
+            `);
+
+            this.database.run(`
+                CREATE TABLE IF NOT EXISTS nodes (
+                    host VARCHAR(32) PRIMARY KEY,
+                    name VARCHAR(32)
+                )
+            `);
+
+            this.database.run(`
+                CREATE TABLE IF NOT EXISTS states (
+                    address VARCHAR(32) PRIMARY KEY,
+                    balance FLOAT,
+                    date DATETIME
+                )
+            `);
+        });
+    }
 
     /**
      * The query methods.
@@ -292,49 +339,4 @@ export class StorageService {
             return this.query.run('DELETE FROM states WHERE address=?', address);
         },
     };
-
-    /**
-     * Class constructor.
-     */
-    constructor() {
-        this.database = Container.get(Database);
-
-        this.database.serialize(() => {
-            // Create the tables.
-            this.database.run(`
-                CREATE TABLE IF NOT EXISTS addresses (
-                    publicKey VARCHAR(32) PRIMARY KEY,
-                    privateKey VARCHAR(32),
-                    isDefault BOOLEAN
-                )
-            `);
-
-            this.database.run(`
-                CREATE TABLE IF NOT EXISTS events (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    type VARCHAR(16),
-                    data BLOB,
-                    otherParent TEXT,
-                    selfParent TEXT,
-                    signature TEXT,
-                    date DATETIME
-                )
-            `);
-
-            this.database.run(`
-                CREATE TABLE IF NOT EXISTS nodes (
-                    host VARCHAR(32) PRIMARY KEY,
-                    name VARCHAR(32)
-                )
-            `);
-
-            this.database.run(`
-                CREATE TABLE IF NOT EXISTS states (
-                    address VARCHAR(32) PRIMARY KEY,
-                    balance FLOAT,
-                    date DATETIME
-                )
-            `);
-        });
-    }
 }

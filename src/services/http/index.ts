@@ -1,7 +1,5 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { Service } from 'typedi';
 
-@Service()
 export class HttpService {
 	/**
 	 * Do the http request.

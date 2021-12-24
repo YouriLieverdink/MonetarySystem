@@ -1,75 +1,58 @@
-import express from 'express';
-import readline from 'readline';
-import Container from 'typedi';
-import { ApiService, CliService, ConsensusService, GossipService } from '../../services';
-import { Config } from '../../types';
+import { Inject } from 'typedi';
+import { ConsensusService, GossipService, QueueService, StorageService } from '../../services';
+import { Event, Transaction } from '../../types';
 
 export class InternalController {
 	/**
+	 * Reaches consensus on a set of events.
+	 */
+	private consensusService: ConsensusService;
+
+	/**
+	 * Stores incoming events which have to be processed.
+	 */
+	private eventsQueue: QueueService<Event>;
+
+	/**
+	 * Populates the events queue with events from the network.
+	 */
+	private gossipService: GossipService;
+
+	/**
+	 * Used to store events which contain a consensus timestamp.
+	 */
+	@Inject('storage')
+	private storageService: StorageService;
+
+	/**
+	 * Incoming transactions from the operating user.
+	 */
+	@Inject('transactions')
+	private transactionsQueue: QueueService<Transaction>;
+
+	/**
 	 * Class constructor.
 	 * 
-	 * This class is used to kickstart the entire application.
-	 * 
-	 * @param config The configuration.
+	 * @param consensusService The consensus service.
+	 * @param eventsQueue The events queue.
+	 * @param gossipService The gossip service.
 	 */
-	constructor(config: Config) {
-		//
-		this.initApi(config.port);
-		this.initCli();
+	constructor(
+		consensusService?: ConsensusService,
+		eventsQueue?: QueueService<Event>,
+		gossipService?: GossipService,
+	) {
+		this.consensusService = consensusService || new ConsensusService();
+		this.eventsQueue = eventsQueue || new QueueService<Event>();
+		this.gossipService = gossipService || new GossipService(this.eventsQueue);
 
-		setInterval(this.tick.bind(this), config.interval);
+		setInterval(this.tick.bind(this), 500);
 	}
 
 	/**
-	 * Initialite the api handling.
-	 * 
-	 * @param port The port the server should listen on.
-	 */
-	private initApi(port: number): void {
-		//
-		const app = express();
-
-		const api = Container.get(ApiService);
-		app.get('/api/*', api.handle);
-
-		const gossip = Container.get(GossipService);
-		app.get('/gossip/*', gossip.handle);
-
-		app.listen(port, '0.0.0.0');
-	}
-
-	/**
-	 * Initialise the cli handling.
-	 */
-	private initCli(): void {
-		//
-		const cli = Container.get(CliService);
-		const rl = readline.createInterface({
-			'input': process.stdin,
-			'output': process.stdout,
-		});
-
-		const ask = () => rl.question(
-			'\x1b[0mtritium> ',
-			(command) => {
-				cli.handle(command);
-				ask();
-			}
-		);
-
-		cli.start(console);
-		ask();
-	}
-
-	/**
-	 * Tick tock.
+	 * Tick tok.
 	 */
 	private tick(): void {
 		//
-		const gossip = Container.get(GossipService);
-		gossip.doGossip();
-
-		const consensus = Container.get(ConsensusService);
-		consensus.doConsensus();
 	}
 }

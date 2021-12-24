@@ -1,6 +1,4 @@
-import { Service } from 'typedi';
 
-@Service()
 export class QueueService<T> {
 	/**
 	 * The items currently in the queue.

@@ -1,20 +1,66 @@
+import { Express } from 'express';
+import readline from 'readline';
 import { Inject, Service } from 'typedi';
-import { QueueService, StorageService } from '../../services';
+import { ApiService, CliService, QueueService, StorageService } from '../../services';
 import { Address, State, Transaction } from '../../types';
 
 @Service()
 export class CommandController {
 	/**
-	 * The transactions queue.
+	 * The express application used to handle api requests.
 	 */
-	@Inject('transactions')
-	private readonly queue: QueueService<Transaction>;
+	@Inject('express')
+	private express: Express;
 
 	/**
-	 * The storage service.
+	 * Used to store events which contain a consensus timestamp.
 	 */
-	@Inject(() => StorageService)
-	private readonly storage: StorageService;
+	@Inject('storage')
+	private storageService: StorageService;
+
+	/**
+	 * Incoming transactions from the operating user.
+	 */
+	@Inject('transactions')
+	private transactionsQueue: QueueService<Transaction>;
+
+	/**
+	 * Class constructor.
+	 */
+	constructor() {
+		//
+		this.initApi();
+		this.initCli();
+	}
+
+	/**
+	 * Initialise the api handling.
+	 */
+	private initApi(): void {
+		const apiService = new ApiService(this);
+		this.express.get('/api/*', apiService.handle);
+	}
+
+	/**
+	 * Initialise the cli handling.
+	 */
+	private initCli(): void {
+		const cli = new CliService(this, console);
+		const rl = readline.createInterface({
+			'input': process.stdin,
+			'output': process.stdout,
+		});
+
+		const ask = () => rl.question(
+			'\x1b[0mtritium> ',
+			async (command) => {
+				await cli.handle(command);
+				ask();
+			},
+		);
+
+		ask();
+	}
 
 	/**
 	 * The address methods.
