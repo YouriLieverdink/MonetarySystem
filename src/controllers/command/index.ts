@@ -1,16 +1,10 @@
 import { Express } from 'express';
 import readline from 'readline';
-import { Inject } from 'typedi';
+import Container, { Inject } from 'typedi';
 import { ApiService, CliService, QueueService, StorageService } from '../../services';
 import { Address, State, Transaction } from '../../types';
 
 export class CommandController {
-	/**
-	 * The express application used to handle api requests.
-	 */
-	@Inject('express')
-	private express: Express;
-
 	/**
 	 * Used to store events which contain a consensus timestamp.
 	 */
@@ -37,7 +31,8 @@ export class CommandController {
 	 */
 	private initApi(): void {
 		const apiService = new ApiService(this);
-		this.express.get('/api/*', apiService.handle);
+		const express = Container.get<Express>('express');
+		express.get('/api/*', apiService.handle);
 	}
 
 	/**
