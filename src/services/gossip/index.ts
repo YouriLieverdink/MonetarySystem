@@ -1,6 +1,6 @@
 import { Express, Request, Response } from 'express';
 import { Inject } from 'typedi';
-import { QueueService, StorageService } from '..';
+import { HttpService, QueueService, StorageService } from '..';
 import { Event } from '../../types';
 
 export class GossipService {
@@ -16,6 +16,11 @@ export class GossipService {
 	private express: Express;
 
 	/**
+	 * The service used to send http requests.
+	 */
+	private httpService: HttpService;
+
+	/**
 	 * Used to store events which contain a consensus timestamp.
 	 */
 	@Inject('storage')
@@ -25,11 +30,14 @@ export class GossipService {
 	 * Class constructor.
 	 * 
 	 * @param eventsQueue The events queue.
+	 * @param httpService The http service.
 	 */
 	constructor(
 		eventsQueue: QueueService<Event>,
+		httpService?: HttpService,
 	) {
 		this.eventsQueue = eventsQueue;
+		this.httpService = httpService || new HttpService();
 
 		this.initApi();
 	}
