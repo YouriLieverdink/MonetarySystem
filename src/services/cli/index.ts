@@ -49,7 +49,7 @@ export class CliService {
 		try {
 			// Check whether the command exists
 			if (Object.keys(this.core).includes(key)) {
-				return this.core[key](command);
+				return await this.core[key](command);
 			}
 
 			response.log(this.errorText('Unknown command'));
