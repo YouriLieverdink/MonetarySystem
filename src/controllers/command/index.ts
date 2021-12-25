@@ -1,6 +1,6 @@
 import { Express } from 'express';
 import readline from 'readline';
-import Container, { Inject } from 'typedi';
+import Container from 'typedi';
 import { ApiService, CliService, QueueService, StorageService } from '../../services';
 import { Address, State, Transaction } from '../../types';
 
@@ -8,20 +8,21 @@ export class CommandController {
 	/**
 	 * Used to store events which contain a consensus timestamp.
 	 */
-	@Inject('storage')
 	private storageService: StorageService;
 
 	/**
 	 * Incoming transactions from the operating user.
 	 */
-	@Inject('transactions')
 	private transactionsQueue: QueueService<Transaction>;
 
 	/**
 	 * Class constructor.
 	 */
 	constructor() {
-		//
+		// Inject dependencies.
+		this.storageService = Container.get<StorageService>('storage');
+		this.transactionsQueue = Container.get<QueueService<Transaction>>('transactions');
+
 		this.initApi();
 		this.initCli();
 	}

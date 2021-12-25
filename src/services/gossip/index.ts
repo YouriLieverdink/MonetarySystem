@@ -1,5 +1,5 @@
 import { Express, Request, Response } from 'express';
-import Container, { Inject } from 'typedi';
+import Container from 'typedi';
 import { HttpService, QueueService, StorageService } from '..';
 import { Event } from '../../types';
 
@@ -17,7 +17,6 @@ export class GossipService {
 	/**
 	 * Used to store events which contain a consensus timestamp.
 	 */
-	@Inject('storage')
 	private storageService: StorageService;
 
 	/**
@@ -32,6 +31,9 @@ export class GossipService {
 	) {
 		this.eventsQueue = eventsQueue;
 		this.httpService = httpService || new HttpService();
+
+		// Inject dependencies.
+		this.storageService = Container.get<StorageService>('storage');
 
 		this.initApi();
 	}
