@@ -1,5 +1,5 @@
 import { Database } from 'sqlite3';
-import { Address, Event, Node, State } from '../../types';
+import { Address, Event, Node, State, Transaction } from '../../types';
 
 export class StorageService {
     /**
@@ -337,6 +337,23 @@ export class StorageService {
          */
         destroy: (address: string): Promise<void> => {
             return this.query.run('DELETE FROM states WHERE address=?', address);
+        },
+    };
+
+    /**
+     * The transactions methods.
+     */
+    public readonly transactions = {
+        /**
+         * Display a listing of the resource.
+         *
+         * @param publicKey The public key of the address.
+         * 
+         * @throws {Error} When an exception occurs.
+         */
+        index: async (publicKey: string): Promise<Transaction[]> => {
+            const events = await this.query.all<Event>('SELECT * FROM events WHERE data LIKE \'%?%\' AND data LIKE \'%?%\'', publicKey, 'transaction');
+            return events.map((event) => event.data as Transaction);
         },
     };
 }

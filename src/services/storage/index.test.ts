@@ -181,4 +181,150 @@ describe('StorageService', () => {
 			});
 		});
 	});
+
+	describe('events', () => {
+
+		describe('index', () => {
+
+			it.todo('should call database.all');
+
+			it.todo('should return an empty list when no items are stored in the database');
+
+			it.todo('should return a populated list when items are stored in the database');
+		});
+
+		describe('read', () => {
+
+			it.todo('should call database.get');
+
+			it.todo('should return undefined when the item was not found');
+
+			it.todo('should return the correct item');
+		});
+
+		describe('create', () => {
+
+			it.todo('should call database.run');
+
+			it.todo('should create and store the item in the database');
+		});
+
+		describe('update', () => {
+
+			it.todo('should call database.run');
+
+			it.todo('should update the item in the database');
+		});
+
+		describe('destroy', () => {
+
+			it.todo('should call database.run');
+
+			it.todo('should delete the item from the database');
+		});
+	});
+
+	describe('nodes', () => {
+
+		describe('index', () => {
+
+			it.todo('should call database.all');
+
+			it.todo('should return an empty list when no items are stored in the database');
+
+			it.todo('should return a populated list when items are stored in the database');
+		});
+
+		describe('read', () => {
+
+			it.todo('should call database.get');
+
+			it.todo('should return undefined when the item was not found');
+
+			it.todo('should return the correct item');
+		});
+
+		describe('create', () => {
+
+			it.todo('should call database.run');
+
+			it.todo('should create and store the item in the database');
+
+			it.todo('should throw an error when the host already exists');
+		});
+
+		describe('update', () => {
+
+			it.todo('should call database.run');
+
+			it.todo('should update the item in the database');
+		});
+
+		describe('destroy', () => {
+
+			it.todo('should call database.run');
+
+			it.todo('should delete the item from the database');
+		});
+	});
+
+	describe('states', () => {
+
+		describe('index', () => {
+
+			it.todo('should call database.all');
+
+			it.todo('should return an empty list when no items are stored in the database');
+
+			it.todo('should return a populated list when items are stored in the database');
+		});
+
+		describe('read', () => {
+
+			it.todo('should call database.get');
+
+			it.todo('should return undefined when the item was not found');
+
+			it.todo('should return the correct item');
+		});
+
+		describe('create', () => {
+
+			it.todo('should call database.run');
+
+			it.todo('should create and store the item in the database');
+
+			it.todo('should throw an error when the address already exists');
+		});
+
+		describe('update', () => {
+
+			it.todo('should call database.run');
+
+			it.todo('should update the item in the database');
+		});
+
+		describe('destroy', () => {
+
+			it.todo('should call database.run');
+
+			it.todo('should delete the item from the database');
+		});
+	});
+
+	describe('transactions', () => {
+
+		describe('index', () => {
+
+			it.todo('should call database.all');
+
+			it.todo('should return an empty list when no items are stored in the database');
+
+			it.todo('should return a populated list when items are stored in the database');
+
+			it.todo('should only return events of type \'transastion\'');
+
+			it.todo('should only return events associated with the provided public key');
+		});
+	});
 });
