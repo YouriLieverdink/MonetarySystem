@@ -133,8 +133,10 @@ export class StorageService {
          *
          * @throws {Error} When an exception occurs.
          */
-        index: (): Promise<Event[]> => {
-            return this.query.all<Event>('SELECT * FROM events');
+        index: async (): Promise<Event[]> => {
+            const data = await this.query.all<Event>('SELECT * FROM events');
+            data.forEach(element => element.data = JSON.parse(String(element.data)));
+            return data;
         },
         /**
          * Display the specified resource.
@@ -143,18 +145,39 @@ export class StorageService {
          *
          * @throws {Error} When an exception occurs.
          */
-        read: (id: number): Promise<Event> => {
-            return this.query.get<Event>('SELECT * FROM events WHERE id=?', id);
+        read: async (id: number): Promise<Event> => {
+            const data = await this.query.get<Event>('SELECT * FROM events WHERE id=?', id);
+            data.data = JSON.parse(String(data.data));
+            return data;
+        },
+        /**
+         * Display the transactions of a specified address.
+         *
+         * @param address The address of the account which transactions you want to see.
+         *
+         * @throws {Error} When an exception occurs.
+         */
+        transactions: async (address: string): Promise<Event[]> => {
+            const like = '%' + address + '%';
+            const data = await this.query.all<Event>('SELECT * FROM events WHERE data LIKE ?', like);
+            data.forEach(element => element.data = JSON.parse(String(element.data)));
+            return data;
         },
         /**
          * Store a newly created resource in storage.
          *
-         * @param date The date and time when the event occured.
+         * @param type
+         * @param data
+         * @param otherParent
+         * @param selfParent
+         * @param signature
+         * @param date The date and time when the event occurred.
          *
          * @throws {Error} When an exception occurs.
          */
         create: (type: string, data: Record<string, unknown>, otherParent: string, selfParent: string, signature: string, date: Date): Promise<void> => {
-            return this.query.run('INSERT INTO events (type, data, otherParent, selfParent, signature, date) VALUES (?, ?, ?, ?, ?, ?)', type, data, otherParent, selfParent, signature, date);
+            const stringData = JSON.stringify(data);
+            return this.query.run('INSERT INTO events (type, data, otherParent, selfParent, signature, date) VALUES (?, ?, ?, ?, ?, ?)', type, stringData, otherParent, selfParent, signature, date);
         },
         /**
          * Update the specified resource in storage.
@@ -313,7 +336,7 @@ export class StorageService {
                 CREATE TABLE IF NOT EXISTS events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     type VARCHAR(16),
-                    data BLOB,
+                    data VARCHAR(255),
                     otherParent TEXT,
                     selfParent TEXT,
                     signature TEXT,

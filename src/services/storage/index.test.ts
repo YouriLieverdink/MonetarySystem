@@ -1,7 +1,8 @@
 import { Database } from 'sqlite3';
 import Container from 'typedi';
-import { Address } from '../../types';
+import { Address, Event } from '../../types';
 import { StorageService } from './index';
+import mock = jest.mock;
 
 describe('StorageService', () => {
 	//
@@ -181,6 +182,28 @@ describe('StorageService', () => {
 				const result = await storage.addresses.read(mockPublicKey);
 
 				expect(result).toBeUndefined();
+			});
+		});
+	});
+//INSERT INTO events (type, data, otherParent, selfParent, signature, date) VALUES ('transaction', '{ "node": { "host": "1.1.1.1:1", "name": "piet" }, "from": "henk", "to": "henk", "amount": 12 }', 'jan', 'klaas', 'transaction1', '2021-12-27T13:37:29.131Z');
+	describe('events', () => {
+		const mockJson = { 'node': { 'host': '1.1.1.1:1', 'name': 'piet' }, 'from': 'straat1', 'to': 'straat2', 'amount': 12 };
+		const mockJson1 = { 'node': { 'host': '1.1.1.1:1', 'name': 'jan' }, 'from': 'straat2', 'to': 'straat3', 'amount': 12 };
+		const mockJson2 = { 'node': { 'host': '1.1.1.1:1', 'name': 'geert' }, 'from': 'straat2', 'to': 'straat1', 'amount': 12 };
+
+
+		describe('transactions', () => {
+
+			it('should return the correct item', async () => {
+				// Add the items to the database.
+				await storage.events.create('transaction', mockJson, 'fret', 'piet', 'transaction1', new Date);
+				await storage.events.create('transaction', mockJson1, 'jan', 'klaas', 'transaction2', new Date);
+				await storage.events.create('transaction', mockJson2, 'fret','geert', 'transaction3', new Date);
+
+				const result = await storage.events.transactions('straat1');
+				expect(result[0].data.from).toEqual('straat1');
+				expect(result[1].data.to).toEqual('straat1');
+
 			});
 		});
 	});
