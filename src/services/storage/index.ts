@@ -23,7 +23,7 @@ export class StorageService {
                 CREATE TABLE IF NOT EXISTS addresses (
                     publicKey VARCHAR(32) PRIMARY KEY,
                     privateKey VARCHAR(32),
-                    isDefault BOOLEAN
+                    isDefault BOOLEAN NOT NULL DEFAULT 0
                 )
             `);
 
