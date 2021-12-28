@@ -5,24 +5,24 @@ jest.mock('../../controllers', () => ({
     __esModule: true,
     CommandController: jest.fn().mockImplementation(() => {
         return {
-            'addresses': {
-                'getAll': jest.fn(),
-                'create': jest.fn(),
-                'import': jest.fn(),
-                'remove': jest.fn(),
+            addresses: {
+                getAll: jest.fn(),
+                create: jest.fn(),
+                import: jest.fn(),
+                remove: jest.fn(),
             },
-            'transactions': {
-                'getAll': jest.fn(),
-                'getAllImported': jest.fn(),
-                'create': jest.fn(),
+            transactions: {
+                getAll: jest.fn(),
+                getAllImported: jest.fn(),
+                create: jest.fn(),
             },
-            'balances': {
-                'getAll': jest.fn(),
-                'get': jest.fn(),
-                'getAllImported': jest.fn(),
+            balances: {
+                getAll: jest.fn(),
+                get: jest.fn(),
+                getAllImported: jest.fn(),
             },
-            'mirror': {
-                'set': jest.fn(),
+            mirror: {
+                set: jest.fn(),
             },
         };
     }),
@@ -101,9 +101,9 @@ describe('CliService', () => {
 
         beforeEach(() => {
             jest.spyOn(command.addresses, 'create').mockResolvedValue({
-                'publicKey': mockPublicKey,
-                'privateKey': mockPrivateKey,
-                'isDefault': mockIsDefault,
+                publicKey: mockPublicKey,
+                privateKey: mockPrivateKey,
+                isDefault: mockIsDefault,
             });
         });
 
@@ -173,9 +173,9 @@ describe('CliService', () => {
         beforeEach(() => {
             jest.spyOn(command.balances, 'getAllImported').mockResolvedValue([]);
             jest.spyOn(command.balances, 'get').mockResolvedValue({
-                'publicKey': mockPublicKey,
-                'date': new Date(),
-                'amount': 10,
+                publicKey: mockPublicKey,
+                date: new Date(),
+                amount: 10,
             });
         });
 

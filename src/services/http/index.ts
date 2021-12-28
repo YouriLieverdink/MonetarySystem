@@ -17,15 +17,15 @@ export class HttpService {
 
 			if (error.response) {
 				// An response outside the range of 2xx was received.
-				throw { 'type': 'response', 'error': error };
+				throw { type: 'response', error: error };
 			}
 
 			if (error.request) {
 				// The request could not be delivered.
-				throw { 'type': 'request', 'error': error };
+				throw { type: 'request', error: error };
 			}
 
-			throw { 'type': 'unknown', 'error': error };
+			throw { type: 'unknown', error: error };
 		}
 	}
 
@@ -39,10 +39,10 @@ export class HttpService {
 	public async post(host: string, uri: string, data: Record<string, unknown>): Promise<AxiosResponse> {
 		// Create the configuration.
 		const config: AxiosRequestConfig = {
-			'baseURL': `https://${host}`,
-			'url': uri,
-			'method': 'POST',
-			'data': data,
+			baseURL: `https://${host}`,
+			url: uri,
+			method: 'POST',
+			data: data,
 		};
 
 		return await this.doRequest(config);

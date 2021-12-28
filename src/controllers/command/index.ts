@@ -42,8 +42,8 @@ export class CommandController {
 	private initCli(): void {
 		const cli = new CliService(this, console);
 		const rl = readline.createInterface({
-			'input': process.stdin,
-			'output': process.stdout,
+			input: process.stdin,
+			output: process.stdout,
 		});
 
 		const ask = () => rl.question(
