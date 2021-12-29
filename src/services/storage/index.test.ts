@@ -1,8 +1,7 @@
 import { Database } from 'sqlite3';
 import Container from 'typedi';
-import { Address, Event } from '../../types';
+import { Address } from '../../types';
 import { StorageService } from './index';
-import mock = jest.mock;
 
 describe('StorageService', () => {
 	//
