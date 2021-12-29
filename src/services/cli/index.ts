@@ -1,22 +1,28 @@
-import { Container, Service } from 'typedi';
 import { CommandController } from '../../controllers';
 import { State, Transaction } from '../../types';
 
-@Service()
 export class CliService {
+	/**
+	 * The instance which should receive all commands.
+	 */
+	private commandController: CommandController;
 
-	/** CommandController service injection. */
-	private commandController = Container.get(CommandController);
-
-	/** The response for the output. */
+	/**
+	 * The object for handling output.
+	 */
 	private response: Console;
 
 	/**
-	 * Display the welcome message.
-	 *  
-	 * @param response The response object.
+	 * Class constructor.
 	 */
-	public start(response: Console): void {
+	constructor(
+		commandController: CommandController,
+		response: Console,
+	) {
+		this.commandController = commandController;
+		this.response = response;
+
+		// Display a welcome message.
 		response.clear();
 		response.log('\n' +
 			'████████╗ ██████╗  ██╗ ████████╗ ██╗ ██╗   ██╗ ███╗   ███╗\n' +
@@ -34,7 +40,7 @@ export class CliService {
 	 * @param request The received string.
 	 * @param response The response object.
 	 */
-	public handle(request: string, response: Console = console): boolean {
+	public async handle(request: string, response: Console = console): Promise<boolean> {
 		const command = request.trim().split(' ');
 		this.response = response;
 
@@ -42,8 +48,8 @@ export class CliService {
 
 		try {
 			// Check whether the command exists
-			if (Object.keys(this.commands).includes(key)) {
-				return this.commands[key](command);
+			if (Object.keys(this.core).includes(key)) {
+				return await this.core[key](command);
 			}
 
 			response.log(this.errorText('Unknown command'));
@@ -56,93 +62,103 @@ export class CliService {
 	}
 
 	/** CLI command interpreters */
-	private readonly commands = {
-		import: (args: string[]): boolean => {
+	private readonly core = {
+		import: async (args: string[]): Promise<boolean> => {
 			if (args.length !== 1)
 				return this.badRequest();
 
 			const privateKey: string = args[0];
-			if (this.commandController.addresses.import(privateKey))
+			if (await this.commandController.addresses.import(privateKey))
 				return this.success(`Successfully imported wallet ${privateKey}`);
-			return false;
+			return false; //new Promise(reject => false);
 		},
-		remove: (args: string[]): boolean => {
+		remove: async (args: string[]): Promise<boolean> => {
 			if (args.length !== 1)
 				return this.badRequest();
 
 			const publicKey: string = args[0];
 
-			if (this.commandController.addresses.remove(publicKey))
+			let response;
+			await this.commandController.addresses.remove(publicKey)
+				.then(() => response = true)
+				.catch(() => response = false);
+
+			if (response)
 				return this.success('Successfully removed keys removed from this device');
 			return false;
+
 		},
-		generate: (args: string[]): boolean => {
+		generate: async (args: string[]): Promise<boolean> => {
 			if (args.length !== 0)
 				return this.badRequest();
 
-			const keyPair = this.commandController.addresses.create();
+			const keyPair = await this.commandController.addresses.create();
 			return this.success(`Generated new key pair! \n  Important Note: Don't lose the private key. No keys no cheese!\n\n  Private key: 	${keyPair.privateKey}\n  Public key: ${keyPair.publicKey}`);
 		},
-		list: (args: string[]): boolean => {
+		list: async (args: string[]): Promise<boolean> => {
 			const showPrivateKeys = args.includes('--private');
 
 			if ((args.length !== 1 && showPrivateKeys) || (args.length === 1 && !showPrivateKeys))
 				return this.badRequest();
 
-			return this.success('Your key(s):\n' + this.commandController.addresses.getAll()
-				.map((address, index) =>
-					`  ${index + 1}. Public key: ${address.publicKey}${(showPrivateKeys) ? `		Private key: ${address.privateKey}` : ''
-					}\n`)
-			);
+			const table = (await this.commandController.addresses.getAll())
+				.map((address, index) => `  ${index + 1}. Public key: ${address.publicKey}${(showPrivateKeys) ? `		Private key: ${address.privateKey}` : ''}\n`);
+
+			if (table.length > 0)
+				return this.success('Your key(s):\n' + table);
+
+			this.response.log(this.errorText('Please import your keys first, or generate a pair using \'generate\''));
+			return true;
 		},
-		transactions: (args: string[]): boolean => {
+		transactions: async (args: string[]): Promise<boolean> => {
 			if (args.length > 1)
 				return this.badRequest();
 
 			const transactions: Transaction[] = (args.length === 1)
-				? this.commandController.transactions.getAll(args[0])
-				: this.commandController.addresses.getAll().flatMap(address =>
-					this.commandController.transactions.getAll(address.publicKey));
+				? await this.commandController.transactions.getAll(args[0])
+				: await this.commandController.transactions.getAllImported();
 
-			return this.success(`Found ${transactions.length} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
-				+ transactions.map((tx, index) =>
-					`  ${index + 1}. Sender: ${tx.from}	Receiver: ${tx.to}	Amount: ${tx.amount} \n`)
-					.toString().replace(',', '')
-			);
+			if (transactions.length > 0)
+				return this.success(`Found ${transactions.length} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
+					+ transactions.map((tx, index) =>
+						`  ${index + 1}. Sender: ${tx.from}	Receiver: ${tx.to}	Amount: ${tx.amount} \n`)
+						.toString().replace(',', '')
+				);
+			this.response.log(this.errorText('No transactions found'));
+			return true;
 		},
-		balance: (args: string[]): boolean => {
+		balance: async (args: string[]): Promise<boolean> => {
 			if (args.length > 1)
 				return this.badRequest();
 
 			const balances: State[] = (args.length === 1)
-				? [this.commandController.balances.get(args[0])]
-				: this.commandController.addresses.getAll().flatMap(address =>
-					this.commandController.balances.get(address.publicKey));
+				? [await this.commandController.balances.get(args[0])]
+				: await this.commandController.balances.getAllImported();
 
-			return this.success(`  Total balance: ${balances.reduce((sum, state) => sum + state.amount, 0)} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
-				+ balances.map(state =>
-					`  Address: ${state.publicKey}	Balance: ${state.amount} \n`
-				).toString().replace(',', '')
-			);
+			// return this.success(`  Total balance: ${balances.reduce((sum, state) => sum + state.amount, 0)} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
+			// 	+ balances.map(state =>
+			// 		`  Address: ${state.publicKey}	Balance: ${state.amount} \n`
+			// 	).toString().replace(',', '')
+			// );
 		},
-		transfer: (args: string[]): boolean => {
-			if (args.length !== 3 || isNaN(Number(args.slice(-1)[0])))
+		transfer: async (args: string[]): Promise<boolean> => {
+			if (args.length !== 3 || isNaN(Number(args[2])) || Number(args[2]) <= 0)
 				return this.badRequest();
 
 			const sender: string = args[0];
 			const receiver: string = args[1];
 			const amount: number = parseInt(args[2]);
 
-			if (this.commandController.transactions.create(sender, receiver, amount))
+			if (await this.commandController.transactions.create(sender, receiver, amount))
 				return this.success('Created transaction!');
 			return false;
 		},
-		mirror: (args: string[]): boolean => {
+		mirror: async (args: string[]): Promise<boolean> => {
 			if (args.length !== 1 || !['on', 'off'].includes(args[0]))
 				return this.badRequest();
 
 			const enabled = args[0] === 'on';
-			return this.commandController.mirror.set(enabled);
+			return await this.commandController.mirror.set(enabled);
 		},
 		default: (args: string[]): boolean => {
 			if (args.length > 1)

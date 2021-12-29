@@ -1,13 +1,60 @@
 import { Database } from 'sqlite3';
-import Container, { Service } from 'typedi';
-import { Address, Event, Node, State } from '../../types';
+import { Address, Event, Node, State, Transaction } from '../../types';
 
-@Service()
 export class StorageService {
     /**
      * The database.
      */
     private database: Database;
+
+    /**
+     * Class constructor.
+     * 
+     * @param database The database.
+     */
+    constructor(
+        database: Database,
+    ) {
+        this.database = database;
+
+        this.database.serialize(() => {
+            // Create the tables.
+            this.database.run(`
+                CREATE TABLE IF NOT EXISTS addresses (
+                    publicKey VARCHAR(32) PRIMARY KEY,
+                    privateKey VARCHAR(32),
+                    isDefault BOOLEAN NOT NULL DEFAULT 0
+                )
+            `);
+
+            this.database.run(`
+                CREATE TABLE IF NOT EXISTS events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    type VARCHAR(16),
+                    data BLOB,
+                    otherParent TEXT,
+                    selfParent TEXT,
+                    signature TEXT,
+                    date DATETIME
+                )
+            `);
+
+            this.database.run(`
+                CREATE TABLE IF NOT EXISTS nodes (
+                    host VARCHAR(32) PRIMARY KEY,
+                    name VARCHAR(32)
+                )
+            `);
+
+            this.database.run(`
+                CREATE TABLE IF NOT EXISTS states (
+                    address VARCHAR(32) PRIMARY KEY,
+                    balance FLOAT,
+                    date DATETIME
+                )
+            `);
+        });
+    }
 
     /**
      * The query methods.
@@ -133,10 +180,8 @@ export class StorageService {
          *
          * @throws {Error} When an exception occurs.
          */
-        index: async (): Promise<Event[]> => {
-            const data = await this.query.all<Event>('SELECT * FROM events');
-            data.forEach(element => element.data = JSON.parse(String(element.data)));
-            return data;
+        index: (): Promise<Event[]> => {
+            return this.query.all<Event>('SELECT * FROM events');
         },
         /**
          * Display the specified resource.
@@ -145,39 +190,18 @@ export class StorageService {
          *
          * @throws {Error} When an exception occurs.
          */
-        read: async (id: number): Promise<Event> => {
-            const data = await this.query.get<Event>('SELECT * FROM events WHERE id=?', id);
-            data.data = JSON.parse(String(data.data));
-            return data;
-        },
-        /**
-         * Display the transactions of a specified address.
-         *
-         * @param address The address of the account which transactions you want to see.
-         *
-         * @throws {Error} When an exception occurs.
-         */
-        transactions: async (address: string): Promise<Event[]> => {
-            const like = '%' + address + '%';
-            const data = await this.query.all<Event>('SELECT * FROM events WHERE data LIKE ?', like);
-            data.forEach(element => element.data = JSON.parse(String(element.data)));
-            return data;
+        read: (id: number): Promise<Event> => {
+            return this.query.get<Event>('SELECT * FROM events WHERE id=?', id);
         },
         /**
          * Store a newly created resource in storage.
          *
-         * @param type
-         * @param data
-         * @param otherParent
-         * @param selfParent
-         * @param signature
-         * @param date The date and time when the event occurred.
+         * @param date The date and time when the event occured.
          *
          * @throws {Error} When an exception occurs.
          */
         create: (type: string, data: Record<string, unknown>, otherParent: string, selfParent: string, signature: string, date: Date): Promise<void> => {
-            const stringData = JSON.stringify(data);
-            return this.query.run('INSERT INTO events (type, data, otherParent, selfParent, signature, date) VALUES (?, ?, ?, ?, ?, ?)', type, stringData, otherParent, selfParent, signature, date);
+            return this.query.run('INSERT INTO events (type, data, otherParent, selfParent, signature, date) VALUES (?, ?, ?, ?, ?, ?)', type, data, otherParent, selfParent, signature, date);
         },
         /**
          * Update the specified resource in storage.
@@ -317,47 +341,19 @@ export class StorageService {
     };
 
     /**
-     * Class constructor.
+     * The transactions methods.
      */
-    constructor() {
-        this.database = Container.get(Database);
-
-        this.database.serialize(() => {
-            // Create the tables.
-            this.database.run(`
-                CREATE TABLE IF NOT EXISTS addresses (
-                    publicKey VARCHAR(32) PRIMARY KEY,
-                    privateKey VARCHAR(32),
-                    isDefault BOOLEAN
-                )
-            `);
-
-            this.database.run(`
-                CREATE TABLE IF NOT EXISTS events (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    type VARCHAR(16),
-                    data VARCHAR(255),
-                    otherParent TEXT,
-                    selfParent TEXT,
-                    signature TEXT,
-                    date DATETIME
-                )
-            `);
-
-            this.database.run(`
-                CREATE TABLE IF NOT EXISTS nodes (
-                    host VARCHAR(32) PRIMARY KEY,
-                    name VARCHAR(32)
-                )
-            `);
-
-            this.database.run(`
-                CREATE TABLE IF NOT EXISTS states (
-                    address VARCHAR(32) PRIMARY KEY,
-                    balance FLOAT,
-                    date DATETIME
-                )
-            `);
-        });
-    }
+    public readonly transactions = {
+        /**
+         * Display a listing of the resource.
+         *
+         * @param publicKey The public key of the address.
+         * 
+         * @throws {Error} When an exception occurs.
+         */
+        index: async (publicKey: string): Promise<Transaction[]> => {
+            const events = await this.query.all<Event>('SELECT * FROM events WHERE data LIKE \'%?%\' AND data LIKE \'%?%\'', publicKey, 'transaction');
+            return events.map((event) => event.data as Transaction);
+        },
+    };
 }
