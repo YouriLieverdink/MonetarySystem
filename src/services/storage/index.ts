@@ -31,7 +31,7 @@ export class StorageService {
                 CREATE TABLE IF NOT EXISTS events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     type VARCHAR(16),
-                    data BLOB,
+                    data VARCHAR(255),
                     otherParent TEXT,
                     selfParent TEXT,
                     signature TEXT,
@@ -194,6 +194,19 @@ export class StorageService {
             return this.query.get<Event>('SELECT * FROM events WHERE id=?', id);
         },
         /**
+         * Display the transactions of a specified address.
+         *
+         * @param address The address of the account which transactions you want to see.
+         *
+         * @throws {Error} When an exception occurs.
+         */
+        transactions: async (address: string): Promise<Transaction[]> => {
+            const like = '%' + address + '%';
+            const data = await this.query.all<Event>('SELECT * FROM events WHERE data LIKE ?', like);
+            data.forEach(element => element.data = JSON.parse(String(element.data)));
+            return data.map((event) => event.data as Transaction);
+        },
+        /**
          * Store a newly created resource in storage.
          *
          * @param date The date and time when the event occured.
@@ -201,7 +214,8 @@ export class StorageService {
          * @throws {Error} When an exception occurs.
          */
         create: (type: string, data: Record<string, unknown>, otherParent: string, selfParent: string, signature: string, date: Date): Promise<void> => {
-            return this.query.run('INSERT INTO events (type, data, otherParent, selfParent, signature, date) VALUES (?, ?, ?, ?, ?, ?)', type, data, otherParent, selfParent, signature, date);
+            const stringData = JSON.stringify(data);
+            return this.query.run('INSERT INTO events (type, data, otherParent, selfParent, signature, date) VALUES (?, ?, ?, ?, ?, ?)', type, stringData, otherParent, selfParent, signature, date);
         },
         /**
          * Update the specified resource in storage.
