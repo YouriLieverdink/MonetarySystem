@@ -1,33 +1,10 @@
-import Container, { Service } from 'typedi';
-import { QueueService, StorageService } from '..';
 import { Event } from '../../types';
 
-
-@Service()
 export class ConsensusService {
-	/**
-	 * The storage service.
-	 */
-	private storage: StorageService;
-
-	/**
-	 * The queue service.
-	 */
-	private queue: QueueService;
-
-	/**
-	 * Class constructor.
-	 */
-	constructor() {
-		this.storage = Container.get(StorageService);
-		this.queue = Container.get(QueueService);
-	}
-
 	/**
 	 * Initiate a new Consensus calculation.
 	 */
-	public doConsensus(): Event[] {
-		const events: Event[] = this.queue.pop(0);
+	public doConsensus(events: Event[]): Event[] {
 		const divided = this.divideRounds(events);
 		const decided = this.decideFame(divided);
 		return this.findOrder(decided);
@@ -38,7 +15,7 @@ export class ConsensusService {
 	 * @param events All events in the queue that
 	 * @returns returns all events with a round number
 	 */
-	private divideRounds(events: Event[]): {'round': number,'event': Event,'witness': boolean}[] {
+	private divideRounds(events: Event[]): { 'round': number, 'event': Event, 'witness': boolean }[] {
 		/**
 		 * Steps for all events in the list:
 		 * 1. Determine event round
@@ -54,7 +31,7 @@ export class ConsensusService {
 	 * @param divided All events divided in a round
 	 * @returns returns all events with a boolean if the event is famous or not
 	 */
-	private decideFame(divided): {'round': number,'event': Event,'witness': boolean, 'famous': boolean}[] {
+	private decideFame(divided): { 'round': number, 'event': Event, 'witness': boolean, 'famous': boolean }[] {
 		/**
 		 * Steps for all events that are a witness:
 		 * 1. Vote for every other events
@@ -72,7 +49,7 @@ export class ConsensusService {
 	 * @param decided All events decided if they are famous or not
 	 * @returns returns all events ordered by round and timestamp
 	 */
-	private findOrder(decided): Event[]{
+	private findOrder(decided): Event[] {
 		/**
 		 * Steps:
 		 * 1. unique famous witnesses assign a consensus timestamp
@@ -85,9 +62,9 @@ export class ConsensusService {
 	}
 
 	/**
-	 * The events methods.
+	 * The core methods.
 	 */
-	public readonly helperFunctions = {
+	public readonly core = {
 		/**
 		 * Determines if y is an ancestor of x
 		 *
@@ -99,7 +76,6 @@ export class ConsensusService {
 
 			throw Error('Not implemented');
 		},
-
 		/**
 		 * Determines if event y is a self-ancestor of event x
 		 *
@@ -111,7 +87,6 @@ export class ConsensusService {
 
 			throw Error('Not implemented');
 		},
-
 		/**
 		 * Determines if event x can see event y
 		 *
@@ -123,7 +98,6 @@ export class ConsensusService {
 
 			throw Error('Not implemented');
 		},
-
 		/**
 		 * Determines if event x can strongly see event y
 		 *

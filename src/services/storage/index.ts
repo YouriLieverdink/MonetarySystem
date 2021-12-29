@@ -1,13 +1,60 @@
 import { Database } from 'sqlite3';
-import Container, { Service } from 'typedi';
-import { Address, Event, Node, State } from '../../types';
+import { Address, Event, Node, State, Transaction } from '../../types';
 
-@Service()
 export class StorageService {
     /**
      * The database.
      */
     private database: Database;
+
+    /**
+     * Class constructor.
+     * 
+     * @param database The database.
+     */
+    constructor(
+        database: Database,
+    ) {
+        this.database = database;
+
+        this.database.serialize(() => {
+            // Create the tables.
+            this.database.run(`
+                CREATE TABLE IF NOT EXISTS addresses (
+                    publicKey VARCHAR(32) PRIMARY KEY,
+                    privateKey VARCHAR(32),
+                    isDefault BOOLEAN NOT NULL DEFAULT 0
+                )
+            `);
+
+            this.database.run(`
+                CREATE TABLE IF NOT EXISTS events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    type VARCHAR(16),
+                    data BLOB,
+                    otherParent TEXT,
+                    selfParent TEXT,
+                    signature TEXT,
+                    date DATETIME
+                )
+            `);
+
+            this.database.run(`
+                CREATE TABLE IF NOT EXISTS nodes (
+                    host VARCHAR(32) PRIMARY KEY,
+                    name VARCHAR(32)
+                )
+            `);
+
+            this.database.run(`
+                CREATE TABLE IF NOT EXISTS states (
+                    address VARCHAR(32) PRIMARY KEY,
+                    balance FLOAT,
+                    date DATETIME
+                )
+            `);
+        });
+    }
 
     /**
      * The query methods.
@@ -294,47 +341,19 @@ export class StorageService {
     };
 
     /**
-     * Class constructor.
+     * The transactions methods.
      */
-    constructor() {
-        this.database = Container.get(Database);
-
-        this.database.serialize(() => {
-            // Create the tables.
-            this.database.run(`
-                CREATE TABLE IF NOT EXISTS addresses (
-                    publicKey VARCHAR(32) PRIMARY KEY,
-                    privateKey VARCHAR(32),
-                    isDefault BOOLEAN
-                )
-            `);
-
-            this.database.run(`
-                CREATE TABLE IF NOT EXISTS events (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    type VARCHAR(16),
-                    data BLOB,
-                    otherParent TEXT,
-                    selfParent TEXT,
-                    signature TEXT,
-                    date DATETIME
-                )
-            `);
-
-            this.database.run(`
-                CREATE TABLE IF NOT EXISTS nodes (
-                    host VARCHAR(32) PRIMARY KEY,
-                    name VARCHAR(32)
-                )
-            `);
-
-            this.database.run(`
-                CREATE TABLE IF NOT EXISTS states (
-                    address VARCHAR(32) PRIMARY KEY,
-                    balance FLOAT,
-                    date DATETIME
-                )
-            `);
-        });
-    }
+    public readonly transactions = {
+        /**
+         * Display a listing of the resource.
+         *
+         * @param publicKey The public key of the address.
+         * 
+         * @throws {Error} When an exception occurs.
+         */
+        index: async (publicKey: string): Promise<Transaction[]> => {
+            const events = await this.query.all<Event>('SELECT * FROM events WHERE data LIKE \'%?%\' AND data LIKE \'%?%\'', publicKey, 'transaction');
+            return events.map((event) => event.data as Transaction);
+        },
+    };
 }

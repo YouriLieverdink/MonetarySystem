@@ -1,59 +1,56 @@
-import { Service } from 'typedi';
-import { Event } from '../../types';
 
-@Service()
-export class QueueService {
+export class QueueService<T> {
 	/**
-	 * The events currently in the queue.
+	 * The items currently in the queue.
 	 */
-	private events: Event[];
+	private items: T[];
 
 	/**
 	 * Class constructor.
 	 */
 	constructor() {
-		this.events = [];
+		this.items = [];
 	}
 
 	/**
-	 * Pushes one or multiple events to the queue.
+	 * Pushes one or multiple items to the queue.
 	 * 
-	 * @param events The events to push
+	 * @param items The items to push
 	 */
-	public push(...events: Event[]): void {
-		this.events.push(...events);
+	public push(...items: T[]): void {
+		this.items.push(...items);
 	}
 
 	/**
-	 * Pops one or multiple events from the queue.
+	 * Pops one or multiple items from the queue.
 	 * 
-	 * @param number The number of events to pop. 0 can be used to pop all events.
+	 * @param number The number of items to pop. 0 can be used to pop all items.
 	 */
-	public pop(number = 1): Event[] {
-		let events = [];
+	public pop(number = 1): T[] {
+		let items = [];
 
 		if (number === 0) {
-			// Return all the events.
-			events = this.events;
-			this.events = [];
+			// Return all the items.
+			items = this.items;
+			this.items = [];
 		}
 		else {
 			for (let i = 0; i < number; i++) {
-				const event = this.events.shift();
+				const event = this.items.shift();
 
 				if (event === undefined) break;
 
-				events.push(event);
+				items.push(event);
 			}
 		}
 
-		return events;
+		return items;
 	}
 
 	/**
 	 * Returns the current length of the queue.
 	 */
 	public length(): number {
-		return this.events.length;
+		return this.items.length;
 	}
 }

@@ -1,19 +1,25 @@
+import express from 'express';
 import 'reflect-metadata';
 import { Database } from 'sqlite3';
 import Container from 'typedi';
-import env from './config/env';
-import { InternalController } from './controllers/internal';
+import { CommandController, InternalController } from './controllers';
+import { QueueService, StorageService } from './services';
+import { Transaction } from './types';
 
 const main = (): void => {
-	// Setup dependencies.
-	Container.set(Database, new Database(env.database.path));
+	// Initalise dependencies.
+	const app = express();
+	app.listen(3001, '0.0.0.0');
+	Container.set('express', app);
 
-	// Start.
-	new InternalController({
-		'interval': 500,
-		'port': 3001,
-		'seed': `${env.seed.ip}:${env.seed.port}`,
-	});
+	const database = new Database('db.sqlite3');
+	Container.set('storage', new StorageService(database));
+
+	Container.set('transactions', new QueueService<Transaction>());
+
+	// Kickstart the node.
+	new CommandController();
+	new InternalController();
 };
 
 main();

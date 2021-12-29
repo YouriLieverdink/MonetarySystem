@@ -3,7 +3,7 @@ import { Event } from '../../types';
 
 describe('QueueService', () => {
 	//
-	let queue: QueueService;
+	let queue: QueueService<Event>;
 
 	beforeEach(() => {
 		// Initialite a new queue for every test.
@@ -17,7 +17,7 @@ describe('QueueService', () => {
 
 	it('has a length of one when one item has been pushed', () => {
 		const items: Event[] = [
-			{ 'type': 'join', 'data': {}, 'date': new Date(), 'otherParent': '', 'selfParent': '', 'signature': '', 'consensusReached': false },
+			{ type: 'join', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
 		];
 
 		queue.push(...items);
@@ -28,9 +28,9 @@ describe('QueueService', () => {
 
 	it('has a length of three when three items have been pushed', () => {
 		const items: Event[] = [
-			{ 'type': 'join', 'data': {}, 'date': new Date(), 'otherParent': '', 'selfParent': '', 'signature': '', 'consensusReached': false },
-			{ 'type': 'join', 'data': {}, 'date': new Date(), 'otherParent': '', 'selfParent': '', 'signature': '', 'consensusReached': false },
-			{ 'type': 'join', 'data': {}, 'date': new Date(), 'otherParent': '', 'selfParent': '', 'signature': '', 'consensusReached': false },
+			{ type: 'join', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
+			{ type: 'join', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
+			{ type: 'join', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
 		];
 
 		queue.push(...items);
@@ -41,9 +41,9 @@ describe('QueueService', () => {
 
 	it('returns the first item that was pushed with pop', () => {
 		const items: Event[] = [
-			{ 'type': 'join', 'data': {}, 'date': new Date(), 'otherParent': '', 'selfParent': '', 'signature': '', 'consensusReached': false },
-			{ 'type': 'state', 'data': {}, 'date': new Date(), 'otherParent': '', 'selfParent': '', 'signature': '', 'consensusReached': false },
-			{ 'type': 'transaction', 'data': {}, 'date': new Date(), 'otherParent': '', 'selfParent': '', 'signature': '', 'consensusReached': false },
+			{ type: 'join', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
+			{ type: 'state', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
+			{ type: 'transaction', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
 		];
 
 		queue.push(...items);
@@ -54,9 +54,9 @@ describe('QueueService', () => {
 
 	it('returns all the items when the number in pop is 0', () => {
 		const items: Event[] = [
-			{ 'type': 'join', 'data': {}, 'date': new Date(), 'otherParent': '', 'selfParent': '', 'signature': '', 'consensusReached': false },
-			{ 'type': 'state', 'data': {}, 'date': new Date(), 'otherParent': '', 'selfParent': '', 'signature': '', 'consensusReached': false },
-			{ 'type': 'transaction', 'data': {}, 'date': new Date(), 'otherParent': '', 'selfParent': '', 'signature': '', 'consensusReached': false },
+			{ type: 'join', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
+			{ type: 'state', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
+			{ type: 'transaction', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
 		];
 
 		queue.push(...items);
