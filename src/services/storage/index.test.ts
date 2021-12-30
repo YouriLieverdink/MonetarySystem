@@ -478,18 +478,79 @@ describe('StorageService', () => {
 	});
 
 	describe('transactions', () => {
+		const publicKey = 'mock-public-key';
+		const type = 'transaction';
+		const otherParent = 'mock-other-parent';
+		const selfParent = 'mock-self-parent';
+		const signature = 'mock-signature';
+		const date = new Date();
+		const consensusReached = false;
 
 		describe('index', () => {
 
-			it.todo('should call database.all');
+			it('should call database.all', async () => {
+				const spy = jest.spyOn(database, 'all');
 
-			it.todo('should return an empty list when no items are stored in the database');
+				await storage.transactions.index(publicKey);
 
-			it.todo('should return a populated list when items are stored in the database');
+				expect(spy).toBeCalled();
+			});
 
-			it.todo('should only return events of type \'transastion\'');
+			it('should return an empty list when no items are stored in the database', async () => {
+				const result = await storage.transactions.index(publicKey);
 
-			it.todo('should only return events associated with the provided public key');
+				expect(result.length).toBe(0);
+			});
+
+			it('should only return events of type \'transastion\'', async () => {
+				const items: Event[] = [
+					{ type: 'transaction', signature: `${signature}1`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached },
+					{ type: 'transaction', signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached },
+					{ type: 'state', signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached },
+				];
+
+				// Add via the databse directly.
+				database.serialize(() => {
+					const statement = database.prepare('INSERT INTO events (type, data, otherParent, selfParent, signature, date) VALUES (?, ?, ?, ?, ?, ?)');
+
+					items.forEach((event) => {
+						const stringData = JSON.stringify(event.data);
+
+						statement.run(event.type, stringData, event.otherParent, event.selfParent, event.signature, event.date);
+					});
+
+					statement.finalize();
+				});
+
+				const result = await storage.transactions.index(publicKey);
+
+				expect(result.length).toEqual(2);
+			});
+
+			it('should only return events associated with the provided public key', async () => {
+				const items: Event[] = [
+					{ type: type, signature: `${signature}1`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached },
+					{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: 'other-public-key' }, consensusReached: consensusReached },
+					{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached },
+				];
+
+				// Add via the databse directly.
+				database.serialize(() => {
+					const statement = database.prepare('INSERT INTO events (type, data, otherParent, selfParent, signature, date) VALUES (?, ?, ?, ?, ?, ?)');
+
+					items.forEach((event) => {
+						const stringData = JSON.stringify(event.data);
+
+						statement.run(event.type, stringData, event.otherParent, event.selfParent, event.signature, event.date);
+					});
+
+					statement.finalize();
+				});
+
+				const result = await storage.transactions.index(publicKey);
+
+				expect(result.length).toEqual(2);
+			});
 		});
 	});
 });

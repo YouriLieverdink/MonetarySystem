@@ -31,7 +31,7 @@ export class StorageService {
                 CREATE TABLE IF NOT EXISTS events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     type VARCHAR(16),
-                    data BLOB,
+                    data VARCHAR(255),
                     otherParent TEXT,
                     selfParent TEXT,
                     signature TEXT,
@@ -201,7 +201,8 @@ export class StorageService {
          * @throws {Error} When an exception occurs.
          */
         create: (type: string, data: Record<string, unknown>, otherParent: string, selfParent: string, signature: string, date: Date): Promise<void> => {
-            return this.query.run('INSERT INTO events (type, data, otherParent, selfParent, signature, date) VALUES (?, ?, ?, ?, ?, ?)', type, data, otherParent, selfParent, signature, date);
+            const stringData = JSON.stringify(data);
+            return this.query.run('INSERT INTO events (type, data, otherParent, selfParent, signature, date) VALUES (?, ?, ?, ?, ?, ?)', type, stringData, otherParent, selfParent, signature, date);
         },
         /**
          * Update the specified resource in storage.
@@ -352,7 +353,8 @@ export class StorageService {
          * @throws {Error} When an exception occurs.
          */
         index: async (publicKey: string): Promise<Transaction[]> => {
-            const events = await this.query.all<Event>('SELECT * FROM events WHERE data LIKE \'%?%\' AND data LIKE \'%?%\'', publicKey, 'transaction');
+            const events = await this.query.all<Event>('SELECT * FROM events WHERE data LIKE ? and type = ?', `%"from":"${publicKey}"%`, 'transaction');
+            events.forEach((event) => event.data = JSON.parse(String(event.data)));
             return events.map((event) => event.data as Transaction);
         },
     };
