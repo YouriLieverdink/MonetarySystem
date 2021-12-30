@@ -56,4 +56,12 @@ export class GossipService {
 		//
 		throw Error('Not implemented');
 	}
+
+	/**
+	 * Initiate a gossip sync.
+	 */
+	public doGossip(): void {
+		//
+		throw Error('Not implemented');
+	}
 }
