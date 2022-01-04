@@ -9,23 +9,23 @@ jest.mock('../../controllers', () => ({
                 getAll: jest.fn(),
                 create: jest.fn(),
                 import: jest.fn(),
-                remove: jest.fn(),
+                remove: jest.fn()
             },
             transactions: {
                 getAll: jest.fn(),
                 getAllImported: jest.fn(),
-                create: jest.fn(),
+                create: jest.fn()
             },
             balances: {
                 getAll: jest.fn(),
                 get: jest.fn(),
-                getAllImported: jest.fn(),
+                getAllImported: jest.fn()
             },
             mirror: {
-                set: jest.fn(),
-            },
+                set: jest.fn()
+            }
         };
-    }),
+    })
 }));
 
 describe('CliService', () => {
@@ -103,7 +103,7 @@ describe('CliService', () => {
             jest.spyOn(command.addresses, 'create').mockResolvedValue({
                 publicKey: mockPublicKey,
                 privateKey: mockPrivateKey,
-                isDefault: mockIsDefault,
+                isDefault: mockIsDefault
             });
         });
 
@@ -175,7 +175,7 @@ describe('CliService', () => {
             jest.spyOn(command.balances, 'get').mockResolvedValue({
                 publicKey: mockPublicKey,
                 date: new Date(),
-                amount: 10,
+                amount: 10
             });
         });
 

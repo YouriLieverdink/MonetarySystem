@@ -21,7 +21,7 @@ describe('StorageService', () => {
 		const items: Address[] = [
 			{ publicKey: `${publicKey}-1`, privateKey: privateKey, isDefault: isDefault },
 			{ publicKey: `${publicKey}-2`, privateKey: privateKey, isDefault: isDefault },
-			{ publicKey: `${publicKey}-3`, privateKey: privateKey, isDefault: isDefault },
+			{ publicKey: `${publicKey}-3`, privateKey: privateKey, isDefault: isDefault }
 		];
 
 		describe('index', () => {
@@ -216,7 +216,7 @@ describe('StorageService', () => {
 		const items: Event[] = [
 			{ type: type, signature: `${signature}1`, selfParent: selfParent, otherParent: otherParent, date: date, data: data, consensusReached: consensusReached },
 			{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: data, consensusReached: consensusReached },
-			{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: data, consensusReached: consensusReached },
+			{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: data, consensusReached: consensusReached }
 		];
 
 		describe('index', () => {
@@ -506,7 +506,7 @@ describe('StorageService', () => {
 				const items: Event[] = [
 					{ type: 'transaction', signature: `${signature}1`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached },
 					{ type: 'transaction', signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached },
-					{ type: 'state', signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached },
+					{ type: 'state', signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached }
 				];
 
 				// Add via the databse directly.
@@ -531,7 +531,7 @@ describe('StorageService', () => {
 				const items: Event[] = [
 					{ type: type, signature: `${signature}1`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached },
 					{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: 'other-public-key' }, consensusReached: consensusReached },
-					{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached },
+					{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached }
 				];
 
 				// Add via the databse directly.
