@@ -1,9 +1,9 @@
-import crypto, { BasePrivateKeyEncodingOptions, webcrypto } from 'crypto';
+import crypto from 'crypto';
 import { Express } from 'express';
-import publicIp from 'public-ip';
 import readline from 'readline';
 import Container from 'typedi';
 import { ApiService, CliService, QueueService, StorageService } from '../../services';
+import { CryptoService } from '../../services/crypto';
 import { Address, State, Transaction } from '../../types';
 
 export class CommandController {
@@ -11,6 +11,11 @@ export class CommandController {
 	 * Used to store events which contain a consensus timestamp.
 	 */
 	private storageService: StorageService;
+
+	/**
+	 * Used to access cryptographic functions.
+	 */
+	private cryptoService: CryptoService;
 
 	/**
 	 * Incoming transactions from the operating user.
@@ -23,6 +28,7 @@ export class CommandController {
 	constructor() {
 		// Inject dependencies.
 		this.storageService = Container.get<StorageService>('storage');
+		this.cryptoService = Container.get<CryptoService>('crypto');
 		this.transactionsQueue = Container.get<QueueService<Transaction>>('transactions');
 
 		this.initApi();
@@ -76,8 +82,11 @@ export class CommandController {
 		 * @returns The private key of the address.
 		 */
 		create: async (): Promise<Address> => {
-			throw Error('Not implemented');
+			const keyPair = this.cryptoService.generateKeys()
 
+			return this.storageService.addresses.create(keyPair.publicKey, keyPair.privateKey, false)
+				.then(() => keyPair)
+				.catch(() => null)
 		},
 		/**
 		 * Import an existing address.
@@ -86,7 +95,11 @@ export class CommandController {
 		 * @returns Whether the operation was successfull.
 		 */
 		import: async (privateKey: string): Promise<boolean> => {
-			throw Error('Not implemented');
+			const publicKey = this.cryptoService.getPublicKey(privateKey);
+
+			return this.storageService.addresses.create(publicKey, privateKey, false)
+				.then(() => true)
+				.catch(() => false)
 		},
 		/**
 		 * Remove an address from the local node.
@@ -98,7 +111,6 @@ export class CommandController {
 			this.storageService.addresses.destroy(publicKey)
 				.then(() => true)
 				.catch(() => false)
-
 	};
 
 	/**
