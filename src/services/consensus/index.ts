@@ -92,10 +92,10 @@ export class ConsensusService {
 		 *
 		 * @param x event
 		 * @param y event
+		 * @param set list of events
 		 * @returns boolean true if x sees y
 		 */
-		see: (x: Event, y: Event): boolean => {
-
+		see: (x: Event, y: Event, set: Event[]): boolean => {
 			throw Error('Not implemented');
 		},
 		/**
@@ -103,7 +103,7 @@ export class ConsensusService {
 		 *
 		 * @param x event
 		 * @param y event
-		 * @param set list of events of a round
+		 * @param set list of events
 		 * @returns boolean true if x strongly sees y
 		 */
 		stronglySee: (x: Event, y: Event, set: Event[]): boolean => {
