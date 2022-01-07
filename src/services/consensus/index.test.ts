@@ -43,8 +43,15 @@ describe('ConsensusService', () => {
 
     describe('see', () => {
         it('should check if event x can see event y', async () => {
-            expect(consensus.core.see(events[4], events[6], events)).toBeFalsy();
-            expect(consensus.core.see(events[6], events[4], events)).toBeTruthy();
+            expect(consensus.core.see(events[3], events[5], events)).toBeFalsy();
+            expect(consensus.core.see(events[5], events[3], events)).toBeTruthy();
+        });
+    });
+
+    describe('ancestor', () => {
+        it('should check if event y is an ancester of x', async () => {
+            expect(consensus.core.ancestor(events[5], events[3], events)).toBeFalsy();
+            expect(consensus.core.ancestor(events[3], events[5], events)).toBeTruthy();
         });
     });
 });
