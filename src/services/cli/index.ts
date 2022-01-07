@@ -195,7 +195,7 @@ export class CliService {
 				'\n    help			Displays all commands' +
 				'\n    exit|quit 			Exits the application' +
 				'\n');
-		},
+		}
 	};
 
 	private errorText = (msg) => `  \x1b[31m${msg}\x1b[0m`;

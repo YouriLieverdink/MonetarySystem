@@ -17,7 +17,7 @@ describe('QueueService', () => {
 
 	it('has a length of one when one item has been pushed', () => {
 		const items: Event[] = [
-			{ type: 'join', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
+			{ type: 'join', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false }
 		];
 
 		queue.push(...items);
@@ -30,7 +30,7 @@ describe('QueueService', () => {
 		const items: Event[] = [
 			{ type: 'join', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
 			{ type: 'join', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
-			{ type: 'join', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
+			{ type: 'join', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false }
 		];
 
 		queue.push(...items);
@@ -43,7 +43,7 @@ describe('QueueService', () => {
 		const items: Event[] = [
 			{ type: 'join', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
 			{ type: 'state', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
-			{ type: 'transaction', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
+			{ type: 'transaction', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false }
 		];
 
 		queue.push(...items);
@@ -56,7 +56,7 @@ describe('QueueService', () => {
 		const items: Event[] = [
 			{ type: 'join', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
 			{ type: 'state', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
-			{ type: 'transaction', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false },
+			{ type: 'transaction', data: {}, date: new Date(), otherParent: '', selfParent: '', signature: '', consensusReached: false }
 		];
 
 		queue.push(...items);

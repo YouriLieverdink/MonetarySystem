@@ -42,7 +42,7 @@ export class HttpService {
 			baseURL: `https://${host}`,
 			url: uri,
 			method: 'POST',
-			data: data,
+			data: data
 		};
 
 		return await this.doRequest(config);

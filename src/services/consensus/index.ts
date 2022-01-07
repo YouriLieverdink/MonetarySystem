@@ -109,6 +109,6 @@ export class ConsensusService {
 		stronglySee: (x: Event, y: Event, set: Event[]): boolean => {
 
 			throw Error('Not implemented');
-		},
+		}
 	};
 }

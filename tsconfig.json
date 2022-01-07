@@ -1,26 +1,18 @@
 {
-    "compilerOptions": {
-		"experimentalDecorators": true,
-        "module": "commonjs",
-        "esModuleInterop": true,
-        "target": "es6",
-        "sourceMap": true,
-        "outDir": "dist",
-        "baseUrl": ".",
-        "paths": {
-            "*": [
-                "node_modules/*"
-            ]
-        },
-        "rootDir": "./src",
-        "types": ["reflect-metadata", "node", "jest"]
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "target": "es6",
+    "sourceMap": true,
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "*": ["node_modules/*"]
     },
-    "include": [
-        "src/**/*"
-    ],
-    "exclude": [
-        "dist/**/*",
-        "node_modules",
-        "src/**/__mocks__/**",
-    ]
+    "rootDir": "./src",
+    "types": ["reflect-metadata", "node", "jest"]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["dist/**/*", "node_modules", "src/**/__mocks__/**"]
 }

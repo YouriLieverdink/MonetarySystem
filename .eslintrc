@@ -1,27 +1,18 @@
 {
-	"root": true,
-	"parser": "@typescript-eslint/parser",
-	"plugins": [
-	  "@typescript-eslint"
-	],
-	"extends": [
-	  "eslint:recommended",
-	  "plugin:@typescript-eslint/eslint-recommended",
-	  "plugin:@typescript-eslint/recommended"
-	],
-	"rules": {
-		"no-await-in-loop": "error",
-		"camelcase": "warn",
-		"eqeqeq": "error",
-		"no-console": "warn",
-		"object-curly-spacing": ["warn", "always"],
-		"semi": ["warn", "always"],
-		"comma-dangle": ["warn", "always-multiline"],
-		"quotes": ["warn", "single"],
-		"no-unused-vars": "off",
-		"@typescript-eslint/no-unused-vars": ["warn", {
-			"argsIgnorePattern": "_"
-		}],
-		"quote-props": ["warn", "as-needed"]
-	}
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "rules": {
+    "no-console": "warn",
+    "semi": ["warn", "always"],
+    "object-curly-spacing": ["warn", "always"],
+    "comma-dangle": ["warn", "never"],
+    "quotes": ["warn", "single"],
+    "eqeqeq": "warn"
   }
+}

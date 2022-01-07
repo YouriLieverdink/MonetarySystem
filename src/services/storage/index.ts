@@ -111,7 +111,7 @@ export class StorageService {
                     resolve(res);
                 });
             });
-        },
+        }
     };
 
     /**
@@ -168,7 +168,7 @@ export class StorageService {
          */
         destroy: (publicKey: string): Promise<void> => {
             return this.query.run('DELETE FROM addresses WHERE publicKey=?', publicKey);
-        },
+        }
     };
 
     /**
@@ -224,7 +224,7 @@ export class StorageService {
          */
         destroy: (id: number): Promise<void> => {
             return this.query.run('DELETE FROM events WHERE id=?', id);
-        },
+        }
     };
 
     /**
@@ -280,7 +280,7 @@ export class StorageService {
          */
         destroy: (host: string): Promise<void> => {
             return this.query.run('DELETE FROM nodes WHERE host=?', host);
-        },
+        }
     };
 
     /**
@@ -338,7 +338,7 @@ export class StorageService {
          */
         destroy: (address: string): Promise<void> => {
             return this.query.run('DELETE FROM states WHERE address=?', address);
-        },
+        }
     };
 
     /**
@@ -356,6 +356,6 @@ export class StorageService {
             const events = await this.query.all<Event>('SELECT * FROM events WHERE data LIKE ? and type = ?', `%"from":"${publicKey}"%`, 'transaction');
             events.forEach((event) => event.data = JSON.parse(String(event.data)));
             return events.map((event) => event.data as Transaction);
-        },
+        }
     };
 }

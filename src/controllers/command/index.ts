@@ -43,7 +43,7 @@ export class CommandController {
 		const cli = new CliService(this, console);
 		const rl = readline.createInterface({
 			input: process.stdin,
-			output: process.stdout,
+			output: process.stdout
 		});
 
 		const ask = () => rl.question(
@@ -98,7 +98,7 @@ export class CommandController {
 		remove: async (publicKey: string): Promise<boolean> => {
 			//
 			throw Error('Not implemented');
-		},
+		}
 	};
 
 	/**
@@ -146,7 +146,7 @@ export class CommandController {
 			 * 5. Return true.
 			 */
 			throw Error('Not implemented');
-		},
+		}
 	};
 
 	/**
@@ -179,7 +179,7 @@ export class CommandController {
 		get: async (publicKey: string): Promise<State> => {
 			//
 			throw Error('Not implemented');
-		},
+		}
 	};
 
 	/**
@@ -199,6 +199,6 @@ export class CommandController {
 			 * 2. Return true.
 			 */
 			throw Error('Not implemented');
-		},
+		}
 	};
 }

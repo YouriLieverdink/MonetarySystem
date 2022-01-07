@@ -30,7 +30,7 @@ export class InternalController {
 
 	/**
 	 * Class constructor.
-	 * 
+	 *
 	 * @param consensusService The consensus service.
 	 * @param eventsQueue The events queue.
 	 * @param gossipService The gossip service.
@@ -38,7 +38,7 @@ export class InternalController {
 	constructor(
 		consensusService?: ConsensusService,
 		eventsQueue?: QueueService<Event>,
-		gossipService?: GossipService,
+		gossipService?: GossipService
 	) {
 		this.consensusService = consensusService || new ConsensusService();
 		this.eventsQueue = eventsQueue || new QueueService<Event>();
