@@ -78,15 +78,11 @@ export class CliService {
 
 			const publicKey: string = args[0];
 
-			let response;
-			await this.commandController.addresses.remove(publicKey)
-				.then(() => response = true)
-				.catch(() => response = false);
+			if (await this.commandController.addresses.remove(publicKey))
+				return this.success('Successfully removed key from device');
 
-			if (response)
-				return this.success('Successfully removed keys removed from this device');
+			this.response.log(this.errorText('Couldn\'t remove key'))
 			return false;
-
 		},
 		generate: async (args: string[]): Promise<boolean> => {
 			if (args.length !== 0)

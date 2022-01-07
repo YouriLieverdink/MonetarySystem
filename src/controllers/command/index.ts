@@ -1,4 +1,6 @@
+import crypto, { BasePrivateKeyEncodingOptions, webcrypto } from 'crypto';
 import { Express } from 'express';
+import publicIp from 'public-ip';
 import readline from 'readline';
 import Container from 'typedi';
 import { ApiService, CliService, QueueService, StorageService } from '../../services';
@@ -66,18 +68,16 @@ export class CommandController {
 		 * 
 		 * @returns A list of addresses.
 		 */
-		getAll: (): Promise<Address[]> => {
-			//
-			throw Error('Not implemented');
-		},
+		getAll: (): Promise<Address[]> =>
+			this.storageService.addresses.index(),
 		/**
 		 * Creates a new address.
 		 * 
 		 * @returns The private key of the address.
 		 */
 		create: async (): Promise<Address> => {
-			//
 			throw Error('Not implemented');
+
 		},
 		/**
 		 * Import an existing address.
@@ -86,7 +86,6 @@ export class CommandController {
 		 * @returns Whether the operation was successfull.
 		 */
 		import: async (privateKey: string): Promise<boolean> => {
-			//
 			throw Error('Not implemented');
 		},
 		/**
@@ -95,10 +94,11 @@ export class CommandController {
 		 * @param publicKey The public key of the address to remove.
 		 * @returns Whether the operation was successfull.
 		 */
-		remove: async (publicKey: string): Promise<boolean> => {
-			//
-			throw Error('Not implemented');
-		}
+		remove: async (publicKey: string): Promise<boolean> =>
+			this.storageService.addresses.destroy(publicKey)
+				.then(() => true)
+				.catch(() => false)
+
 	};
 
 	/**
@@ -111,12 +111,7 @@ export class CommandController {
 		 * @returns A list of transactions.
 		 */
 		getAll: async (publicKey: string): Promise<Transaction[]> => {
-			/**
-			 * Steps:
-			 * 1. Retrieve all transactions for the given public key from the database.
-			 * 2. Return the transactions.
-			 */
-			throw Error('Not implemented');
+			return this.storageService.transactions.index(publicKey)
 		},
 		/**
 		 * Gets all the stored transactions for the users' addresses.
@@ -158,17 +153,15 @@ export class CommandController {
 		 * 
 		 * @returns A list of states.
 		 */
-		getAll: async (): Promise<State[]> => {
-			//
-			throw Error('Not implemented');
-		},
+		getAll: async (): Promise<State[]> =>
+			this.storageService.states.index(),
 		/**
 		 * Gets all the states of the imported addresses.
 		 *
 		 * @returns A list of states.
 		 */
 		getAllImported: async (): Promise<State[]> => {
-			return Promise.all((await this.addresses.getAll()).flatMap(address => this.balances.get(address.publicKey)));
+			return Promise.all((await this.addresses.getAll()).flatMap(async address => await this.balances.get(address.publicKey)));
 		},
 		/**
 		 * Gets the state for a given address.
@@ -176,10 +169,8 @@ export class CommandController {
 		 * @param publicKey The public key of the address.
 		 * @returns A state.
 		 */
-		get: async (publicKey: string): Promise<State> => {
-			//
-			throw Error('Not implemented');
-		}
+		get: async (publicKey: string): Promise<State> =>
+			this.storageService.states.read(publicKey)
 	};
 
 	/**
