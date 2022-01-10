@@ -32,8 +32,8 @@ describe('CliService', () => {
     let command: CommandController;
     let cliService: CliService;
 
-    const mockPublicKey = 'mock-public-key';
-    const mockPrivateKey = 'mock-private-key';
+    const mockPublicKey = 'MCowBQYDK2VwAyEAdSGVbGcJqcCZifUBM6ZguNxX1/kYvOxQ/7Bco3hcjdo=';
+    const mockPrivateKey = 'MC4CAQAwBQYDK2VwBCIEIMIXGPwc1YDQSKGZ4icOlWsJF+9XRV5wKUOZGm9nzBIl';
     const mockIsDefault = 0;
 
     beforeEach(() => {
@@ -198,7 +198,7 @@ describe('CliService', () => {
     describe('command: transfer', () => {
 
         beforeEach(() => {
-            jest.spyOn(command.transactions, 'create').mockResolvedValue(true);
+            jest.spyOn(command.transactions, 'create').mockReturnValue(true);
         });
 
         it('is rejected with no arguments', async () => {

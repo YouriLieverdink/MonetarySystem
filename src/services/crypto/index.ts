@@ -1,4 +1,5 @@
-import { generateKeyPairSync } from 'crypto';
+import { createPublicKey, generateKeyPairSync, sign } from 'crypto';
+import { Transaction } from '../../types';
 
 export class CryptoService {
     generateKeys(): { publicKey: string, privateKey: string } {
@@ -20,7 +21,26 @@ export class CryptoService {
     }
 
     getPublicKey(privateKey: string): string {
-        throw Error('Not implemented');
+        try {
+            const publicKey = createPublicKey({
+                key: this.addPrivateKeyPadding(privateKey),
+                format: 'pem'
+            }).export({
+                format: 'pem',
+                type: 'spki'
+            })
+
+            return this.stripKeyPadding(publicKey as string)
+        } catch (e) {
+            return null
+        }
+    }
+
+    signTransaction(privateKey: string, tx: Transaction): string {
+        return sign('SHA256', Buffer.from(tx.from + tx.to + tx.amount+tx.node), {
+            key: this.addPrivateKeyPadding(privateKey),
+            format: 'pem'
+        }).toString('base64')
     }
 
     stripKeyPadding(string: string): string {

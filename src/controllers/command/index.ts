@@ -7,24 +7,16 @@ import { CryptoService } from '../../services/crypto';
 import { Address, State, Transaction } from '../../types';
 
 export class CommandController {
-	/**
-	 * Used to store events which contain a consensus timestamp.
-	 */
+	/** Used to store events which contain a consensus timestamp. */
 	private storageService: StorageService;
 
-	/**
-	 * Used to access cryptographic functions.
-	 */
+	/** Used to access cryptographic functions. */
 	private cryptoService: CryptoService;
 
-	/**
-	 * Incoming transactions from the operating user.
-	 */
+	/** Incoming transactions from the operating user. */
 	private transactionsQueue: QueueService<Transaction>;
 
-	/**
-	 * Class constructor.
-	 */
+	/** Class constructor. */
 	constructor() {
 		// Inject dependencies.
 		this.storageService = Container.get<StorageService>('storage');
@@ -35,20 +27,16 @@ export class CommandController {
 		this.initCli();
 	}
 
-	/**
-	 * Initialise the api handling.
-	 */
+	/** Initialise the api handling. */
 	private initApi(): void {
 		const apiService = new ApiService(this);
 		const express = Container.get<Express>('express');
 		express.get('/api/*', apiService.handle);
 	}
 
-	/**
-	 * Initialise the cli handling.
-	 */
+	/** Initialise the cli handling. */
 	private initCli(): void {
-		const cli = new CliService(this, console);
+		const cliService = new CliService(this, console);
 		const rl = readline.createInterface({
 			input: process.stdin,
 			output: process.stdout
@@ -57,7 +45,7 @@ export class CommandController {
 		const ask = () => rl.question(
 			'\x1b[0mtritium> ',
 			async (command) => {
-				await cli.handle(command);
+				await cliService.handle(command);
 				ask();
 			},
 		);
@@ -92,14 +80,19 @@ export class CommandController {
 		 * Import an existing address.
 		 * 
 		 * @param privateKey The private key of the address to add.
-		 * @returns Whether the operation was successfull.
+		 * @returns publicKey if the operation was successfull, null if not
 		 */
 		import: async (privateKey: string): Promise<boolean> => {
 			const publicKey = this.cryptoService.getPublicKey(privateKey);
 
-			return this.storageService.addresses.create(publicKey, privateKey, false)
-				.then(() => true)
-				.catch(() => false)
+			if (publicKey == null)
+				return null;
+
+			return (await this.storageService.addresses.index()).map(a => a.publicKey).includes(publicKey)
+				? false
+				: this.storageService.addresses.create(publicKey, privateKey, false)
+					.then(() => true)
+					.catch(() => null)
 		},
 		/**
 		 * Remove an address from the local node.
@@ -141,18 +134,16 @@ export class CommandController {
 		 * @param publicKeySender The public key of the sending address.
 		 * @param publicKeyReceiver The public key of the receiving address.
 		 * @param amount The amount to transfer.
-		 * @returns Whether the operation was successfull.
+		 * @returns Whether the operation was successful.
 		 */
-		create: async (publicKeySender: string, publicKeyReceiver: string, amount: number): Promise<boolean> => {
-			/**
-			 * Steps:
-			 * 1. Create a transaction object.
-			 * 2. Sign the object.
-			 * 3. Set the date field to now.
-			 * 4. Send the transaction to the GossipService for distribution.
-			 * 5. Return true.
-			 */
-			throw Error('Not implemented');
+		create: (publicKeySender: string, publicKeyReceiver: string, amount: number): true => {
+			this.transactionsQueue.push({
+				from: publicKeySender,
+				to: publicKeyReceiver,
+				amount: amount,
+				node: null
+			})
+			return true;
 		}
 	};
 
