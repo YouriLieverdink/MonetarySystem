@@ -34,4 +34,8 @@ export type Event = {
      * If consensus about the event is reached.
      */
     consensusReached: boolean;
+    /**
+     * The public key of the creator of the event.
+     */
+    creator: string;
 };

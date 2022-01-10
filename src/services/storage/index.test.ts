@@ -89,7 +89,7 @@ describe('StorageService', () => {
 				const item = items[0];
 
 				const result = await storage.addresses.read(item.publicKey);
-				console.log(result)
+				console.log(result);
 				expect(result.publicKey).toEqual(item.publicKey);
 				expect(result.privateKey).toEqual(item.privateKey);
 				expect(result.isDefault).toEqual(item.isDefault);
@@ -214,9 +214,9 @@ describe('StorageService', () => {
 		const consensusReached = false;
 
 		const items: Event[] = [
-			{ type: type, signature: `${signature}1`, selfParent: selfParent, otherParent: otherParent, date: date, data: data, consensusReached: consensusReached },
-			{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: data, consensusReached: consensusReached },
-			{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: data, consensusReached: consensusReached }
+			{ type: type, signature: `${signature}1`, selfParent: selfParent, otherParent: otherParent, date: date, data: data, consensusReached: consensusReached, creator: 'creatorMock' },
+			{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: data, consensusReached: consensusReached, creator: 'creatorMock' },
+			{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: data, consensusReached: consensusReached, creator: 'creatorMock' }
 		];
 
 		describe('index', () => {
@@ -504,9 +504,9 @@ describe('StorageService', () => {
 
 			it('should only return events of type \'transastion\'', async () => {
 				const items: Event[] = [
-					{ type: 'transaction', signature: `${signature}1`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached },
-					{ type: 'transaction', signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached },
-					{ type: 'state', signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached }
+					{ type: 'transaction', signature: `${signature}1`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached, creator: 'creatorMock' },
+					{ type: 'transaction', signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached, creator: 'creatorMock' },
+					{ type: 'state', signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached, creator: 'creatorMock' }
 				];
 
 				// Add via the databse directly.
@@ -529,9 +529,9 @@ describe('StorageService', () => {
 
 			it('should only return events associated with the provided public key', async () => {
 				const items: Event[] = [
-					{ type: type, signature: `${signature}1`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached },
-					{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: 'other-public-key' }, consensusReached: consensusReached },
-					{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached }
+					{ type: type, signature: `${signature}1`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached, creator: 'creatorMock' },
+					{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: 'other-public-key' }, consensusReached: consensusReached, creator: 'creatorMock' },
+					{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached, creator: 'creatorMock' }
 				];
 
 				// Add via the databse directly.

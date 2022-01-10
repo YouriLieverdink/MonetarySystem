@@ -5,7 +5,7 @@ export class ConsensusService {
     /**
      * Initiate a new Consensus calculation.
      */
-    public doConsensus(events: Event[]): Event[] {
+    public doConsensus(events: Event[], peers: Node[]): Event[] {
         const divided = this.divideRounds(events);
         const decided = this.decideFame(divided);
         return this.findOrder(decided);

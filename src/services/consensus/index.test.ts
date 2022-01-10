@@ -24,15 +24,15 @@ describe('ConsensusService', () => {
         };
 
         //3 join events
-        const event1: Event = { type: 'join', signature: 'signatureA', selfParent: '', otherParent: '', date: new Date(2022, 1, 1, 1, 1, 1), data: transaction, consensusReached: false };
-        const event2: Event = { type: 'join', signature: 'signatureB', selfParent: '', otherParent: '', date: new Date(2022, 1, 1, 1, 1, 2), data: transaction, consensusReached: false };
-        const event3: Event = { type: 'join', signature: 'signatureC', selfParent: '', otherParent: '', date: new Date(2022, 1, 1, 1, 1, 3), data: transaction, consensusReached: false };
+        const event1: Event = { type: 'join', signature: 'signatureA', selfParent: '', otherParent: '', date: new Date(2022, 1, 1, 1, 1, 1), data: transaction, consensusReached: false, creator: 'A' };
+        const event2: Event = { type: 'join', signature: 'signatureB', selfParent: '', otherParent: '', date: new Date(2022, 1, 1, 1, 1, 2), data: transaction, consensusReached: false, creator: 'B' };
+        const event3: Event = { type: 'join', signature: 'signatureC', selfParent: '', otherParent: '', date: new Date(2022, 1, 1, 1, 1, 3), data: transaction, consensusReached: false, creator: 'C' };
         //A sends to B, B creates new event
-        const event4: Event = { type: 'transaction', signature: 'signatureB', selfParent: String(createHash('sha256').update(JSON.stringify(event2)).digest('hex')), otherParent: String(createHash('sha256').update(JSON.stringify(event1)).digest('hex')), date: new Date(2022, 1, 1, 1, 1, 4), data: transaction, consensusReached: false };
+        const event4: Event = { type: 'transaction', signature: 'signatureB', selfParent: String(createHash('sha256').update(JSON.stringify(event2)).digest('hex')), otherParent: String(createHash('sha256').update(JSON.stringify(event1)).digest('hex')), date: new Date(2022, 1, 1, 1, 1, 4), data: transaction, consensusReached: false, creator: 'B' };
         //B sends to A, A creates new event
-        const event5: Event = { type: 'transaction', signature: 'signature', selfParent: String(createHash('sha256').update(JSON.stringify(event1)).digest('hex')), otherParent: String(createHash('sha256').update(JSON.stringify(event4)).digest('hex')), date: new Date(2022, 1, 1, 1, 1, 5), data: transaction, consensusReached: false };
+        const event5: Event = { type: 'transaction', signature: 'signature', selfParent: String(createHash('sha256').update(JSON.stringify(event1)).digest('hex')), otherParent: String(createHash('sha256').update(JSON.stringify(event4)).digest('hex')), date: new Date(2022, 1, 1, 1, 1, 5), data: transaction, consensusReached: false, creator: 'A' };
         //A sends to C, C creates new event
-        const event6: Event = { type: 'transaction', signature: 'signature', selfParent: String(createHash('sha256').update(JSON.stringify(event3)).digest('hex')), otherParent: String(createHash('sha256').update(JSON.stringify(event5)).digest('hex')), date: new Date(2022, 1, 1, 1, 1, 6), data: transaction, consensusReached: false };
+        const event6: Event = { type: 'transaction', signature: 'signature', selfParent: String(createHash('sha256').update(JSON.stringify(event3)).digest('hex')), otherParent: String(createHash('sha256').update(JSON.stringify(event5)).digest('hex')), date: new Date(2022, 1, 1, 1, 1, 6), data: transaction, consensusReached: false, creator: 'C' };
         events.push(event1);
         events.push(event2);
         events.push(event3);
@@ -63,7 +63,7 @@ describe('ConsensusService', () => {
         });
     });
 
-    describe('getParent', () => {
+    describe('getParent',   () => {
         it('should return the parent of the event', async () => {
             expect(consensus.core.getParent(events[5], events, true)).toEqual(events[4]);
             expect(consensus.core.getParent(events[5], events, false)).toEqual(events[2]);
