@@ -50,8 +50,23 @@ describe('ConsensusService', () => {
 
     describe('ancestor', () => {
         it('should check if event y is an ancester of x', async () => {
-            expect(consensus.core.ancestor(events[5], events[3], events)).toBeFalsy();
-            expect(consensus.core.ancestor(events[3], events[5], events)).toBeTruthy();
+            expect(consensus.core.ancestor(events[3], events[5], events)).toBeFalsy();
+            expect(consensus.core.ancestor(events[5], events[3], events)).toBeTruthy();
+        });
+    });
+
+    describe('selfAncestor', () => {
+        it('should check if event y is an selfAncester of x', async () => {
+            expect(consensus.core.selfAncestor(events[2], events[5], events)).toBeFalsy();
+            expect(consensus.core.selfAncestor(events[3], events[5], events)).toBeFalsy();
+            expect(consensus.core.selfAncestor(events[5], events[2], events)).toBeTruthy();
+        });
+    });
+
+    describe('getParent', () => {
+        it('should return the parent of the event', async () => {
+            expect(consensus.core.getParent(events[5], events, true)).toEqual(events[4]);
+            expect(consensus.core.getParent(events[5], events, false)).toEqual(events[2]);
         });
     });
 });

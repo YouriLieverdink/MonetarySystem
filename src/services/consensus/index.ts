@@ -75,21 +75,19 @@ export class ConsensusService {
          * @returns boolean true if event y is an ancestor of event x
          */
         ancestor: (x: Event, y: Event, set: Event[]): boolean => {
-            if (x === y) {
-                return true;
-            }
+            return this.core.checkAncestor(x, y, set, false);
+        },
 
-            let selected: Event = y;
-            for (let i = 0; i < 100; i++) {
-                if (this.core.getParent(selected, set, true)){
-                    selected = this.core.getParent(selected, set, true);
-                }else {
-                    return false;
-                }
-                if (selected === x) {
-                    return true;
-                }
-            }
+        /**
+         * Determines if event y is a self-ancestor of event x
+         *
+         * @param x event
+         * @param y event
+         * @param set
+         * @returns boolean true if y is a self-ancestor of x
+         */
+        selfAncestor: (x: Event, y: Event, set: Event[]): boolean => {
+            return this.core.checkAncestor(x, y, set, true);
         },
 
         /**
@@ -115,18 +113,41 @@ export class ConsensusService {
             return null;
         },
 
-
         /**
-         * Determines if event y is a self-ancestor of event x
+         * Determines if y is an ancestor of x
          *
-         * @param x event
-         * @param y event
-         * @returns boolean true if y is a self-ancestor of x
+         * @param x
+         * @param y
+         * @param set
+         * @param selfAncestor
+         * @returns boolean true if event y is an ancestor of event x
          */
-        selfAncestor: (x: Event, y: Event): boolean => {
+        checkAncestor: (x: Event, y: Event, set: Event[], selfAncestor: boolean): boolean => {
+            if (x === y) {
+                return true;
+            }
 
-            throw Error('Not implemented');
+            let selected: Event = x;
+            for (let i = 0; i < set.length; i++) {
+                if (selfAncestor) {
+                    if (this.core.getParent(selected, set, false)){
+                        selected = this.core.getParent(selected, set, false);
+                    }else {
+                        return false;
+                    }
+                }else{
+                    if (this.core.getParent(selected, set, true)){
+                        selected = this.core.getParent(selected, set, true);
+                    }else {
+                        return false;
+                    }
+                }
+                if (selected === y) {
+                    return true;
+                }
+            }
         },
+
         /**
          * Determines if event x can see event y
          *
@@ -136,7 +157,7 @@ export class ConsensusService {
          * @returns boolean true if x sees y
          */
         see: (x: Event, y: Event, set: Event[]): boolean => {
-            return this.core.ancestor(y, x, set);
+            return this.core.ancestor(x, y, set);
         },
         /**
          * Determines if event x can strongly see event y

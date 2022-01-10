@@ -89,7 +89,7 @@ describe('StorageService', () => {
 				const item = items[0];
 
 				const result = await storage.addresses.read(item.publicKey);
-
+				console.log(result)
 				expect(result.publicKey).toEqual(item.publicKey);
 				expect(result.privateKey).toEqual(item.privateKey);
 				expect(result.isDefault).toEqual(item.isDefault);
