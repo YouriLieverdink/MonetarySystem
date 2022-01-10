@@ -1,5 +1,5 @@
 import { ConsensusService } from '.';
-import { Event, Transaction, Node } from '../../types';
+import { Event, Transaction, Node} from '../../types';
 import { createHash } from 'crypto';
 
 describe('ConsensusService', () => {
@@ -13,14 +13,14 @@ describe('ConsensusService', () => {
 
         const node: Node = {
             host: '1.1.1.1.1',
-            name: 'Jasper Sikkema',
+            name: 'Jasper Sikkema'
         };
 
         const transaction: Transaction = {
             node: node,
             from: '11AA',
             to: '22BB',
-            amount: 2,
+            amount: 2
         };
 
         //3 join events
@@ -67,6 +67,19 @@ describe('ConsensusService', () => {
         it('should return the parent of the event', async () => {
             expect(consensus.core.getParent(events[5], events, true)).toEqual(events[4]);
             expect(consensus.core.getParent(events[5], events, false)).toEqual(events[2]);
+        });
+    });
+
+    describe('superMajority',   () => {
+        it('should return if the number give is equal or more than the super majority', async () => {
+            const nodes: Node[] = [
+                { host: '123.123.123.123', name: 'hostMock' },
+                { host: '123.123.123.123', name: 'hostMock' },
+                { host: '123.123.123.123', name: 'hostMock' },
+                { host: '123.123.123.123', name: 'hostMock' }
+            ];
+            expect(consensus.core.superMajority(nodes, 3)).toBeTruthy();
+            expect(consensus.core.superMajority(nodes, 2)).toBeFalsy();
         });
     });
 });

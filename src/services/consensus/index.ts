@@ -1,4 +1,4 @@
-import { Event } from '../../types';
+import { Event, Node } from '../../types';
 import { createHash } from 'crypto';
 
 export class ConsensusService {
@@ -171,5 +171,16 @@ export class ConsensusService {
 
             throw Error('Not implemented');
         },
+
+        /**
+         * Determines if the number is a super majority (+2/3)
+         *
+         * @returns boolean true if x sees y
+         * @param nodes
+         * @param compare
+         */
+        superMajority: (nodes: Node[], compare: number): boolean => {
+            return compare >= Math.floor(2 * nodes.length / 3 + 1);
+        }
     };
 }
