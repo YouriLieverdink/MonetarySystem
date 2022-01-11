@@ -10,6 +10,8 @@ import { Transaction } from './types';
 const main = (): void => {
 	// Initialise the dependencies.
 	const app = express();
+	app.use(express.json());
+
 	app.listen(3001, '0.0.0.0');
 	Container.set('express', app);
 

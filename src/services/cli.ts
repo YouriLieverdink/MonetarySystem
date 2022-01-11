@@ -110,6 +110,11 @@ export class Cli {
      * The available commands.
      */
     private readonly commands = {
+        clear: async (): Promise<void> => {
+            //
+            this.response.clear();
+            this.responses.welcome();
+        },
         import: async (args: string[]): Promise<void> => {
             //
             if (args.length !== 1) {
@@ -118,7 +123,7 @@ export class Cli {
             }
 
             await this.command.addresses.import(args[0]);
-            this.responses.success('Address imported.');
+            this.responses.success('Address imported to this device.');
         },
         remove: async (args: string[]): Promise<void> => {
             //
@@ -141,13 +146,7 @@ export class Cli {
 
             const address = await this.command.addresses.create();
 
-            this.responses.success(`
-                Generated new key pair!
-                  Private key: ${address.privateKey}
-                  Public key:  ${address.publicKey}
-
-                Important note: Don't lose the private key. No keys no cheese!
-            `);
+            this.responses.success(`Generated new key pair!\n\n    Public key:  ${address.publicKey}\n    Private key: ${address.privateKey}\n\n  Important note: Don't lose the private key. No keys no cheese!`);
         },
         list: async (args: string[]): Promise<void> => {
             //
@@ -163,11 +162,9 @@ export class Cli {
                 return;
             }
 
-            const table = await this.command.addresses.getAll();
-            table.map((address, index) => {
-                return `
-                    ${index + 1}. Public key:  ${address.publicKey} ${showPrivateKeys ? `\nPrivate key: ${address.privateKey}` : ''}
-                `;
+            const addresses = await this.command.addresses.getAll();
+            const table = addresses.map((address, index) => {
+                return `${index + 1}. Public key:  ${address.publicKey} ${showPrivateKeys ? `\n       Private key: ${address.privateKey}` : ''}`;
             });
 
             if (table.length === 0) {
@@ -175,10 +172,10 @@ export class Cli {
                 return;
             }
 
-            this.responses.success(`
-                Your key(s):
-                    ${table}
-            `);
+            this.responses.success('Your key(s):');
+            table.forEach((row) => {
+                this.responses.success(`  ${row}`);
+            });
         },
         transactions: async (args: string[]): Promise<void> => {
             //
@@ -233,8 +230,10 @@ export class Cli {
             this.responses.success('Created transaction!');
         },
         mirror: async (args: string[]): Promise<void> => {
-            if (args.length !== 1 || !['on', 'off'].includes(args[0]))
+            if (args.length !== 1 || !['on', 'off'].includes(args[0])) {
                 this.responses.bad();
+                return;
+            }
 
             const enabled = args[0] === 'on';
             await this.command.settings.update('mirror', enabled ? 'true' : 'false');
@@ -250,7 +249,6 @@ export class Cli {
             throw new Error('Not implemented');
         },
         exit: (): void => {
-            this.response.log('exiting...');
             process.exit(0);
         },
         help: (): void => {
@@ -274,8 +272,8 @@ export class Cli {
                 // '\n    default <public_key>	Set default address for spending' +
                 '\n' +
                 '\n    help			Displays all commands' +
-                '\n    exit 			Exits the application' +
-                '\n');
+                '\n    exit 			Exits the application'
+            );
         }
     };
 }

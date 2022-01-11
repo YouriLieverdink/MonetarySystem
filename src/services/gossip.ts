@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios';
-import express from 'express';
+import { Express } from 'express';
 import _ from 'lodash';
+import Container from 'typedi';
 import { Computer } from '../types';
 
 export type GossipConfig = {
@@ -53,7 +54,7 @@ export abstract class Gossip<T> {
         }
 
         // Initialise the listener and sender.
-        this.initServer(config.me.port);
+        this.initServer();
         setInterval(this.tick.bind(this), config.interval);
     }
 
@@ -61,12 +62,9 @@ export abstract class Gossip<T> {
      * Initialises the express application which listens for incoming http
      * requests from the other computers in the network.
      */
-    private initServer(port: number): void {
+    private initServer(): void {
         //
-        const server = express();
-
-        // Required for parsing json request bodies.
-        server.use(express.json());
+        const server = Container.get<Express>('express');
 
         server.post('/blab', async (request, response) => {
             //
@@ -87,8 +85,6 @@ export abstract class Gossip<T> {
 
             response.sendStatus(200);
         });
-
-        server.listen(port);
     }
 
     /**
