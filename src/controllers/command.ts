@@ -119,10 +119,33 @@ export class Command {
      */
     public readonly transactions = {
         /**
-         * Gets all the stored transactions for a given address.
+         * Gets stored transactions for a given address.
+         * 
+         * @param publicKey The public key to retrieve the transactions for.
          */
-        getAll: async (publicKey: string): Promise<Transaction[]> => {
+        get: async (publicKey: string): Promise<Transaction[]> => {
             return this.storage.transactions.index(publicKey);
+        },
+        /**
+         * Gets all the transactions.
+         */
+        getAll: async (): Promise<Transaction[]> => {
+            //
+            throw Error('Not implemented');
+        },
+        /**
+         * Gets all the stored transactions for the imported addresses.
+         */
+        getAllImported: async (): Promise<Transaction[]> => {
+            // Return the transactions for all the user's addresses.
+            const addresses = await this.storage.addresses.index();
+            const transactions: Transaction[] = [];
+
+            addresses.forEach(async ({ publicKey }) => {
+                transactions.push(...(await this.transactions.get(publicKey)));
+            });
+
+            return transactions;
         },
         /**
          * Create a new transaction.
@@ -132,7 +155,7 @@ export class Command {
          * @param amount The amount to transfer.
          */
         create: (from: string, to: string, amount: number): void => {
-            this.queue.push({ from, to, amount, node: null });
+            this.queue.push({ from, to, amount });
         }
     };
 
@@ -141,7 +164,17 @@ export class Command {
      */
     public readonly states = {
         /**
+         * Gets the state for a given address.
+         * 
+         * @param publicKey The public key of the address.
+         */
+        get: async (publicKey: string): Promise<State> => {
+            return this.storage.states.read(publicKey);
+        },
+        /**
          * Gets all the states.
+         * 
+         * @param publicKey The public key to retrieve the state for.
          */
         getAll: async (): Promise<State[]> => {
             return this.storage.states.index();
@@ -150,15 +183,15 @@ export class Command {
          * Gets all the states of the imported addresses.
          */
         getAllImported: async (): Promise<State[]> => {
-            return Promise.all((await this.addresses.getAll()).flatMap(async address => await this.states.get(address.publicKey)));
-        },
-        /**
-         * Gets the state for a given address.
-         * 
-         * @param publicKey The public key of the address.
-         */
-        get: async (publicKey: string): Promise<State> => {
-            return this.storage.states.read(publicKey);
+            // Return the states for all the user's addresses.
+            const addresses = await this.storage.addresses.index();
+            const states: State[] = [];
+
+            addresses.forEach(async ({ publicKey }) => {
+                states.push((await this.states.get(publicKey)));
+            });
+
+            return states;
         }
     };
 

@@ -1,176 +1,260 @@
-import { CommandController } from '../controllers';
+import { Command } from '../controllers';
 import { State, Transaction } from '../types';
 
 export class Cli {
     /**
-     * The instance which should receive all commands.
+     * The command controller.
      */
-    private commandController: CommandController;
+    private command: Command;
 
     /**
-     * The object for handling output.
+     * The object used to send responses.
      */
     private response: Console;
 
     /**
      * Class constructor.
+     * 
+     * @param command The command controller.
+     * @param resposne The object used to send responses.
      */
     constructor(
-        commandController: CommandController,
-        response: Console,
+        command: Command,
+        response: Console
     ) {
-        this.commandController = commandController;
+        //
+        this.command = command;
         this.response = response;
 
-        // Display a welcome message.
-        response.clear();
-        response.log('\n' +
-            '████████╗ ██████╗  ██╗ ████████╗ ██╗ ██╗   ██╗ ███╗   ███╗\n' +
-            '╚══██╔══╝ ██╔══██╗ ██║ ╚══██╔══╝ ██║ ██║   ██║ ████╗ ████║\n' +
-            '   ██║    ██████╔╝ ██║    ██║    ██║ ██║   ██║ ██╔████╔██║\n' +
-            '   ██║    ██╔══██╗ ██║    ██║    ██║ ██║   ██║ ██║╚██╔╝██║\n' +
-            '   ██║    ██║  ██║ ██║    ██║    ██║ ╚██████╔╝ ██║ ╚═╝ ██║\n' +
-            '   ╚═╝    ╚═╝  ╚═╝ ╚═╝    ╚═╝    ╚═╝  ╚═════╝  ╚═╝     ╚═╝\n' +
-            '\n Enter \'help\' to display command line options.\n');
+        this.response.clear();
+        this.responses.welcome();
     }
 
     /**
-     * Handle incoming CLI commands.
+     * Handle incoming cli commands.
      * 
-     * @param request The received string.
-     * @param response The response object.
+     * @param request The received cli command.
      */
-    public async handle(request: string, response: Console = console): Promise<boolean> {
-        const command = request.trim().split(' ');
-        this.response = response;
-
-        const key = command.shift();
+    public async handle(request: string): Promise<void> {
+        //
+        const args = request.trim().split(' ');
+        const command = args.shift();
 
         try {
-            // Check whether the command exists
-            if (Object.keys(this.core).includes(key))
-                return await this.core[key](command);
-
-            return this.error('Unknown command');
+            // Attempt to call the provided command.
+            return await this.commands[command](args);
         }
         catch (e) {
-            return this.error(e.message);
+            const error: Error = e;
+
+            if (error.name === 'TypeError') {
+                // The provided command was not found in `this.commands`.
+                this.responses.error('Not implemented');
+                return;
+            }
+
+            this.responses.error(error.message);
         }
     }
 
-    /** CLI command interpreters */
-    private readonly core = {
-        import: async (args: string[]): Promise<boolean> => {
-            if (args.length !== 1)
-                return this.badRequest();
-
-            const privateKey: string = args[0];
-            const response = await this.commandController.addresses.import(privateKey);
-
-            return response != null
-                ? response
-                    ? this.success('Import success')
-                    : this.error('Already imported')
-                : this.error('Could not import private key');
-
+    /**
+     * Default responses.
+     */
+    private readonly responses = {
+        /**
+         * Displays a "bad syntax" message.
+         */
+        bad: (): void => {
+            //
+            this.responses.error('Wrong syntax');
+            this.response.log(
+                '  Enter \'help\' to display command line options.\n'
+            );
         },
-        remove: async (args: string[]): Promise<boolean> => {
-            if (args.length !== 1)
-                return this.badRequest();
+        /**
+         * Displays an indented message in red.
+         * 
+         * @param message The message to display.
+         */
+        error: (message: string): void => {
+            //
+            this.response.log(`  \x1b[31m${message}\x1b[0m\n`);
+        },
+        /**
+         * Displays an indented message.
+         * 
+         * @param message The message to display.
+         */
+        success: (message: string): void => {
+            //
+            this.response.log(`  ${message}\n`);
+        },
+        /**
+         * Displays the welcome message.
+         */
+        welcome: (): void => {
+            //
+            this.response.log('\n' +
+                '████████╗ ██████╗  ██╗ ████████╗ ██╗ ██╗   ██╗ ███╗   ███╗\n' +
+                '╚══██╔══╝ ██╔══██╗ ██║ ╚══██╔══╝ ██║ ██║   ██║ ████╗ ████║\n' +
+                '   ██║    ██████╔╝ ██║    ██║    ██║ ██║   ██║ ██╔████╔██║\n' +
+                '   ██║    ██╔══██╗ ██║    ██║    ██║ ██║   ██║ ██║╚██╔╝██║\n' +
+                '   ██║    ██║  ██║ ██║    ██║    ██║ ╚██████╔╝ ██║ ╚═╝ ██║\n' +
+                '   ╚═╝    ╚═╝  ╚═╝ ╚═╝    ╚═╝    ╚═╝  ╚═════╝  ╚═╝     ╚═╝\n' +
+                '\n Enter \'help\' to display command line options.\n'
+            );
+        }
+    };
+
+    /**
+     * The available commands.
+     */
+    private readonly commands = {
+        import: async (args: string[]): Promise<void> => {
+            //
+            if (args.length !== 1) {
+                this.responses.bad();
+                return;
+            }
+
+            await this.command.addresses.import(args[0]);
+            this.responses.success('Address imported.');
+        },
+        remove: async (args: string[]): Promise<void> => {
+            //
+            if (args.length !== 1) {
+                this.responses.bad();
+                return;
+            }
 
             const publicKey: string = args[0];
 
-            if (await this.commandController.addresses.remove(publicKey))
-                return this.success('Successfully removed key from device');
-
-            return this.error('Could not remove key');
+            await this.command.addresses.remove(publicKey);
+            this.responses.success('Address removed from this device.');
         },
-        generate: async (args: string[]): Promise<boolean> => {
-            if (args.length !== 0)
-                return this.badRequest();
+        generate: async (args: string[]): Promise<void> => {
+            //
+            if (args.length !== 0) {
+                this.responses.bad();
+                return;
+            }
 
-            const keyPair = await this.commandController.addresses.create();
-            return this.success(`Generated new key pair! \n\n  Private key:	${keyPair.privateKey}\n  Public key:	${keyPair.publicKey}\n\n  Important Note: Don't lose the private key. No keys no cheese!`);
+            const address = await this.command.addresses.create();
+
+            this.responses.success(`
+                Generated new key pair!
+                  Private key: ${address.privateKey}
+                  Public key:  ${address.publicKey}
+
+                Important note: Don't lose the private key. No keys no cheese!
+            `);
         },
-        list: async (args: string[]): Promise<boolean> => {
+        list: async (args: string[]): Promise<void> => {
+            //
             const showPrivateKeys = args.includes('--private');
 
-            if ((args.length !== 1 && showPrivateKeys) || (args.length === 1 && !showPrivateKeys))
-                return this.badRequest();
+            if (args.length !== 1 && showPrivateKeys) {
+                this.responses.bad();
+                return;
+            }
 
-            const table = (await this.commandController.addresses.getAll())
-                .map((address, index) => `  ${index + 1}. Public key:	${address.publicKey}${(showPrivateKeys) ? `\n     Private key:	${address.privateKey}` : ''}\n`);
+            if (args.length === 1 && !showPrivateKeys) {
+                this.responses.bad();
+                return;
+            }
 
-            if (table.length > 0)
-                return this.success('Your key(s):\n' + table.toString().replace(',', ''));
+            const table = await this.command.addresses.getAll();
+            table.map((address, index) => {
+                return `
+                    ${index + 1}. Public key:  ${address.publicKey} ${showPrivateKeys ? `\nPrivate key: ${address.privateKey}` : ''}
+                `;
+            });
 
-            this.error('Please import your keys first, or generate a pair using \'generate\'');
-            return true;
+            if (table.length === 0) {
+                this.responses.error('Please import your addresses, or generate one with \'generate\'');
+                return;
+            }
+
+            this.responses.success(`
+                Your key(s):
+                    ${table}
+            `);
         },
-        transactions: async (args: string[]): Promise<boolean> => {
-            if (args.length > 1)
-                return this.badRequest();
+        transactions: async (args: string[]): Promise<void> => {
+            //
+            if (args.length > 1) {
+                this.responses.bad();
+                return;
+            }
 
             const transactions: Transaction[] = (args.length === 1)
-                ? await this.commandController.transactions.getAll(args[0])
-                : await this.commandController.transactions.getAllImported();
+                ? await this.command.transactions.get(args[0])
+                : await this.command.transactions.getAllImported();
 
-            if (transactions.length > 0)
-                return this.success(`Found ${transactions.length} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
+            if (transactions.length > 0) {
+                this.responses.success(`Found ${transactions.length} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
                     + transactions.map((tx, index) =>
                         `  ${index + 1}. Sender: ${tx.from}	Receiver: ${tx.to}	Amount: ${tx.amount} \n`)
                         .toString().replace(',', '')
                 );
-            this.response.log(this.errorText('No transactions found'));
-            return true;
+                return;
+            }
+
+            this.responses.error('No transactions found');
         },
-        balance: async (args: string[]): Promise<boolean> => {
-            if (args.length > 1)
-                return this.badRequest();
+        balance: async (args: string[]): Promise<void> => {
+            //
+            if (args.length > 1) {
+                this.responses.bad();
+                return;
+            }
 
             const balances: State[] = (args.length === 1)
-                ? [await this.commandController.balances.get(args[0])]
-                : await this.commandController.balances.getAllImported();
+                ? [await this.command.states.get(args[0])]
+                : await this.command.states.getAllImported();
 
-            return this.success(`  Total balance: ${balances.reduce((sum, state) => sum + state.balance, 0)} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
+            this.responses.success(`  Total balance: ${balances.reduce((sum, state) => sum + state.balance, 0)} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
                 + balances.map(state =>
                     `  Address: ${state.publicKey}	Balance: ${state.balance} \n`
                 ).toString().replace(',', '')
             );
         },
-        transfer: async (args: string[]): Promise<boolean> => {
-            if (args.length !== 3 || isNaN(Number(args[2])) || Number(args[2]) <= 0)
-                return this.badRequest();
+        transfer: async (args: string[]): Promise<void> => {
+            if (args.length !== 3 || isNaN(Number(args[2])) || Number(args[2]) <= 0) {
+                this.responses.bad();
+                return;
+            }
 
             const sender: string = args[0];
             const receiver: string = args[1];
             const amount: number = parseInt(args[2]);
 
-            if (this.commandController.transactions.create(sender, receiver, amount))
-                return this.success('Created transaction!');
-            return false;
+            this.command.transactions.create(sender, receiver, amount);
+            this.responses.success('Created transaction!');
         },
-        mirror: async (args: string[]): Promise<boolean> => {
+        mirror: async (args: string[]): Promise<void> => {
             if (args.length !== 1 || !['on', 'off'].includes(args[0]))
-                return this.badRequest();
+                this.responses.bad();
 
             const enabled = args[0] === 'on';
-            return await this.commandController.mirror.set(enabled)
-                ? this.success(`Mirroring ${enabled ? 'enabled' : 'disabled'}`)
-                : this.error(`Error ${enabled ? 'enabling' : 'disabling'} mirroring`);
+            await this.command.settings.update('mirror', enabled ? 'true' : 'false');
+
+            this.responses.success(`Mirroring ${enabled ? 'enabled' : 'disabled'}`);
         },
         default: (args: string[]): boolean => {
-            if (args.length > 1)
-                return this.badRequest();
+            if (args.length > 1) {
+                this.responses.bad();
+                return;
+            }
 
             throw new Error('Not implemented');
         },
-        exit: (): true => {
+        exit: (): void => {
             this.response.log('exiting...');
             process.exit(0);
         },
-        help: (): true => {
-            return this.success('Commands:' +
+        help: (): void => {
+            this.responses.success('Commands:' +
                 '\n' +
                 '\n  Wallet setup:' +
                 '\n    generate			Generate new key pair' +
@@ -193,22 +277,5 @@ export class Cli {
                 '\n    exit 			Exits the application' +
                 '\n');
         }
-    };
-
-    private errorText = (msg) => `  \x1b[31m${msg}\x1b[0m`;
-
-    private badRequest = (): false => {
-        this.response?.error(this.errorText('wrong syntax') + '\n  Enter \'help\' to display command line options.');
-        return false;
-    };
-
-    private success = (msg): true => {
-        this.response?.log(`  ${msg}`);
-        return true;
-    };
-
-    private error = (msg): false => {
-        this.response?.error(this.errorText(msg));
-        return false;
     };
 }

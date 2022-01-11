@@ -1,17 +1,17 @@
 import { Request, Response } from 'express';
-import { CommandController } from '../controllers';
+import { Command } from '../controllers';
 
 export class Api {
     /**
      * The instance which should receive all commands.
      */
-    private command: CommandController;
+    private command: Command;
 
     /**
      * Class constructor.
      */
     constructor(
-        command: CommandController,
+        command: Command,
     ) {
         this.command = command;
     }
