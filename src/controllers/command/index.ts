@@ -1,7 +1,7 @@
 import { Express } from 'express';
 import readline from 'readline';
 import Container from 'typedi';
-import { ApiService, Cli, QueueService, StorageService } from '../../services';
+import { Api, Cli, QueueService, StorageService } from '../../services';
 import { CryptoService } from '../../services/crypto';
 import { Address, State, Transaction } from '../../types';
 
@@ -28,7 +28,7 @@ export class CommandController {
 
 	/** Initialise the api handling. */
 	private initApi(): void {
-		const apiService = new ApiService(this);
+		const apiService = new Api(this);
 		const express = Container.get<Express>('express');
 		express.get('/api/*', apiService.handle);
 	}
