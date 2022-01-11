@@ -38,4 +38,12 @@ export type Event = {
      * The public key of the creator of the event.
      */
     creator: string;
+    /**
+     * The round number the event is in.
+     */
+    round?: number;
+    /**
+     * If the event is a witness
+     */
+    witness?: boolean;
 };
