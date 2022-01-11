@@ -62,6 +62,6 @@ export class GossipService {
 	 */
 	public doGossip(): void {
 		//
-		throw Error('Not implemented');
+		// throw Error('Not implemented');
 	}
 }

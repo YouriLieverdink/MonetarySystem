@@ -48,17 +48,14 @@ export class CliService {
 
 		try {
 			// Check whether the command exists
-			if (Object.keys(this.core).includes(key)) {
+			if (Object.keys(this.core).includes(key))
 				return await this.core[key](command);
-			}
 
-			response.log(this.errorText('Unknown command'));
+			return this.error('Unknown command');
 		}
 		catch (e) {
-			response.log(this.errorText(e.message));
+			return this.error(e.message);
 		}
-
-		return false;
 	}
 
 	/** CLI command interpreters */
@@ -68,9 +65,14 @@ export class CliService {
 				return this.badRequest();
 
 			const privateKey: string = args[0];
-			if (await this.commandController.addresses.import(privateKey))
-				return this.success(`Successfully imported wallet ${privateKey}`);
-			return false; //new Promise(reject => false);
+			const response = await this.commandController.addresses.import(privateKey);
+
+			return response != null
+				? response
+					? this.success('Import success')
+					: this.error('Already imported')
+				: this.error('Could not import private key');
+
 		},
 		remove: async (args: string[]): Promise<boolean> => {
 			if (args.length !== 1)
@@ -78,22 +80,17 @@ export class CliService {
 
 			const publicKey: string = args[0];
 
-			let response;
-			await this.commandController.addresses.remove(publicKey)
-				.then(() => response = true)
-				.catch(() => response = false);
+			if (await this.commandController.addresses.remove(publicKey))
+				return this.success('Successfully removed key from device');
 
-			if (response)
-				return this.success('Successfully removed keys removed from this device');
-			return false;
-
+			return this.error('Could not remove key');
 		},
 		generate: async (args: string[]): Promise<boolean> => {
 			if (args.length !== 0)
 				return this.badRequest();
 
 			const keyPair = await this.commandController.addresses.create();
-			return this.success(`Generated new key pair! \n  Important Note: Don't lose the private key. No keys no cheese!\n\n  Private key: 	${keyPair.privateKey}\n  Public key: ${keyPair.publicKey}`);
+			return this.success(`Generated new key pair! \n\n  Private key:	${keyPair.privateKey}\n  Public key:	${keyPair.publicKey}\n\n  Important Note: Don't lose the private key. No keys no cheese!`);
 		},
 		list: async (args: string[]): Promise<boolean> => {
 			const showPrivateKeys = args.includes('--private');
@@ -102,12 +99,12 @@ export class CliService {
 				return this.badRequest();
 
 			const table = (await this.commandController.addresses.getAll())
-				.map((address, index) => `  ${index + 1}. Public key: ${address.publicKey}${(showPrivateKeys) ? `		Private key: ${address.privateKey}` : ''}\n`);
+				.map((address, index) => `  ${index + 1}. Public key:	${address.publicKey}${(showPrivateKeys) ? `\n     Private key:	${address.privateKey}` : ''}\n`);
 
 			if (table.length > 0)
-				return this.success('Your key(s):\n' + table);
+				return this.success('Your key(s):\n' + table.toString().replace(',',''));
 
-			this.response.log(this.errorText('Please import your keys first, or generate a pair using \'generate\''));
+			this.error('Please import your keys first, or generate a pair using \'generate\'');
 			return true;
 		},
 		transactions: async (args: string[]): Promise<boolean> => {
@@ -135,11 +132,11 @@ export class CliService {
 				? [await this.commandController.balances.get(args[0])]
 				: await this.commandController.balances.getAllImported();
 
-			// return this.success(`  Total balance: ${balances.reduce((sum, state) => sum + state.amount, 0)} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
-			// 	+ balances.map(state =>
-			// 		`  Address: ${state.publicKey}	Balance: ${state.amount} \n`
-			// 	).toString().replace(',', '')
-			// );
+			return this.success(`  Total balance: ${balances.reduce((sum, state) => sum + state.amount, 0)} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
+				+ balances.map(state =>
+					`  Address: ${state.publicKey}	Balance: ${state.amount} \n`
+				).toString().replace(',', '')
+			);
 		},
 		transfer: async (args: string[]): Promise<boolean> => {
 			if (args.length !== 3 || isNaN(Number(args[2])) || Number(args[2]) <= 0)
@@ -149,7 +146,7 @@ export class CliService {
 			const receiver: string = args[1];
 			const amount: number = parseInt(args[2]);
 
-			if (await this.commandController.transactions.create(sender, receiver, amount))
+			if (this.commandController.transactions.create(sender, receiver, amount))
 				return this.success('Created transaction!');
 			return false;
 		},
@@ -158,7 +155,9 @@ export class CliService {
 				return this.badRequest();
 
 			const enabled = args[0] === 'on';
-			return await this.commandController.mirror.set(enabled);
+			return await this.commandController.mirror.set(enabled)
+				? this.success(`Mirroring ${enabled ? 'enabled' : 'disabled'}`)
+				: this.error(`Error ${enabled ? 'enabling' : 'disabling'} mirroring`)
 		},
 		default: (args: string[]): boolean => {
 			if (args.length > 1)
@@ -186,14 +185,13 @@ export class CliService {
 				'\n    transactions		Lists all transactions for imported public keys' +
 				'\n    transactions <public_key>	Lists all transactions for a specific public keys' +
 				'\n    transfer <sender_public_key> <receiver_public_key> <amount> 	Transfer funds from A to B' +
-				// '\n    create-transaction <receiver_public_key> <amount> 				Send funds from default address to B' +
 				'\n' +
 				'\n  Node Configuration:' +
 				'\n    mirror on|off		Enables or disables the mirroring option' +
 				// '\n    default <public_key>	Set default address for spending' +
 				'\n' +
 				'\n    help			Displays all commands' +
-				'\n    exit|quit 			Exits the application' +
+				'\n    exit 			Exits the application' +
 				'\n');
 		}
 	};
@@ -201,12 +199,17 @@ export class CliService {
 	private errorText = (msg) => `  \x1b[31m${msg}\x1b[0m`;
 
 	private badRequest = (): false => {
-		this.response?.log(this.errorText('wrong syntax') + '\n  Enter \'help\' to display command line options.');
+		this.response?.error(this.errorText('wrong syntax') + '\n  Enter \'help\' to display command line options.');
 		return false;
 	};
 
 	private success = (msg): true => {
 		this.response?.log(`  ${msg}`);
 		return true;
+	};
+
+	private error = (msg): false => {
+		this.response?.error(this.errorText(msg));
+		return false;
 	};
 }
