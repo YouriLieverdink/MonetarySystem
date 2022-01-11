@@ -115,19 +115,17 @@ export class CommandController {
 		 * 
 		 * @returns A list of transactions.
 		 */
-		getAll: async (publicKey: string): Promise<Transaction[]> => {
-			return this.storageService.transactions.index(publicKey)
-		},
+		getAll: async (publicKey: string): Promise<Transaction[]> =>
+			this.storageService.transactions.index(publicKey),
 		/**
 		 * Gets all the stored transactions for the users' addresses.
 		 *
 		 * @returns A list of transactions.
 		 */
-		getAllImported: async (): Promise<Transaction[]> => {
-			return (await Promise.all((await this.addresses.getAll())
+		getAllImported: async (): Promise<Transaction[]> =>
+			(await Promise.all((await this.addresses.getAll())
 				.flatMap(address => this.transactions.getAll(address.publicKey))))
-				.flatMap(tx => tx);
-		},
+				.flatMap(tx => tx),
 		/**
 		 * Create a new transaction.
 		 * 
@@ -163,9 +161,8 @@ export class CommandController {
 		 *
 		 * @returns A list of states.
 		 */
-		getAllImported: async (): Promise<State[]> => {
-			return Promise.all((await this.addresses.getAll()).flatMap(async address => await this.balances.get(address.publicKey)));
-		},
+		getAllImported: async (): Promise<State[]> =>
+			Promise.all((await this.addresses.getAll()).flatMap(async address => await this.balances.get(address.publicKey))),
 		/**
 		 * Gets the state for a given address.
 		 * 
@@ -181,18 +178,21 @@ export class CommandController {
 	 */
 	public readonly mirror = {
 		/**
+		 * Gets the mirroring enabled/disabled status.
+		 */
+		get: async (): Promise<boolean> =>
+			await this.storageService.settings.get('mirror')
+				.then(v => v)
+				.catch(() => false),
+
+		/**
 		 * Sets the mirroring option.
 		 * 
 		 * @param value The value to set.
-		 * @returns Whether the operation was successful.
 		 */
-		set: async (value: boolean): Promise<boolean> => {
-			/**
-			 * Steps:
-			 * 1. Update the value in the database.
-			 * 2. Return true.
-			 */
-			throw Error('Not implemented');
-		}
+		set: async (value: boolean): Promise<boolean> =>
+			await this.storageService.settings.set('mirror', value)
+				.then(() => true)
+				.catch(() => false)
 	};
 }

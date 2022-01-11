@@ -146,7 +146,7 @@ export class CliService {
 			const receiver: string = args[1];
 			const amount: number = parseInt(args[2]);
 
-			if (await this.commandController.transactions.create(sender, receiver, amount))
+			if (this.commandController.transactions.create(sender, receiver, amount))
 				return this.success('Created transaction!');
 			return false;
 		},
@@ -155,7 +155,9 @@ export class CliService {
 				return this.badRequest();
 
 			const enabled = args[0] === 'on';
-			return await this.commandController.mirror.set(enabled);
+			return await this.commandController.mirror.set(enabled)
+				? this.success(`Mirroring ${enabled ? 'enabled' : 'disabled'}`)
+				: this.error(`Error ${enabled ? 'enabling' : 'disabling'} mirroring`)
 		},
 		default: (args: string[]): boolean => {
 			if (args.length > 1)

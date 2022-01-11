@@ -1,5 +1,6 @@
 import { Database } from 'sqlite3';
 import { Address, Event, Node, State, Transaction } from '../../types';
+import { Setting } from '../../types/setting';
 
 export class StorageService {
     /**
@@ -51,6 +52,13 @@ export class StorageService {
                     address VARCHAR(32) PRIMARY KEY,
                     balance FLOAT,
                     date DATETIME
+                )
+            `);
+
+            this.database.run(`
+                CREATE TABLE IF NOT EXISTS settings (
+                    key VARCHAR(10) PRIMARY KEY,
+                    enabled BOOLEAN DEFAULT 0
                 )
             `);
         });
@@ -357,5 +365,31 @@ export class StorageService {
             events.forEach((event) => event.data = JSON.parse(String(event.data)));
             return events.map((event) => event.data as Transaction);
         }
+    };
+
+    /**
+     * The setting methods.
+     */
+    public readonly settings = {
+        /**
+         * Retrieves the enabled boolean of the key.
+         *
+         * @param key The key of the boolean to retrieve.
+         *
+         * @throws {Error} When an exception occurs.
+         */
+        get: async (key: 'mirror'): Promise<boolean> =>
+            (await this.query.get<Setting>('SELECT enabled FROM settings WHERE key=?', key)).enabled,
+
+        /**
+         * Sets the enabled boolean of the key.
+         *
+         * @param key The key of the boolean to set.
+         * @param enable The new value of key
+         *
+         * @throws {Error} When an exception occurs.
+         */
+        set: async (key: 'mirror', enable: boolean): Promise<void> =>
+            this.query.run('REPLACE INTO settings(key, enabled) VALUES (?,?)', key, enable)
     };
 }
