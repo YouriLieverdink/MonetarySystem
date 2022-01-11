@@ -1,8 +1,7 @@
-import crypto from 'crypto';
 import { Express } from 'express';
 import readline from 'readline';
-import Container from 'typedi'; Queue;
-import { ApiService, CliService, QueueService, StorageService } from '../../services';
+import Container from 'typedi';
+import { ApiService, Cli, QueueService, StorageService } from '../../services';
 import { CryptoService } from '../../services/crypto';
 import { Address, State, Transaction } from '../../types';
 
@@ -36,7 +35,7 @@ export class CommandController {
 
 	/** Initialise the cli handling. */
 	private initCli(): void {
-		const cliService = new CliService(this, console);
+		const cliService = new Cli(this, console);
 		const rl = readline.createInterface({
 			input: process.stdin,
 			output: process.stdout
