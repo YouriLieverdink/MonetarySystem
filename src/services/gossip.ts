@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import express from 'express';
 import _ from 'lodash';
-import { Computer } from '../types/computer';
+import { Computer } from '../types';
 
 export type GossipConfig = {
     /**
