@@ -16,6 +16,8 @@ export class Internal extends Gossip<Event<Transaction>> {
 
     /**
      * Class constructor.
+     * 
+     * @param config The configuration for gossip.
      */
     constructor(config: GossipConfig) {
         super(config);

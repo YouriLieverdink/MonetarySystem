@@ -6,11 +6,6 @@ import { Address, Setting, State, Transaction } from '../types';
 
 export class Command {
     /** 
-     * Used to store events which contain a consensus timestamp. 
-     */
-    private storage: Storage;
-
-    /** 
      * Used to access cryptographic functions.
      */
     private crypto: Crypto;
@@ -21,13 +16,23 @@ export class Command {
     private queue: Queue<Transaction>;
 
     /** 
-     * Class constructor. 
+     * Used to store events which contain a consensus timestamp. 
      */
-    constructor() {
+    private storage: Storage;
+
+    /** 
+     * Class constructor. 
+     * 
+     * @param crypto The crypto service.
+     */
+    constructor(
+        crypto?: Crypto,
+    ) {
+        this.crypto = crypto || new Crypto();
+
         // Inject dependencies.
-        this.storage = Container.get<Storage>('storage');
-        this.crypto = Container.get<Crypto>('crypto');
         this.queue = Container.get<Queue<Transaction>>('transactions');
+        this.storage = Container.get<Storage>('storage');
 
         this.initApi();
         this.initCli();
@@ -132,9 +137,9 @@ export class Command {
     };
 
     /**
-     * The balance methods.
+     * The state methods.
      */
-    public readonly balances = {
+    public readonly states = {
         /**
          * Gets all the states.
          */
@@ -145,7 +150,7 @@ export class Command {
          * Gets all the states of the imported addresses.
          */
         getAllImported: async (): Promise<State[]> => {
-            return Promise.all((await this.addresses.getAll()).flatMap(async address => await this.balances.get(address.publicKey)));
+            return Promise.all((await this.addresses.getAll()).flatMap(async address => await this.states.get(address.publicKey)));
         },
         /**
          * Gets the state for a given address.
