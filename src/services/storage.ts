@@ -1,7 +1,7 @@
 import { Database } from 'sqlite3';
 import { Address, Computer, Event, Setting, State, Transaction } from '../types';
 
-export class StorageService {
+export class Storage {
     /**
      * The database.
      */

@@ -1,5 +1,5 @@
 import Container from 'typedi';
-import { ConsensusService, GossipService, Queue, StorageService } from '../../services';
+import { ConsensusService, GossipService, Queue, Storage } from '../../services';
 import { Event, Transaction } from '../../types';
 
 export class InternalController {
@@ -21,7 +21,7 @@ export class InternalController {
 	/**
 	 * Used to store events which contain a consensus timestamp.
 	 */
-	private storageService: StorageService;
+	private storageService: Storage;
 
 	/**
 	 * Incoming transactions from the operating user.
@@ -45,7 +45,7 @@ export class InternalController {
 		this.gossipService = gossipService || new GossipService(this.eventsQueue);
 
 		// Inject dependencies.
-		this.storageService = Container.get<StorageService>('storage');
+		this.storageService = Container.get<Storage>('storage');
 		this.transactionsQueue = Container.get<Queue<Transaction>>('transactions');
 
 		setInterval(this.tick.bind(this), 500);
