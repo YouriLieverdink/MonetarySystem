@@ -1,5 +1,5 @@
 
-export class QueueService<T> {
+export class Queue<T> {
 	/**
 	 * The items currently in the queue.
 	 */

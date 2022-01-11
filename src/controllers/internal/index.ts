@@ -1,5 +1,5 @@
 import Container from 'typedi';
-import { ConsensusService, GossipService, QueueService, StorageService } from '../../services';
+import { ConsensusService, GossipService, Queue, StorageService } from '../../services';
 import { Event, Transaction } from '../../types';
 
 export class InternalController {
@@ -11,7 +11,7 @@ export class InternalController {
 	/**
 	 * Stores incoming events which have to be processed.
 	 */
-	private eventsQueue: QueueService<Event>;
+	private eventsQueue: Queue<Event>;
 
 	/**
 	 * Populates the events queue with events from the network.
@@ -26,7 +26,7 @@ export class InternalController {
 	/**
 	 * Incoming transactions from the operating user.
 	 */
-	private transactionsQueue: QueueService<Transaction>;
+	private transactionsQueue: Queue<Transaction>;
 
 	/**
 	 * Class constructor.
@@ -37,16 +37,16 @@ export class InternalController {
 	 */
 	constructor(
 		consensusService?: ConsensusService,
-		eventsQueue?: QueueService<Event>,
+		eventsQueue?: Queue<Event>,
 		gossipService?: GossipService
 	) {
 		this.consensusService = consensusService || new ConsensusService();
-		this.eventsQueue = eventsQueue || new QueueService<Event>();
+		this.eventsQueue = eventsQueue || new Queue<Event>();
 		this.gossipService = gossipService || new GossipService(this.eventsQueue);
 
 		// Inject dependencies.
 		this.storageService = Container.get<StorageService>('storage');
-		this.transactionsQueue = Container.get<QueueService<Transaction>>('transactions');
+		this.transactionsQueue = Container.get<Queue<Transaction>>('transactions');
 
 		setInterval(this.tick.bind(this), 500);
 	}

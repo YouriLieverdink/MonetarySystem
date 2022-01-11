@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { Express } from 'express';
 import readline from 'readline';
-import Container from 'typedi';
+import Container from 'typedi'; Queue;
 import { ApiService, CliService, QueueService, StorageService } from '../../services';
 import { CryptoService } from '../../services/crypto';
 import { Address, State, Transaction } from '../../types';
@@ -13,7 +13,7 @@ export class CommandController {
 	/** Used to access cryptographic functions. */
 	private cryptoService: CryptoService;
 
-	/** Incoming transactions from the operating user. */
+	/** Incoming transactions fQueueating user. */
 	private transactionsQueue: QueueService<Transaction>;
 
 	/** Class constructor. */
@@ -21,7 +21,7 @@ export class CommandController {
 		// Inject dependencies.
 		this.storageService = Container.get<StorageService>('storage');
 		this.cryptoService = Container.get<CryptoService>('crypto');
-		this.transactionsQueue = Container.get<QueueService<Transaction>>('transactions');
+		this.transactionsQueue = Container.get<Queue<Transaction>>('transactions');
 
 		this.initApi();
 		this.initCli();
@@ -70,11 +70,11 @@ export class CommandController {
 		 * @returns The private key of the address.
 		 */
 		create: async (): Promise<Address> => {
-			const keyPair = this.cryptoService.generateKeys()
+			const keyPair = this.cryptoService.generateKeys();
 
 			return this.storageService.addresses.create(keyPair.publicKey, keyPair.privateKey, false)
 				.then(() => keyPair)
-				.catch(() => null)
+				.catch(() => null);
 		},
 		/**
 		 * Import an existing address.
@@ -92,7 +92,7 @@ export class CommandController {
 				? false
 				: this.storageService.addresses.create(publicKey, privateKey, false)
 					.then(() => true)
-					.catch(() => null)
+					.catch(() => null);
 		},
 		/**
 		 * Remove an address from the local node.
@@ -140,7 +140,7 @@ export class CommandController {
 				to: publicKeyReceiver,
 				amount: amount,
 				node: null
-			})
+			});
 			return true;
 		}
 	};

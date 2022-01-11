@@ -1,13 +1,13 @@
 import { Express, Request, Response } from 'express';
 import Container from 'typedi';
-import { HttpService, QueueService, StorageService } from '..';
+import { HttpService, Queue, StorageService } from '..';
 import { Event } from '../../types';
 
 export class GossipService {
 	/**
 	 * Stores incoming events which have to be processed.
 	 */
-	private eventsQueue: QueueService<Event>;
+	private eventsQueue: Queue<Event>;
 
 	/**
 	 * The service used to send http requests.
@@ -26,7 +26,7 @@ export class GossipService {
 	 * @param httpService The http service.
 	 */
 	constructor(
-		eventsQueue: QueueService<Event>,
+		eventsQueue: Queue<Event>,
 		httpService?: HttpService,
 	) {
 		this.eventsQueue = eventsQueue;
