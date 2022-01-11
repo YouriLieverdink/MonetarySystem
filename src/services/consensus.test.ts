@@ -1,22 +1,22 @@
 /* eslint-disable max-len */
 import { Consensus } from './consensus';
-import { Event } from '../types/event';
+import { Event, Header } from '../types';
 import { Crypto } from './crypto';
 
 describe('Consensus', () => {
     //
     let crypto: Crypto;
-    let events: Event<never>[];
+    let headers: Header[];
     let hashgraph: Consensus<Event<never>>;
 
     beforeAll(() => {
         crypto = new Crypto();
-        events = [];
+        const events: Event<never>[] = [];
+        headers = [];
 
         for (let i = 0; i < 17; i++) {
             events.push({
                 id: `${i}`,
-                consensus: false,
                 timestamp: new Date(),
                 publicKey: '',
                 signature: ''
@@ -68,6 +68,14 @@ describe('Consensus', () => {
 
         events[16].selfParent = h(events[15]);
         events[16].otherParent = h(events[13]);
+
+        headers = [];
+        for (let i = 0; i < 17; i++) {
+            headers.push({
+                consensus: false,
+                body: events[i]
+            });
+        }
     });
 
     beforeEach(() => {
@@ -83,42 +91,42 @@ describe('Consensus', () => {
         describe('canSee', () => {
 
             it('returns true when x and y are the same', () => {
-                const result = hashgraph.helpers.canSee(events, events[0], events[0]);
+                const result = hashgraph.helpers.canSee(headers, headers[0], headers[0]);
                 expect(result).toBeTruthy();
             });
 
             it('returns false when x is a genesis event', () => {
-                const result = hashgraph.helpers.canSee(events, events[0], events[1]);
+                const result = hashgraph.helpers.canSee(headers, headers[0], headers[1]);
                 expect(result).toBeFalsy();
             });
 
             it('returns true when y is a selfParent of x', () => {
-                const result = hashgraph.helpers.canSee(events, events[10], events[0]);
+                const result = hashgraph.helpers.canSee(headers, headers[10], headers[0]);
                 expect(result).toBeTruthy();
             });
 
             it('returns false when y is not a selfParent of x', () => {
-                const result = hashgraph.helpers.canSee(events, events[10], events[4]);
+                const result = hashgraph.helpers.canSee(headers, headers[10], headers[4]);
                 expect(result).toBeFalsy();
             });
 
             it('returns true when y is an otherParent of x', () => {
-                const result = hashgraph.helpers.canSee(events, events[10], events[7]);
+                const result = hashgraph.helpers.canSee(headers, headers[10], headers[7]);
                 expect(result).toBeTruthy();
             });
 
             it('returns false when y is not an otherParent of x', () => {
-                const result = hashgraph.helpers.canSee(events, events[10], events[4]);
+                const result = hashgraph.helpers.canSee(headers, headers[10], headers[4]);
                 expect(result).toBeFalsy();
             });
 
             it('returns true when y is a parent of a parent of x', () => {
-                const result = hashgraph.helpers.canSee(events, events[10], events[5]);
+                const result = hashgraph.helpers.canSee(headers, headers[10], headers[5]);
                 expect(result).toBeTruthy();
             });
 
             it('returns true when y is a parent of a parent of a parent of x', () => {
-                const result = hashgraph.helpers.canSee(events, events[10], events[3]);
+                const result = hashgraph.helpers.canSee(headers, headers[10], headers[3]);
                 expect(result).toBeTruthy();
             });
         });
@@ -126,27 +134,27 @@ describe('Consensus', () => {
         describe('canStronglySee', () => {
             //
             it('returns false when x=16 and y=0', () => {
-                const result = hashgraph.helpers.canStronglySee(events, events[16], events[0], 5);
+                const result = hashgraph.helpers.canStronglySee(headers, headers[16], headers[0], 5);
                 expect(result).toBeFalsy();
             });
 
             it('returns true when x=16 and y=1', () => {
-                const result = hashgraph.helpers.canStronglySee(events, events[16], events[1], 5);
+                const result = hashgraph.helpers.canStronglySee(headers, headers[16], headers[1], 5);
                 expect(result).toBeTruthy();
             });
 
             it('returns true when x=16 and y=2', () => {
-                const result = hashgraph.helpers.canStronglySee(events, events[16], events[2], 5);
+                const result = hashgraph.helpers.canStronglySee(headers, headers[16], headers[2], 5);
                 expect(result).toBeTruthy();
             });
 
             it('returns true when x=16 and y=3', () => {
-                const result = hashgraph.helpers.canStronglySee(events, events[16], events[3], 5);
+                const result = hashgraph.helpers.canStronglySee(headers, headers[16], headers[3], 5);
                 expect(result).toBeTruthy();
             });
 
             it('returns true when x=16 and y=4', () => {
-                const result = hashgraph.helpers.canStronglySee(events, events[16], events[4], 5);
+                const result = hashgraph.helpers.canStronglySee(headers, headers[16], headers[4], 5);
                 expect(result).toBeTruthy();
             });
         });
@@ -155,26 +163,48 @@ describe('Consensus', () => {
     describe('selfParent', () => {
 
         it('returns undefined when the event is a genesis event', () => {
-            const result = hashgraph.helpers.selfParent(events, events[0]);
+            const result = hashgraph.helpers.selfParent(headers, headers[0]);
             expect(result).toBeUndefined();
         });
 
         it('returns selfParent when the selfParent is found', () => {
-            const result = hashgraph.helpers.selfParent(events, events[12]);
-            expect(result).toEqual(events[8]);
+            const result = hashgraph.helpers.selfParent(headers, headers[12]);
+            expect(result).toEqual(headers[8]);
         });
     });
 
     describe('otherParent', () => {
 
         it('returns undefined when the event is a genesis event', () => {
-            const result = hashgraph.helpers.otherParent(events, events[0]);
+            const result = hashgraph.helpers.otherParent(headers, headers[0]);
             expect(result).toBeUndefined();
         });
 
         it('returns otherParent when the otherParent is found', () => {
-            const result = hashgraph.helpers.otherParent(events, events[12]);
-            expect(result).toEqual(events[9]);
+            const result = hashgraph.helpers.otherParent(headers, headers[12]);
+            expect(result).toEqual(headers[9]);
+        });
+
+        it('returns otherParent when the otherParent is found and header is changed', () => {
+            headers[9].round = 1;
+            const result = hashgraph.helpers.otherParent(headers, headers[12]);
+            expect(result).toEqual(headers[9]);
+        });
+    });
+
+    describe('witness', () => {
+        it('returns true when a creators event is the first event of a round', () => {
+            const divided: Header[] = hashgraph.divideRounds(headers, 5);
+            const result = hashgraph.helpers.witness(divided, divided[0]);
+            
+            expect(result).toBeTruthy();
+        });
+
+        it('returns false when a creators event is not the first event of a round', () => {
+            const divided: Header[] = hashgraph.divideRounds(headers, 5);
+            const result = hashgraph.helpers.witness(divided, divided[12]);
+
+            expect(result).toBeFalsy();
         });
     });
 });

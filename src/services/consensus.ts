@@ -1,5 +1,6 @@
 import { Crypto } from '../services';
-import { Event } from '../types';
+import { Event, Header } from '../types';
+import publicIp from 'public-ip';
 
 export class Consensus<T> {
     /**
@@ -10,7 +11,8 @@ export class Consensus<T> {
     /**
      * The events to which consensus has not been reached.
      */
-    private events: Event<T>[];
+    private events: Header[];
+
 
     /**
      * Class constructor.
@@ -26,15 +28,16 @@ export class Consensus<T> {
 
     /**
      * Performs the consensus algorithm.
-     * 
+     *
      * @param events The current events.
+     * @param n The number of peers in the network.
      * @returns Events on which consensus has been reached.
      */
-    public doConsensus(events: Event<T>[]): Event<T>[] {
+    public doConsensus(events: Header[], n: number): Header[] {
         //
         events.push(...this.events);
 
-        events = this.divideRounds(events);
+        events = this.divideRounds(events, n);
         events = this.decideFame(events);
         events = this.findOrder(events);
 
@@ -45,12 +48,19 @@ export class Consensus<T> {
      * Performs the first step of the consensus algorithm, division into rounds.
      * This method is responsible for assigning a round number to every event
      * and determining whether it is a witness or not.
-     * 
+     *
      * @param events The current events.
+     * @param n
      * @returns Events divided into rounds.
      */
-    private divideRounds(events: Event<T>[]): Event<T>[] {
-        //
+    public divideRounds(events: Header[], n: number): Header[] {
+        events.forEach((event) => {
+            if (!event.round) {
+                event.round = this.helpers.round(events, event, n);
+            }
+            event.witness = this.helpers.witness(events, event);
+        });
+
         return events;
     }
 
@@ -61,7 +71,7 @@ export class Consensus<T> {
      * @param events The current events.
      * @returns Events which have received fame when necessary.
      */
-    private decideFame(events: Event<T>[]): Event<T>[] {
+    private decideFame(events: Header[]): Header[] {
         //
         return events;
     }
@@ -73,7 +83,7 @@ export class Consensus<T> {
      * @param events The current events.
      * @returns Events which have been ordered.
      */
-    private findOrder(events: Event<T>[]): Event<T>[] {
+    private findOrder(events: Header[]): Header[] {
         //
         return events;
     }
@@ -91,14 +101,14 @@ export class Consensus<T> {
          * @returns Whether x can see y.
          */
         canSee: (
-            events: Event<T>[],
-            x: Event<T>,
-            y: Event<T>
+            events: Header[],
+            x: Header,
+            y: Header
         ): boolean => {
             //
             if (x === y) return true;
 
-            if (!x.otherParent && !x.selfParent) {
+            if (!x.body.otherParent && !x.body.selfParent) {
                 // Genesis events don't have parents, sad :(
                 return false;
             }
@@ -126,22 +136,22 @@ export class Consensus<T> {
          * @returns Whether x can strongly see y.
          */
         canStronglySee: (
-            events: Event<T>[],
-            x: Event<T>,
-            y: Event<T>,
+            events: Header[],
+            x: Header,
+            y: Header,
             n: number
         ): boolean => {
             //
             const computers = new Set<string>();
 
-            const dfs = (path: Event<T>[]): Event<T>[][] => {
+            const dfs = (path: Header[]): Header[][] => {
                 const x = path[path.length - 1];
-                let paths: Event<T>[][] = [];
+                let paths: Header[][] = [];
 
                 if (x === y) return [path];
 
                 // Retrieve the parents for the current event.
-                const parents: Event<T>[] = this.helpers.parents(events, x);
+                const parents: Header[] = this.helpers.parents(events, x);
 
                 parents.forEach((parent) => {
                     // Stop when we have reached a genesis event.
@@ -158,10 +168,10 @@ export class Consensus<T> {
             const paths = dfs([x]);
 
             paths.forEach((path) => path.forEach((event) => {
-                computers.add(event.publicKey);
+                computers.add(event.body.publicKey);
             }));
 
-            return computers.size >= (2 * n) / 3;
+            return this.helpers.superMajority(n, computers.size);
         },
         /**
          * Returns the parent event of the provided event.
@@ -172,15 +182,14 @@ export class Consensus<T> {
          * @returns The self or other parent.
          */
         parent: (
-            events: Event<T>[],
-            x: Event<T>,
+            events: Header[],
+            x: Header,
             kind: 'selfParent' | 'otherParent',
-        ): Event<T> => {
+        ): Header => {
             //
-            const match = (event: Event<T>) => {
-                return x[kind] === this.crypto.createHash(event);
+            const match = (event: Header) => {
+                return x.body[kind] === this.crypto.createHash(event.body);
             };
-
             return events.find(match);
         },
         /**
@@ -191,9 +200,9 @@ export class Consensus<T> {
          * @returns The parents of the current event.
          */
         parents: (
-            events: Event<T>[],
-            x: Event<T>,
-        ): Event<T>[] => {
+            events: Header[],
+            x: Header,
+        ): Header[] => {
             //
             return ['selfParent', 'otherParent'].map((kind) => {
                 return this.helpers[kind](events, x);
@@ -206,7 +215,7 @@ export class Consensus<T> {
          * @param x The event to return the parent for.
          * @returns The self parent.
          */
-        selfParent: (events: Event<T>[], x: Event<T>): Event<T> => {
+        selfParent: (events: Header[], x: Header): Header => {
             //
             return this.helpers.parent(events, x, 'selfParent');
         },
@@ -217,9 +226,109 @@ export class Consensus<T> {
          * @param x The event to return the parent for.
          * @returns The other parent.
          */
-        otherParent: (events: Event<T>[], x: Event<T>): Event<T> => {
+        otherParent: (events: Header[], x: Header): Header=> {
             //
             return this.helpers.parent(events, x, 'otherParent');
+        },
+
+        /**
+         * Calculates the round of a transaction
+         * @param events All events in the queue that
+         * @param event
+         * @param n The number of participating computers.
+         * @returns returns all events with a round number
+         */
+        round: (events: Header[], event: Header, n: number): number => {
+            let parentRound = -1;
+
+            if (this.helpers.selfParent(events, event)) {
+                const selfParent = this.helpers.parent(events, event, 'selfParent');
+                parentRound = selfParent.round;
+            }
+
+            if (this.helpers.parent(events, event, 'otherParent')) {
+                const otherParent = this.helpers.parent(events, event, 'otherParent');
+                const opRound = otherParent.round;
+                if (opRound > parentRound) {
+                    parentRound = opRound;
+                }
+            }
+
+            if (parentRound === -1) {
+                return 0;
+            }
+
+            let round = parentRound;
+
+            //look at parent round and count strongly seen witnesses (dit is nog niet zo mooi moet anders)
+            const parentRoundEvents = this.helpers.getRoundEvents(events, parentRound);
+            const parentRoundWitnesses = this.helpers.getRoundWitnesses(events, parentRound);
+
+            let c = 0;
+            parentRoundWitnesses.forEach(function (value) {
+                const ss = this.canStronglySee(parentRoundEvents, event, value, n);
+                if (ss) {
+                    c++;
+                }
+            });
+
+            // If there is a super-majority of strongly-seen witnesses, increment the
+            // round
+            if (this.helpers.superMajority(n, c)) {
+                round++;
+            }
+            return round;
+        },
+
+        /**
+         * Returns the events of a specific round
+         *
+         * @returns boolean true if x sees y
+         * @param events
+         * @param round
+         */
+        getRoundEvents: (events: Header[], round: number): Header[] => {
+            return events.filter(element => element.round = round);
+        },
+
+        /**
+         * Returns the witnesses of a specific round
+         *
+         * @returns Event<T>[] list of witnesses from specific round
+         * @param events
+         * @param round
+         */
+        getRoundWitnesses: (events: Header[], round: number): Header[] => {
+            const roundEvents = this.helpers.getRoundEvents(events, round);
+            return roundEvents.filter(element => element.witness === true);
+        },
+
+        /**
+         * Determines if the number is a super majority (+2/3)
+         *
+         * @returns boolean true if x sees y
+         * @param events
+         * @param event
+         */
+        witness: (events: Header[], event: Header): boolean => {
+            const xRound = event.round;
+            let spRound = -1;
+            if (this.helpers.selfParent(events, event) !== undefined){
+                spRound = this.helpers.selfParent(events, event).round;
+            }
+
+            return xRound > spRound;
+        },
+
+        /**
+         * Determines if the number is a super majority (+2/3)
+         *
+         * @returns boolean true if x sees y
+         * @param computers
+         * @param compare
+         */
+        superMajority: (computers: number, compare: number): boolean => {
+            return compare >= Math.floor(2 * computers / 3 + 1);
         }
     };
 }
