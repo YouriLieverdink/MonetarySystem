@@ -29,7 +29,6 @@ export class Internal extends Gossip<Event<Transaction>> {
         const event: Event<Transaction> = {
             id: uuidv1(),
             timestamp: new Date(),
-            consensus: false,
             publicKey: this.address.publicKey,
             signature: ''
         };
@@ -95,7 +94,6 @@ export class Internal extends Gossip<Event<Transaction>> {
         const event: Event<Transaction> = {
             id: uuidv1(),
             timestamp: new Date(),
-            consensus: false,
             selfParent: this.crypto.createHash(this.lastItem),
             otherParent: this.crypto.createHash(lastItem),
             publicKey: this.address.publicKey,
