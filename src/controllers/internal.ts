@@ -1,7 +1,8 @@
+import Container from 'typedi';
 import { v1 as uuidv1 } from 'uuid';
 import { containsHash } from '../helpers';
-import { Crypto, Gossip, GossipConfig } from '../services';
-import { Address, Event, Transaction } from '../types';
+import { Crypto, Gossip, GossipConfig, Queue, Storage } from '../services';
+import { Event, Transaction } from '../types';
 
 export class Internal extends Gossip<Event<Transaction>> {
     /**
@@ -10,9 +11,14 @@ export class Internal extends Gossip<Event<Transaction>> {
     private crypto: Crypto;
 
     /**
-     * The address used for signing the events.
+     * Transactions created by the user for distribution.
      */
-    private address: Address;
+    private queue: Queue<Transaction>;
+
+    /** 
+     * Used to store things in the database.
+     */
+    private storage: Storage;
 
     /**
      * Class constructor.
@@ -22,23 +28,51 @@ export class Internal extends Gossip<Event<Transaction>> {
     constructor(config: GossipConfig) {
         super(config);
 
-        this.crypto = new Crypto();
-        this.address = this.crypto.createAddress();
+        // Inject depedencies.
+        this.crypto = Container.get<Crypto>('crypto');
+        this.queue = Container.get<Queue<Transaction>>('transactions');
+        this.storage = Container.get<Storage>('storage');
 
-        // Create the initial event.
+        // Set the initial event.
+        this.addEvent();
+    }
+
+    /**
+     * Adds a new event to this items.
+     * 
+     * @param selfParent The parent of the event created by this computer.
+     * @param otherParent The parent of the event created by another.
+     */
+    protected async addEvent(
+        selfParent?: string,
+        otherParent?: string
+    ): Promise<void> {
+        //
+        const addresses = await this.storage.addresses.index();
+
+        // We must have an address before we can sign transactions.
+        if (addresses.length === 0) return;
+
+        const address = addresses[0];
+
         const event: Event<Transaction> = {
             id: uuidv1(),
             timestamp: new Date(),
             consensus: false,
-            publicKey: this.address.publicKey,
-            signature: ''
+            publicKey: address.publicKey,
+            signature: '',
+            selfParent: selfParent,
+            otherParent: otherParent
         };
 
-        // Sign the message.
-        event.signature = this.crypto.createSignature(
-            event,
-            this.address.privateKey
-        );
+        // Add a single transactions (when available) to the event.
+        const transactions = this.queue.pop();
+        if (transactions.length > 0) {
+            event.data = transactions[0];
+        }
+
+        // Signs the message.
+        event.signature = this.crypto.createSignature(event, address.privateKey);
 
         this.items.push(event);
         this.lastItem = event;
@@ -91,24 +125,10 @@ export class Internal extends Gossip<Event<Transaction>> {
             }
         });
 
-        // Create an item to commemorate the sync.
-        const event: Event<Transaction> = {
-            id: uuidv1(),
-            timestamp: new Date(),
-            consensus: false,
-            selfParent: this.crypto.createHash(this.lastItem),
-            otherParent: this.crypto.createHash(lastItem),
-            publicKey: this.address.publicKey,
-            signature: ''
-        };
+        // Create an event to commemorate the sync.
+        const selfParent = this.crypto.createHash(this.lastItem);
+        const otherParent = this.crypto.createHash(lastItem);
 
-        // Sign the message.
-        event.signature = this.crypto.createSignature(
-            event,
-            this.address.privateKey
-        );
-
-        this.items.push(event);
-        this.lastItem = event;
+        this.addEvent(selfParent, otherParent);
     }
 }
