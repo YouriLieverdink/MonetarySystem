@@ -187,9 +187,11 @@ describe('Consensus', () => {
         });
 
         it('returns otherParent when the otherParent is found and header is changed', () => {
-            headers[9].round = 1;
+            headers[9].consensus = true;
             const result = hashgraph.helpers.otherParent(headers, headers[12]);
+            
             expect(result).toEqual(headers[9]);
+            headers[9].consensus = false;
         });
     });
 
