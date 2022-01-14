@@ -56,9 +56,9 @@ export class Consensus<T> {
     public divideRounds(events: Header[], n: number): Header[] {
         events.forEach((event) => {
             if (!event.round) {
-                event.round = this.helpers.round(events, event, n);
+                event.round = this.roundHelpers.round(events, event, n);
             }
-            event.witness = this.helpers.witness(events, event);
+            event.witness = this.roundHelpers.witness(events, event);
         });
 
         return events;
@@ -226,11 +226,24 @@ export class Consensus<T> {
          * @param x The event to return the parent for.
          * @returns The other parent.
          */
-        otherParent: (events: Header[], x: Header): Header=> {
+        otherParent: (events: Header[], x: Header): Header => {
             //
             return this.helpers.parent(events, x, 'otherParent');
         },
 
+        /**
+         * Determines if the number is a super majority (+2/3)
+         *
+         * @returns boolean true if x sees y
+         * @param computers
+         * @param compare
+         */
+        superMajority: (computers: number, compare: number): boolean => {
+            return compare >= Math.floor(2 * computers / 3 + 1);
+        }
+    };
+
+    public readonly roundHelpers = {
         /**
          * Calculates the round of a transaction
          * @param events All events in the queue that
@@ -239,46 +252,67 @@ export class Consensus<T> {
          * @returns returns all events with a round number
          */
         round: (events: Header[], event: Header, n: number): number => {
-            let parentRound = -1;
+            let round = this.roundHelpers.getHighestParentRound(events, event);
 
-            if (this.helpers.selfParent(events, event)) {
-                const selfParent = this.helpers.parent(events, event, 'selfParent');
-                parentRound = selfParent.round;
-            }
-
-            if (this.helpers.parent(events, event, 'otherParent')) {
-                const otherParent = this.helpers.parent(events, event, 'otherParent');
-                const opRound = otherParent.round;
-                if (opRound > parentRound) {
-                    parentRound = opRound;
-                }
-            }
-
-            if (parentRound === -1) {
+            if (round === -1) {
                 return 0;
             }
 
-            let round = parentRound;
+            const count = this.roundHelpers.countStrongestSeenWitnesses(events, event, round, n);
 
-            //look at parent round and count strongly seen witnesses (dit is nog niet zo mooi moet anders)
-            const parentRoundEvents = this.helpers.getRoundEvents(events, parentRound);
-            const parentRoundWitnesses = this.helpers.getRoundWitnesses(events, parentRound);
-
-            let c = 0;
-            parentRoundWitnesses.forEach(function (value) {
-                const ss = this.canStronglySee(parentRoundEvents, event, value, n);
-                if (ss) {
-                    c++;
-                }
-            });
-
-            // If there is a super-majority of strongly-seen witnesses, increment the
-            // round
-            if (this.helpers.superMajority(n, c)) {
+            // If there is a super-majority of strongly-seen witnesses, increment the round
+            if (this.helpers.superMajority(n, count)) {
                 round++;
+            }
+
+            return round;
+        },
+
+        /**
+         * Return round of parent with the highest round
+         * @param events All events in the queue that
+         * @param event
+         * @returns returns round number
+         */
+        getHighestParentRound: (events: Header[], event: Header): number => {
+            let round = -1;
+
+            if (this.helpers.selfParent(events, event)) {
+                round = this.helpers.selfParent(events, event).round;
+            }
+
+            if (this.helpers.otherParent(events, event)) {
+                const opRound = this.helpers.otherParent(events, event).round;
+                if (opRound > round) {
+                    round = opRound;
+                }
             }
             return round;
         },
+
+        /**
+         * Counts strongly seen witnesses in a round
+         * @param events
+         * @param event
+         * @param round
+         * @param n The number of participating computers.
+         * @returns The number strongly seen witnesses
+         */
+        countStrongestSeenWitnesses: (events: Header[], event: Header, round: number, n: number): number => {
+            const parentRoundEvents = this.roundHelpers.getRoundEvents(events, round);
+            const parentRoundWitnesses = this.roundHelpers.getRoundWitnesses(events, round);
+
+            let count = 0;
+            for (let i = 0, len = parentRoundWitnesses.length; i < len; i++) {
+                const ss = this.helpers.canStronglySee(parentRoundEvents, event, parentRoundWitnesses[i], n);
+                if (ss) {
+                    count++;
+                }
+            }
+
+            return count;
+        },
+
 
         /**
          * Returns the events of a specific round
@@ -288,7 +322,7 @@ export class Consensus<T> {
          * @param round
          */
         getRoundEvents: (events: Header[], round: number): Header[] => {
-            return events.filter(element => element.round = round);
+            return events.filter(element => element.round === round);
         },
 
         /**
@@ -299,7 +333,7 @@ export class Consensus<T> {
          * @param round
          */
         getRoundWitnesses: (events: Header[], round: number): Header[] => {
-            const roundEvents = this.helpers.getRoundEvents(events, round);
+            const roundEvents = this.roundHelpers.getRoundEvents(events, round);
             return roundEvents.filter(element => element.witness === true);
         },
 
@@ -319,16 +353,5 @@ export class Consensus<T> {
 
             return xRound > spRound;
         },
-
-        /**
-         * Determines if the number is a super majority (+2/3)
-         *
-         * @returns boolean true if x sees y
-         * @param computers
-         * @param compare
-         */
-        superMajority: (computers: number, compare: number): boolean => {
-            return compare >= Math.floor(2 * computers / 3 + 1);
-        }
     };
 }

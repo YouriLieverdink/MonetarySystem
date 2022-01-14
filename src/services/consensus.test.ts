@@ -8,6 +8,7 @@ describe('Consensus', () => {
     let crypto: Crypto;
     let headers: Header[];
     let hashgraph: Consensus<Event<never>>;
+    const peers = 5;
 
     beforeAll(() => {
         crypto = new Crypto();
@@ -194,17 +195,41 @@ describe('Consensus', () => {
 
     describe('witness', () => {
         it('returns true when a creators event is the first event of a round', () => {
-            const divided: Header[] = hashgraph.divideRounds(headers, 5);
-            const result = hashgraph.helpers.witness(divided, divided[0]);
+            const divided: Header[] = hashgraph.divideRounds(headers, peers);
+            const result = hashgraph.roundHelpers.witness(divided, divided[0]);
             
             expect(result).toBeTruthy();
         });
 
         it('returns false when a creators event is not the first event of a round', () => {
-            const divided: Header[] = hashgraph.divideRounds(headers, 5);
-            const result = hashgraph.helpers.witness(divided, divided[12]);
+            const divided: Header[] = hashgraph.divideRounds(headers, peers);
+            const result = hashgraph.roundHelpers.witness(divided, divided[12]);
 
             expect(result).toBeFalsy();
         });
     });
+
+    describe('divideRound', () => {
+        it('returns 0 when event is and genesis event', () => {
+            const divided: Header[] = hashgraph.divideRounds(headers, peers);
+            const round = hashgraph.roundHelpers.round(divided, divided[0], peers);
+
+            expect(round).toEqual(0);
+        });
+
+        it('returns 0 when event belongs in round 0', () => {
+            const divided: Header[] = hashgraph.divideRounds(headers, peers);
+            const round = hashgraph.roundHelpers.round(divided, divided[10], peers);
+
+            expect(round).toEqual(0);
+        });
+
+        it('increments the round if there is a super-majority of strongly-seen witnesses', () => {
+            const divided: Header[] = hashgraph.divideRounds(headers, peers);
+            const round = hashgraph.roundHelpers.round(divided, divided[16], peers);
+
+            expect(round).toEqual(1);
+        });
+    });
+
 });
