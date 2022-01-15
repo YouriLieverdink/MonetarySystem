@@ -1,10 +1,20 @@
 import Container from 'typedi';
 import { v1 as uuidv1 } from 'uuid';
 import { containsHash } from '../helpers';
-import { Crypto, Gossip, GossipConfig, Queue, Storage } from '../services';
-import { Event, Transaction } from '../types';
+import { Consensus, Crypto, Gossip, GossipConfig, Queue, Storage } from '../services';
+import { Address, Event, Transaction } from '../types';
 
 export class Internal extends Gossip<Event<Transaction>> {
+    /**
+     * The address used for signing the events.
+     */
+    private address: Address;
+
+    /**
+    * The algorithm for reaching consensus.
+    */
+    private consensus: Consensus<Transaction>;
+
     /**
      * Used for cryptography.
      */
@@ -17,6 +27,8 @@ export class Internal extends Gossip<Event<Transaction>> {
 
     /** 
      * Used to store things in the database.
+     *
+     * Used for permanent storage on disk.
      */
     private storage: Storage;
 
@@ -54,6 +66,11 @@ export class Internal extends Gossip<Event<Transaction>> {
         if (addresses.length === 0) return;
 
         const address = addresses[0];
+        // Inject dependencies.
+        this.crypto = new Crypto();
+        this.consensus = new Consensus();
+        this.address = this.crypto.createAddress();
+        this.storage = Container.get<Storage>('storage');
 
         const event: Event<Transaction> = {
             id: uuidv1(),
@@ -81,8 +98,29 @@ export class Internal extends Gossip<Event<Transaction>> {
     /**
      * Called every constant `interval`.
      */
-    protected onTick(): void {
-        //
+    protected async onTick(): Promise<void> {
+        // Initiate a new consensus calcuation.
+        const events = this.consensus.doConsensus(this.items);
+
+        // Check if mirror is enabled.
+        const mirror = await this.storage.settings.get('mirror');
+
+        const promises: Promise<void>[] = [];
+
+        // We have reached consensus on these events.
+        events.forEach((event) => {
+            // We remove after 5 seconds to ensure everyone has it.
+            setTimeout(() => {
+                const index = this.items.indexOf(event);
+                if (index > -1) {
+                    this.items.splice(index, 1);
+                }
+            }, 5000);
+
+            if (mirror && mirror.value === 'true') {
+                promises.push(this.storage.events.create(event));
+            }
+        });
     }
 
     /**
