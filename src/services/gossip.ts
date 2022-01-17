@@ -184,4 +184,11 @@ export abstract class Gossip<T> {
      * @param lastItem The last item the other computer created.
      */
     protected abstract onItems(items: T[], lastItem: T): void;
+
+    /**
+     * The number of connected computers.
+     */
+    protected get n(): number {
+        return this.computers.length;
+    }
 }
