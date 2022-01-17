@@ -1,12 +1,12 @@
 import { Event } from '../types';
-import { Consensus } from './consensus';
+import { Consensus, cEvent } from './consensus';
 import { Crypto } from './crypto';
 
 describe('Consensus', () => {
     //
     let crypto: Crypto;
     let hashgraph: Consensus<Event<never>>;
-    let events: Event<never>[];
+    let events: cEvent<never>[];
     let n: number;
 
     beforeEach(() => {
@@ -31,7 +31,11 @@ describe('Consensus', () => {
         [3, 9].forEach((i) => events[i].publicKey = 'Dave');
         [4, 6, 14].forEach((i) => events[i].publicKey = 'Ed');
 
-        const h = (e: Event<never>) => crypto.createHash(e as Event<never>);
+        const h = (e: cEvent<never>) => crypto.createHash(e, [
+            'consensus',
+            'round',
+            'witness'
+        ]);
 
         // Construct the hashgraph.
         events[5].selfParent = h(events[2]);

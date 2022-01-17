@@ -1,12 +1,13 @@
 import { Crypto } from '../services';
 import { Event } from '../types';
 
-type cEvent<T> = Event<T> & {
+export type cEvent<T> = Event<T> & {
     consensus?: boolean;
     round?: number;
     witness?: boolean;
 }
 
+//
 export class Consensus<T> {
     /**
      * Used for cryptography.
@@ -193,7 +194,11 @@ export class Consensus<T> {
         ): cEvent<T> => {
             //
             const match = (event: cEvent<T>) => {
-                return x[kind] === this.crypto.createHash(event as Event<T>);
+                return x[kind] === this.crypto.createHash(event, [
+                    'consensus',
+                    'round',
+                    'witness'
+                ]);
             };
 
             return events.find(match);
