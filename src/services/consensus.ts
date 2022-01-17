@@ -352,6 +352,66 @@ export class Consensus<T> {
             }
 
             return xRound > spRound;
-        },
+        }
+    };
+
+    public readonly fameHelpers = {
+        /**
+         * decide if witnesses are famous
+         * @param events
+         * @param n The number of participating computers.
+         * @returns returns all events with a round number
+         */
+        fame: (events: Header[], n: number): Header[] => {
+            //make something to save votes
+
+            //for every undecided round r
+
+                //get all witnesses from that round r
+
+                //for every witness - x
+                    //if it is decided continue
+
+                    //vote loop j = r +1; j<= last round; j++
+                        //get witnesses from j round - y
+
+                        //for every j witness
+                            //dif = j - r
+
+                            //if diff == 1
+                                //see = see(y, x)
+                                //set vote of x y to true or false pending on see
+
+                            //else
+                                //get witnesses from j-1 - w
+                                //make collection of ss witnesses
+
+                                // for every j-1 witness
+                                    //ss = stronglyseen(y - w)
+                                    //if strongle seen add to collection
+
+                                //collect votes from witnesses
+                                //yes = 0 no = 0
+                                //for every ss witnesses - w
+                                    // if yes then yes++
+                                    // if no then no++
+                                //v = false t = no
+                                //if yes >= no
+                                    //v = true t = yes
+                                //if normal round
+                                    //if supermajority
+                                        //set fame of x to v
+                                        //set vote of x y to v
+                                        //break out of vote loop
+                                    //else
+                                        //set vote of x y to v
+                                //else if coin round
+                                    //if supermajority
+                                        //set vote of x y to v
+                                    //else
+                                        //set vote of x y to middleBit of y's hash
+
+            return events;
+        }
     };
 }
