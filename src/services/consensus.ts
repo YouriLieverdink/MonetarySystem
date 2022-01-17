@@ -193,8 +193,9 @@ export class Consensus<T> {
         ): cEvent<T> => {
             //
             const match = (event: cEvent<T>) => {
-                return x[kind] === this.crypto.createHash(event);
+                return x[kind] === this.crypto.createHash(event as Event<T>);
             };
+
             return events.find(match);
         },
         /**
@@ -209,9 +210,15 @@ export class Consensus<T> {
             x: cEvent<T>,
         ): cEvent<T>[] => {
             //
-            return ['selfParent', 'otherParent'].map((kind) => {
-                return this.helpers[kind](events, x);
+            const parents: cEvent<T>[] = [];
+
+            ['selfParent', 'otherParent'].forEach((kind) => {
+                const parent = this.helpers[kind](events, x);
+
+                if (parent) parents.push(parent);
             });
+
+            return parents;
         },
         /**
          * Returns the self parent for the provided event.
