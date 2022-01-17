@@ -22,6 +22,7 @@ export class Consensus<T> {
     ) {
         //
         this.crypto = crypto || new Crypto();
+        this.events = [];
     }
 
     /**
