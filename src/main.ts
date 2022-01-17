@@ -4,7 +4,7 @@ import { Database } from 'sqlite3';
 import Container from 'typedi';
 import { env } from './config';
 import { Command, Internal } from './controllers';
-import { Queue, Storage } from './services';
+import { Queue, Storage, Crypto } from './services';
 import { Transaction } from './types';
 
 const main = (): void => {
@@ -12,13 +12,15 @@ const main = (): void => {
 	const app = express();
 	app.use(express.json());
 
-	app.listen(3001, '0.0.0.0');
+	app.listen(+env.node.port, env.node.ip);
 	Container.set('express', app);
 
 	const database = new Database('db.sqlite3');
 	Container.set('storage', new Storage(database));
 
 	Container.set('transactions', new Queue<Transaction>());
+
+	Container.set('crypto', new Crypto());
 
 	new Internal({
 		interval: +env.interval,
