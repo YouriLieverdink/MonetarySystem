@@ -1,6 +1,11 @@
 import { Crypto } from '../services';
-import { Event, Header } from '../types';
-import publicIp from 'public-ip';
+import { Event } from '../types';
+
+type cEvent<T> = Event<T> & {
+    consensus?: boolean;
+    round?: number;
+    witness?: boolean;
+}
 
 export class Consensus<T> {
     /**
@@ -11,8 +16,7 @@ export class Consensus<T> {
     /**
      * The events to which consensus has not been reached.
      */
-    private events: Header[];
-
+    private events: cEvent<T>[];
 
     /**
      * Class constructor.
@@ -34,7 +38,7 @@ export class Consensus<T> {
      * @param n The number of peers in the network.
      * @returns Events on which consensus has been reached.
      */
-    public doConsensus(events: Header[], n: number): Header[] {
+    public doConsensus(events: cEvent<T>[], n: number): cEvent<T>[] {
         //
         events.push(...this.events);
 
@@ -54,7 +58,7 @@ export class Consensus<T> {
      * @param n
      * @returns Events divided into rounds.
      */
-    public divideRounds(events: Header[], n: number): Header[] {
+    public divideRounds(events: cEvent<T>[], n: number): cEvent<T>[] {
         events.forEach((event) => {
             if (!event.round) {
                 event.round = this.roundHelpers.round(events, event, n);
@@ -72,7 +76,7 @@ export class Consensus<T> {
      * @param events The current events.
      * @returns Events which have received fame when necessary.
      */
-    private decideFame(events: Header[]): Header[] {
+    private decideFame(events: cEvent<T>[]): cEvent<T>[] {
         //
         return events;
     }
@@ -84,7 +88,7 @@ export class Consensus<T> {
      * @param events The current events.
      * @returns Events which have been ordered.
      */
-    private findOrder(events: Header[]): Header[] {
+    private findOrder(events: cEvent<T>[]): cEvent<T>[] {
         //
         return events;
     }
@@ -102,14 +106,14 @@ export class Consensus<T> {
          * @returns Whether x can see y.
          */
         canSee: (
-            events: Header[],
-            x: Header,
-            y: Header
+            events: cEvent<T>[],
+            x: cEvent<T>,
+            y: cEvent<T>
         ): boolean => {
             //
             if (x === y) return true;
 
-            if (!x.body.otherParent && !x.body.selfParent) {
+            if (!x.otherParent && !x.selfParent) {
                 // Genesis events don't have parents, sad :(
                 return false;
             }
@@ -137,22 +141,22 @@ export class Consensus<T> {
          * @returns Whether x can strongly see y.
          */
         canStronglySee: (
-            events: Header[],
-            x: Header,
-            y: Header,
+            events: cEvent<T>[],
+            x: cEvent<T>,
+            y: cEvent<T>,
             n: number
         ): boolean => {
             //
             const computers = new Set<string>();
 
-            const dfs = (path: Header[]): Header[][] => {
+            const dfs = (path: cEvent<T>[]): cEvent<T>[][] => {
                 const x = path[path.length - 1];
-                let paths: Header[][] = [];
+                let paths: cEvent<T>[][] = [];
 
                 if (x === y) return [path];
 
                 // Retrieve the parents for the current event.
-                const parents: Header[] = this.helpers.parents(events, x);
+                const parents: cEvent<T>[] = this.helpers.parents(events, x);
 
                 parents.forEach((parent) => {
                     // Stop when we have reached a genesis event.
@@ -169,7 +173,7 @@ export class Consensus<T> {
             const paths = dfs([x]);
 
             paths.forEach((path) => path.forEach((event) => {
-                computers.add(event.body.publicKey);
+                computers.add(event.publicKey);
             }));
 
             return this.helpers.superMajority(n, computers.size);
@@ -183,13 +187,13 @@ export class Consensus<T> {
          * @returns The self or other parent.
          */
         parent: (
-            events: Header[],
-            x: Header,
+            events: cEvent<T>[],
+            x: cEvent<T>,
             kind: 'selfParent' | 'otherParent',
-        ): Header => {
+        ): cEvent<T> => {
             //
-            const match = (event: Header) => {
-                return x.body[kind] === this.crypto.createHash(event.body);
+            const match = (event: cEvent<T>) => {
+                return x[kind] === this.crypto.createHash(event);
             };
             return events.find(match);
         },
@@ -201,9 +205,9 @@ export class Consensus<T> {
          * @returns The parents of the current event.
          */
         parents: (
-            events: Header[],
-            x: Header,
-        ): Header[] => {
+            events: cEvent<T>[],
+            x: cEvent<T>,
+        ): cEvent<T>[] => {
             //
             return ['selfParent', 'otherParent'].map((kind) => {
                 return this.helpers[kind](events, x);
@@ -216,7 +220,7 @@ export class Consensus<T> {
          * @param x The event to return the parent for.
          * @returns The self parent.
          */
-        selfParent: (events: Header[], x: Header): Header => {
+        selfParent: (events: cEvent<T>[], x: cEvent<T>): cEvent<T> => {
             //
             return this.helpers.parent(events, x, 'selfParent');
         },
@@ -227,7 +231,7 @@ export class Consensus<T> {
          * @param x The event to return the parent for.
          * @returns The other parent.
          */
-        otherParent: (events: Header[], x: Header): Header => {
+        otherParent: (events: cEvent<T>[], x: cEvent<T>): cEvent<T> => {
             //
             return this.helpers.parent(events, x, 'otherParent');
         },
@@ -252,7 +256,7 @@ export class Consensus<T> {
          * @param n The number of participating computers.
          * @returns returns all events with a round number
          */
-        round: (events: Header[], event: Header, n: number): number => {
+        round: (events: cEvent<T>[], event: cEvent<T>, n: number): number => {
             let round = this.roundHelpers.getHighestParentRound(events, event);
 
             if (round === -1) {
@@ -275,7 +279,7 @@ export class Consensus<T> {
          * @param event
          * @returns returns round number
          */
-        getHighestParentRound: (events: Header[], event: Header): number => {
+        getHighestParentRound: (events: cEvent<T>[], event: cEvent<T>): number => {
             let round = -1;
 
             if (this.helpers.selfParent(events, event)) {
@@ -299,7 +303,7 @@ export class Consensus<T> {
          * @param n The number of participating computers.
          * @returns The number strongly seen witnesses
          */
-        countStrongestSeenWitnesses: (events: Header[], event: Header, round: number, n: number): number => {
+        countStrongestSeenWitnesses: (events: cEvent<T>[], event: cEvent<T>, round: number, n: number): number => {
             const parentRoundEvents = this.roundHelpers.getRoundEvents(events, round);
             const parentRoundWitnesses = this.roundHelpers.getRoundWitnesses(events, round);
 
@@ -322,7 +326,7 @@ export class Consensus<T> {
          * @param events
          * @param round
          */
-        getRoundEvents: (events: Header[], round: number): Header[] => {
+        getRoundEvents: (events: cEvent<T>[], round: number): cEvent<T>[] => {
             return events.filter(element => element.round === round);
         },
 
@@ -333,7 +337,7 @@ export class Consensus<T> {
          * @param events
          * @param round
          */
-        getRoundWitnesses: (events: Header[], round: number): Header[] => {
+        getRoundWitnesses: (events: cEvent<T>[], round: number): cEvent<T>[] => {
             const roundEvents = this.roundHelpers.getRoundEvents(events, round);
             return roundEvents.filter(element => element.witness === true);
         },
@@ -345,10 +349,10 @@ export class Consensus<T> {
          * @param events
          * @param event
          */
-        witness: (events: Header[], event: Header): boolean => {
+        witness: (events: cEvent<T>[], event: cEvent<T>): boolean => {
             const xRound = event.round;
             let spRound = -1;
-            if (this.helpers.selfParent(events, event) !== undefined){
+            if (this.helpers.selfParent(events, event) !== undefined) {
                 spRound = this.helpers.selfParent(events, event).round;
             }
 
@@ -363,54 +367,54 @@ export class Consensus<T> {
          * @param n The number of participating computers.
          * @returns returns all events with a round number
          */
-        fame: (events: Header[], n: number): Header[] => {
+        fame: (events: cEvent<T>[], n: number): cEvent<T>[] => {
             //make something to save votes
 
             //for every undecided round r
 
-                //get all witnesses from that round r
+            //get all witnesses from that round r
 
-                //for every witness - x
-                    //if it is decided continue
+            //for every witness - x
+            //if it is decided continue
 
-                    //vote loop j = r +1; j<= last round; j++
-                        //get witnesses from j round - y
+            //vote loop j = r +1; j<= last round; j++
+            //get witnesses from j round - y
 
-                        //for every j witness
-                            //dif = j - r
+            //for every j witness
+            //dif = j - r
 
-                            //if diff == 1
-                                //see = see(y, x)
-                                //set vote of x y to true or false pending on see
+            //if diff == 1
+            //see = see(y, x)
+            //set vote of x y to true or false pending on see
 
-                            //else
-                                //get witnesses from j-1 - w
-                                //make collection of ss witnesses
+            //else
+            //get witnesses from j-1 - w
+            //make collection of ss witnesses
 
-                                // for every j-1 witness
-                                    //ss = stronglyseen(y - w)
-                                    //if strongle seen add to collection
+            // for every j-1 witness
+            //ss = stronglyseen(y - w)
+            //if strongle seen add to collection
 
-                                //collect votes from witnesses
-                                //yes = 0 no = 0
-                                //for every ss witnesses - w
-                                    // if yes then yes++
-                                    // if no then no++
-                                //v = false t = no
-                                //if yes >= no
-                                    //v = true t = yes
-                                //if normal round
-                                    //if supermajority
-                                        //set fame of x to v
-                                        //set vote of x y to v
-                                        //break out of vote loop
-                                    //else
-                                        //set vote of x y to v
-                                //else if coin round
-                                    //if supermajority
-                                        //set vote of x y to v
-                                    //else
-                                        //set vote of x y to middleBit of y's hash
+            //collect votes from witnesses
+            //yes = 0 no = 0
+            //for every ss witnesses - w
+            // if yes then yes++
+            // if no then no++
+            //v = false t = no
+            //if yes >= no
+            //v = true t = yes
+            //if normal round
+            //if supermajority
+            //set fame of x to v
+            //set vote of x y to v
+            //break out of vote loop
+            //else
+            //set vote of x y to v
+            //else if coin round
+            //if supermajority
+            //set vote of x y to v
+            //else
+            //set vote of x y to middleBit of y's hash
 
             return events;
         }

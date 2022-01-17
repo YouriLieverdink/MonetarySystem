@@ -4,4 +4,3 @@ export * from './event';
 export * from './setting';
 export * from './state';
 export * from './transaction';
-export * from './header';
