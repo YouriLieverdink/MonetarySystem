@@ -2,14 +2,9 @@ import Container from 'typedi';
 import { v1 as uuidv1 } from 'uuid';
 import { containsHash } from '../helpers';
 import { Consensus, Crypto, Gossip, GossipConfig, Queue, Storage } from '../services';
-import { Address, Event, Transaction } from '../types';
+import { Event, Transaction } from '../types';
 
 export class Internal extends Gossip<Event<Transaction>> {
-    /**
-     * The address used for signing the events.
-     */
-    private address: Address;
-
     /**
     * The algorithm for reaching consensus.
     */
@@ -44,6 +39,7 @@ export class Internal extends Gossip<Event<Transaction>> {
         this.crypto = Container.get<Crypto>('crypto');
         this.queue = Container.get<Queue<Transaction>>('transactions');
         this.storage = Container.get<Storage>('storage');
+        this.consensus = new Consensus();
 
         // Set the initial event.
         this.addEvent();
@@ -66,11 +62,6 @@ export class Internal extends Gossip<Event<Transaction>> {
         if (addresses.length === 0) return;
 
         const address = addresses[0];
-        // Inject dependencies.
-        this.crypto = new Crypto();
-        this.consensus = new Consensus();
-        this.address = this.crypto.createAddress();
-        this.storage = Container.get<Storage>('storage');
 
         const event: Event<Transaction> = {
             id: uuidv1(),
