@@ -22,7 +22,6 @@ export class Cli {
         command: Command,
         response: Console
     ) {
-        //
         this.command = command;
         this.response = response;
 
@@ -40,7 +39,7 @@ export class Cli {
         const command = args.shift();
 
         try {
-            if (command == '') return;
+            if (command === '') return;
 
             // Attempt to call the provided command.
             return (this.commands[command](args))
@@ -87,7 +86,7 @@ export class Cli {
          * 
          * @param message The message to display.
          */
-        log: (message: string = ''): void =>
+        log: (message = ''): void =>
             this.response.log(`  ${message}`),
         /**
          * Displays the welcome message.
@@ -172,10 +171,10 @@ export class Cli {
                 : await this.command.transactions.getAllImported();
 
             if (transactions.length > 0) {
-                this.responses.log(`Found ${transactions.length} transaction${transactions.length === 1 ? '': 's'}`)
+                this.responses.log(`Found ${transactions.length} transaction${transactions.length === 1 ? '': 's'}`);
                 transactions.forEach((tx, index) => {
-                    return this.responses.log(`${index + 1}.    Amount: ${tx.amount}    Sender: ${tx.from}	Receiver: ${tx.to}`)
-                })
+                    return this.responses.log(`${index + 1}.    Amount: ${tx.amount}    Sender: ${tx.from}	Receiver: ${tx.to}`);
+                });
                 return;
             }
 
@@ -188,25 +187,25 @@ export class Cli {
                 return this.responses.bad();
 
             const states: Promise<State[]> = (args.length === 1)
-                ? new Promise(async () => [await this.command.states.get(args[0])])
+                ? this.command.states.get(args[0])
                 : this.command.states.getAllImported();
 
             return states
                 .then(states => {
-                    if (states.filter(b => b != undefined || b != null).length === 0)
-                        return this.responses.log('No balance data')
+                    if (states.filter(b => b != null).length === 0)
+                        return this.responses.log('No balance data');
 
-                    this.responses.log(`Total balance: ${states.reduce((sum, state) => sum + state?.balance ?? 0, 0)}`)
+                    this.responses.log(`Total balance: ${states.reduce((sum, { balance }) => sum + balance as Number ?? 0, 0)}`);
                     states.forEach(({ publicKey, balance }) =>
                         this.responses.log(`Balance: ${balance ?? 'unknown'}		Address: ${publicKey ?? 'unknown'}`)
-                )})
-                .catch(() => this.responses.error('Error getting balance data'))
+                    )
+                }).catch(() =>
+                    this.responses.error('Error getting balance data')
+                );
         },
         transfer: async (args: string[]): Promise<void> => {
-            if (args.length !== 3 || isNaN(Number(args[2])) || Number(args[2]) <= 0) {
-                this.responses.bad();
-                return;
-            }
+            if (args.length !== 3 || isNaN(Number(args[2])) || Number(args[2]) <= 0)
+                return this.responses.bad();
 
             const sender: string = args[0];
             const receiver: string = args[1];
@@ -216,21 +215,17 @@ export class Cli {
             this.responses.log('Created transaction!');
         },
         mirror: async (args: string[]): Promise<void> => {
-            if (args.length !== 1 || !['on', 'off'].includes(args[0])) {
-                this.responses.bad();
-                return;
-            }
+            if (args.length !== 1 || !['on', 'off'].includes(args[0]))
+                return this.responses.bad();
 
             const enabled = args[0] === 'on';
             await this.command.settings.update('mirror', enabled ? 'true' : 'false');
 
             this.responses.log(`Mirroring ${enabled ? 'enabled' : 'disabled'}`);
         },
-        default: (args: string[]): boolean => {
-            if (args.length > 1) {
-                this.responses.bad();
-                return;
-            }
+        default: (args: string[]): void => {
+            if (args.length > 1)
+                return this.responses.bad();
 
             throw new Error('Not implemented');
         },
