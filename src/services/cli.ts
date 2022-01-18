@@ -195,10 +195,10 @@ export class Cli {
                     if (states.filter(b => b != null).length === 0)
                         return this.responses.log('No balance data');
 
-                    this.responses.log(`Total balance: ${states.reduce((sum, { balance }) => sum + balance as Number ?? 0, 0)}`);
+                    this.responses.log(`Total balance: ${states.reduce((sum, { balance }) => sum + balance ?? 0, 0)}`);
                     states.forEach(({ publicKey, balance }) =>
                         this.responses.log(`Balance: ${balance ?? 'unknown'}		Address: ${publicKey ?? 'unknown'}`)
-                    )
+                    );
                 }).catch(() =>
                     this.responses.error('Error getting balance data')
                 );
