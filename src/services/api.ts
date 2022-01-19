@@ -1,6 +1,7 @@
-import { Request, Response } from 'express';
-import { Command } from '../controllers';
+import {Request, Response} from 'express';
+import {Command} from '../controllers';
 import {State, Transaction} from "../types";
+import {response} from "express/ts4.0";
 
 export class Api {
     /**
@@ -30,8 +31,7 @@ export class Api {
         try {
             // Check whether the command exists
             if (Object.keys(this.core).includes(command)) {
-
-                return await this.core[command](request);
+                response.send(await this.core[command](request));
             }
             console.log(this.errorText('Unknown request'));
         }
@@ -164,7 +164,7 @@ export class Api {
         mirror: async (args: Request): Promise<void> => {
             if (args.method === 'POST' && Object.keys(args.body).length !== 0){
 
-                let mirrorMode = true;
+                let mirrorMode: boolean;
 
                 for (const [key, value] of args.body) {
                     if (key == 'enabled') {
@@ -174,9 +174,7 @@ export class Api {
                 await this.commandController.settings.update('mirror', mirrorMode ? 'true' : 'false');
             }
         },
-
     };
-
 
     private errorText = (msg) => `  \x1b[31m${msg}\x1b[0m`;
 
