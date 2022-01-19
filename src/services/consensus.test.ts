@@ -136,6 +136,30 @@ describe('Consensus', () => {
 
             expect(event.witness).toBe(false);
         });
+
+        describe('decideFame', () => {
+
+            it('sets famous to true when famous', () => {
+                const cEvents = consensus.doConsensus(events, n);
+
+                const event0 = cEvents.find((cEvent) => cEvent.id === events[0].id);
+                const event1 = cEvents.find((cEvent) => cEvent.id === events[1].id);
+                const event2 = cEvents.find((cEvent) => cEvent.id === events[2].id);
+                const event3 = cEvents.find((cEvent) => cEvent.id === events[3].id);
+                const event12 = cEvents.find((cEvent) => cEvent.id === events[12].id);
+                const event13 = cEvents.find((cEvent) => cEvent.id === events[13].id);
+                const event14 = cEvents.find((cEvent) => cEvent.id === events[14].id);
+
+                expect(event0.famous).toBe(true);
+                expect(event1.famous).toBe(true);
+                expect(event2.famous).toBe(true);
+                expect(event3.famous).toBe(true);
+                expect(event12.famous).toBe(true);
+                expect(event13.famous).toBe(true);
+                expect(event14.famous).toBe(true);
+
+            });
+        });
     });
 
     describe('helpers', () => {

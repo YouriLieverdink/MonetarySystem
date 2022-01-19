@@ -127,8 +127,9 @@ export class Crypto {
 
     /**
      * Hashes the provided data using sha256.
-     * 
+     *
      * @param data The data to hash.
+     * @param except
      * @returns The hashed string.
      */
     public createHash<T>(data: T, except: string[] = []): string {

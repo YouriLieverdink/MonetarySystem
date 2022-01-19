@@ -5,8 +5,8 @@ export type cEvent<T> = Event<T> & {
     consensus?: boolean;
     round?: number;
     witness?: boolean;
-    famous?: boolean;
     roundReceived?: number;
+    famous?: boolean;
 }
 
 //
