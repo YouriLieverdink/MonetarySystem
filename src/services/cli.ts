@@ -14,15 +14,14 @@ export class Cli {
 
     /**
      * Class constructor.
-     * 
+     *
      * @param command The command controller.
-     * @param resposne The object used to send responses.
+     * @param response The object used to send responses.
      */
     constructor(
         command: Command,
         response: Console
     ) {
-        //
         this.command = command;
         this.response = response;
 
@@ -36,24 +35,31 @@ export class Cli {
      * @param request The received cli command.
      */
     public async handle(request: string): Promise<void> {
-        //
         const args = request.trim().split(' ');
         const command = args.shift();
 
         try {
+            if (command === '') return;
+
             // Attempt to call the provided command.
-            return await this.commands[command](args);
+            return (this.commands[command](args))
+                .then(p => {
+                    this.responses.log(); // print empty row
+                    return p;
+                })
+                .catch(p => p);
         }
         catch (e) {
             const error: Error = e;
 
             if (error.name === 'TypeError') {
                 // The provided command was not found in `this.commands`.
-                this.responses.error('Not implemented');
+                this.responses.error('Invalid command');
+                this.responses.log('Enter \'help\' to display command line options.\n');
                 return;
             }
 
-            this.responses.error(error.message);
+            this.responses.error(error.message + '\n');
         }
     }
 
@@ -65,35 +71,27 @@ export class Cli {
          * Displays a "bad syntax" message.
          */
         bad: (): void => {
-            //
             this.responses.error('Wrong syntax');
-            this.response.log(
-                '  Enter \'help\' to display command line options.\n'
-            );
+            this.responses.log('Enter \'help\' to display command line options.');
         },
         /**
          * Displays an indented message in red.
          * 
          * @param message The message to display.
          */
-        error: (message: string): void => {
-            //
-            this.response.log(`  \x1b[31m${message}\x1b[0m\n`);
-        },
+        error: (message: string): void =>
+            this.responses.log(`\x1b[31m${message}\x1b[0m`),
         /**
          * Displays an indented message.
          * 
          * @param message The message to display.
          */
-        success: (message: string): void => {
-            //
-            this.response.log(`  ${message}\n`);
-        },
+        log: (message = ''): void =>
+            this.response.log(`  ${message}`),
         /**
          * Displays the welcome message.
          */
-        welcome: (): void => {
-            //
+        welcome: (): void =>
             this.response.log('\n' +
                 '████████╗ ██████╗  ██╗ ████████╗ ██╗ ██╗   ██╗ ███╗   ███╗\n' +
                 '╚══██╔══╝ ██╔══██╗ ██║ ╚══██╔══╝ ██║ ██║   ██║ ████╗ ████║\n' +
@@ -102,8 +100,7 @@ export class Cli {
                 '   ██║    ██║  ██║ ██║    ██║    ██║ ╚██████╔╝ ██║ ╚═╝ ██║\n' +
                 '   ╚═╝    ╚═╝  ╚═╝ ╚═╝    ╚═╝    ╚═╝  ╚═════╝  ╚═╝     ╚═╝\n' +
                 '\n Enter \'help\' to display command line options.\n'
-            );
-        }
+            )
     };
 
     /**
@@ -111,34 +108,28 @@ export class Cli {
      */
     private readonly commands = {
         clear: async (): Promise<void> => {
-            //
             this.response.clear();
             this.responses.welcome();
         },
         import: async (args: string[]): Promise<void> => {
-            //
             if (args.length !== 1) {
                 this.responses.bad();
                 return;
             }
 
             await this.command.addresses.import(args[0]);
-            this.responses.success('Address imported to this device.');
+            this.responses.log('Address imported to this device.');
         },
         remove: async (args: string[]): Promise<void> => {
-            //
-            if (args.length !== 1) {
-                this.responses.bad();
-                return;
-            }
+            if (args.length !== 1)
+                return this.responses.bad();
 
             const publicKey: string = args[0];
 
             await this.command.addresses.remove(publicKey);
-            this.responses.success('Address removed from this device.');
+            this.responses.log('Address removed from this device.');
         },
         generate: async (args: string[]): Promise<void> => {
-            //
             if (args.length !== 0) {
                 this.responses.bad();
                 return;
@@ -146,113 +137,102 @@ export class Cli {
 
             const address = await this.command.addresses.create();
 
-            this.responses.success(`Generated new key pair!\n\n    Public key:  ${address.publicKey}\n    Private key: ${address.privateKey}\n\n  Important note: Don't lose the private key. No keys no cheese!`);
+            this.responses.log(`Generated new key pair!\n\n    Public key:  ${address.publicKey}\n    Private key: ${address.privateKey}\n\n  Important note: Don't lose the private key. No keys no cheese!`);
         },
         list: async (args: string[]): Promise<void> => {
-            //
             const showPrivateKeys = args.includes('--private');
 
-            if (args.length !== 1 && showPrivateKeys) {
-                this.responses.bad();
-                return;
-            }
+            if (args.length !== 1 && showPrivateKeys)
+                return this.responses.bad();
 
-            if (args.length === 1 && !showPrivateKeys) {
-                this.responses.bad();
-                return;
-            }
+            if (args.length === 1 && !showPrivateKeys)
+                return this.responses.bad();
 
             const addresses = await this.command.addresses.getAll();
-            const table = addresses.map((address, index) => {
-                return `${index + 1}. Public key:  ${address.publicKey} ${showPrivateKeys ? `\n       Private key: ${address.privateKey}` : ''}`;
-            });
+            const table = addresses.map((address, index) =>
+                `${index + 1}.   Public key:  ${address.publicKey} ${showPrivateKeys ? `\n       Private key: ${address.privateKey}` : ''}`
+            );
 
-            if (table.length === 0) {
-                this.responses.error('Please import your addresses, or generate one with \'generate\'');
-                return;
-            }
+            if (table.length === 0)
+                return this.responses.error('Please import your addresses, or generate one with \'generate\'.');
 
-            this.responses.success('Your key(s):');
-            table.forEach((row) => {
-                this.responses.success(`  ${row}`);
-            });
+
+            this.responses.log('Your key(s):');
+            table.forEach((row) =>
+                this.responses.log(row)
+            );
         },
         transactions: async (args: string[]): Promise<void> => {
-            //
-            if (args.length > 1) {
-                this.responses.bad();
-                return;
-            }
+            if (args.length > 1)
+                return this.responses.bad();
 
             const transactions: Transaction[] = (args.length === 1)
                 ? await this.command.transactions.get(args[0])
                 : await this.command.transactions.getAllImported();
 
             if (transactions.length > 0) {
-                this.responses.success(`Found ${transactions.length} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
-                    + transactions.map((tx, index) =>
-                        `  ${index + 1}. Sender: ${tx.from}	Receiver: ${tx.to}	Amount: ${tx.amount} \n`)
-                        .toString().replace(',', '')
-                );
+                this.responses.log(`Found ${transactions.length} transaction${transactions.length === 1 ? '': 's'}`);
+                transactions.forEach((tx, index) => {
+                    return this.responses.log(`${index + 1}.    Amount: ${tx.amount}    Sender: ${tx.from}	Receiver: ${tx.to}`);
+                });
                 return;
             }
 
             this.responses.error('No transactions found');
         },
+        tx: (args: string[]) =>
+            this.commands.transactions(args),
         balance: async (args: string[]): Promise<void> => {
-            //
-            if (args.length > 1) {
-                this.responses.bad();
-                return;
-            }
+            if (args.length > 1)
+                return this.responses.bad();
 
-            const balances: State[] = (args.length === 1)
-                ? [await this.command.states.get(args[0])]
-                : await this.command.states.getAllImported();
+            const states: Promise<State[]> = (args.length === 1)
+                ? this.command.states.get(args[0])
+                : this.command.states.getAllImported();
 
-            this.responses.success(`  Total balance: ${balances.reduce((sum, state) => sum + state.balance, 0)} transactions${(args.length === 1) ? ` for ${args[0]}` : ''}:\n`
-                + balances.map(state =>
-                    `  Address: ${state.publicKey}	Balance: ${state.balance} \n`
-                ).toString().replace(',', '')
-            );
+            return states
+                .then(states => {
+                    if (states.filter(b => b != null).length === 0)
+                        return this.responses.log('No balance data');
+
+                    this.responses.log(`Total balance: ${states.reduce((sum, { balance }) => sum + balance ?? 0, 0)}`);
+                    states.forEach(({ publicKey, balance }) =>
+                        this.responses.log(`Balance: ${balance ?? 'unknown'}		Address: ${publicKey ?? 'unknown'}`)
+                    );
+                }).catch(() =>
+                    this.responses.error('Error getting balance data')
+                );
         },
         transfer: async (args: string[]): Promise<void> => {
-            if (args.length !== 3 || isNaN(Number(args[2])) || Number(args[2]) <= 0) {
-                this.responses.bad();
-                return;
-            }
+            if (args.length !== 3 || isNaN(Number(args[2])) || Number(args[2]) <= 0)
+                return this.responses.bad();
 
             const sender: string = args[0];
             const receiver: string = args[1];
             const amount: number = parseInt(args[2]);
 
             this.command.transactions.create(sender, receiver, amount);
-            this.responses.success('Created transaction!');
+            this.responses.log('Created transaction!');
         },
         mirror: async (args: string[]): Promise<void> => {
-            if (args.length !== 1 || !['on', 'off'].includes(args[0])) {
-                this.responses.bad();
-                return;
-            }
+            if (args.length !== 1 || !['on', 'off'].includes(args[0]))
+                return this.responses.bad();
 
             const enabled = args[0] === 'on';
             await this.command.settings.update('mirror', enabled ? 'true' : 'false');
 
-            this.responses.success(`Mirroring ${enabled ? 'enabled' : 'disabled'}`);
+            this.responses.log(`Mirroring ${enabled ? 'enabled' : 'disabled'}`);
         },
-        default: (args: string[]): boolean => {
-            if (args.length > 1) {
-                this.responses.bad();
-                return;
-            }
+        default: (args: string[]): void => {
+            if (args.length > 1)
+                return this.responses.bad();
 
             throw new Error('Not implemented');
         },
-        exit: (): void => {
-            process.exit(0);
-        },
-        help: (): void => {
-            this.responses.success('Commands:' +
+        exit: (): void =>
+            process.exit(0),
+        help: (): void =>
+            this.responses.log('Commands:' +
                 '\n' +
                 '\n  Wallet setup:' +
                 '\n    generate			Generate new key pair' +
@@ -273,7 +253,6 @@ export class Cli {
                 '\n' +
                 '\n    help			Displays all commands' +
                 '\n    exit 			Exits the application'
-            );
-        }
+            )
     };
 }

@@ -141,9 +141,8 @@ export class Command {
             const addresses = await this.storage.addresses.index();
             const transactions: Transaction[] = [];
 
-            addresses.forEach(async ({ publicKey }) => {
+            for (const { publicKey } of addresses)
                 transactions.push(...(await this.transactions.get(publicKey)));
-            });
 
             return transactions;
         },
@@ -168,28 +167,25 @@ export class Command {
          * 
          * @param publicKey The public key of the address.
          */
-        get: async (publicKey: string): Promise<State> => {
-            return this.storage.states.read(publicKey);
+        get: async (publicKey: string): Promise<State[]> => {
+            return [await this.storage.states.read(publicKey)];
         },
         /**
-         * Gets all the states.
-         * 
-         * @param publicKey The public key to retrieve the state for.
+         * Gets all states.
          */
         getAll: async (): Promise<State[]> => {
             return this.storage.states.index();
         },
         /**
-         * Gets all the states of the imported addresses.
+         * Gets all states of the imported addresses.
          */
         getAllImported: async (): Promise<State[]> => {
             // Return the states for all the user's addresses.
             const addresses = await this.storage.addresses.index();
             const states: State[] = [];
 
-            addresses.forEach(async ({ publicKey }) => {
-                states.push((await this.states.get(publicKey)));
-            });
+            for (const { publicKey } of addresses)
+                states.push(...(await this.states.get(publicKey)).filter(s => s != null));
 
             return states;
         }

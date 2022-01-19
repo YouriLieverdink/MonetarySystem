@@ -204,7 +204,7 @@ export class Storage {
         /**
          * Store a newly created resource in storage.
          *
-         * @param date The date and time when the event occured.
+         * @param event The event object.
          *
          * @throws {Error} When an exception occurs.
          */
@@ -354,9 +354,10 @@ export class Storage {
          * @throws {Error} When an exception occurs.
          */
         index: async (publicKey: string): Promise<Transaction[]> => {
-            const events = await this.query.all<Event<Transaction>>('SELECT * FROM events WHERE data LIKE ?', `%"from":"${publicKey}"%`);
-            events.forEach((event) => event.data = JSON.parse(String(event.data)));
-            return events.map((event) => event.data as Transaction);
+            const events = await this.query.all<Event<Transaction>>('SELECT * FROM events WHERE data LIKE ? OR data LIKE ?', `%"to":"${publicKey}"%`, `%"from":"${publicKey}"%`);
+            return events.map(({ data }) =>
+                JSON.parse(String(data)) as Transaction
+            );
         }
     };
 
