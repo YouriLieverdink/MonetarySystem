@@ -31,12 +31,12 @@ export class Api {
         try {
             // Check whether the command exists
             if (Object.keys(this.core).includes(command)) {
-                response.send(await this.core[command](request));
+                return await this.core[command](request);
             }
-            console.log(this.errorText('Unknown request'));
+            response.status(400);
         }
         catch (e) {
-            console.log(this.errorText(e.message));
+            response.status(400);
         }
 
     }
@@ -46,7 +46,6 @@ export class Api {
             if (Object.keys(args.body).length !== 0 && args.method === 'POST') {
 
                 let privateKey;
-                let response;
 
                 for (const [key, value] of args.body) {
                     if (key === 'privateKey') {
@@ -55,13 +54,10 @@ export class Api {
                 }
 
                 await this.commandController.addresses.import(privateKey)
-                    .then(() => response = true)
-                    .catch(() => response = false);
-
-                if (response)
-                    this.success(`Successfully imported wallet ${privateKey}`);
+                    .then(res => response.send(res))
+                    .catch(() => response.send("Something went wrong"));
             }
-            this.badRequest();
+            response.status(400)
         },
         remove: async (args: Request): Promise<void> => {
             if (Object.keys(args.body).length !== 0 && args.method === 'POST') {
@@ -73,16 +69,11 @@ export class Api {
                     }
                 }
 
-                let response;
-
                 await this.commandController.addresses.remove(publicKey)
-                    .then(() => response = true)
-                    .catch(() => response = false);
-
-                if (response)
-                    this.success(`Succesfully removed keys from device`);
+                    .then(() => response.status(200))
+                    .catch(() => response.status(400));
             }
-            this.badRequest();
+            response.status(400);
         },
         transactions: async (args: Request): Promise<void> => {
 
@@ -104,47 +95,47 @@ export class Api {
                         amount = value;
                         break;
                     default:
-                        this.errorText("No valid key found");
+                        console.log("Wrong key");
                 }
             }
 
             if (method === 'GET'){
-                const transactions: Transaction[] = (publicKeySender.length !== 0)
+                (publicKeySender.length !== 0)
                     ? await this.commandController.transactions.get(publicKeySender)
-                    : await this.commandController.transactions.getAllImported();
-
-                if (transactions.length > 0){
-                    this.success(`Found ${transactions.length} `);
-                }
-                else this.errorText("couldn't find transactions");
+                        .then(transactions => response.send(transactions))
+                        .catch(() => response.status(400))
+                    : await this.commandController.transactions.getAllImported()
+                        .then( transactions => response.send(transactions))
+                        .catch( () => response.status(400));
             }
             if (method === 'POST'){
                 if (Object.keys(args.body).length === 0){
-                    this.badRequest();
+                    response.status(400);
                 }
-                this.commandController.transactions.create(publicKeySender, publicKeyReceiver, amount);
-                this.success('Successfully created transaction');
+
+                const success = await this.commandController.transactions.create(publicKeySender, publicKeyReceiver, amount);
+
+                if (success){
+                    response.status(200);
+                }
+                else response.status(400);
             }
         },
         address: async (args: Request): Promise<void> => {
             if (args.method === 'GET') {
-                const table = (await this.commandController.addresses.getAll())
-                    .map((address, index) => `  ${index + 1}. Public key: ${address.publicKey}${`		Private key: ${address.privateKey}`}\n`);
-
-                if (table.length > 0)
-                    this.success('Your key(s):\n' + table);
-
-                console.log(this.errorText('Please import your keys first, or generate a pair'));
+                await this.commandController.addresses.getAll()
+                    .then(addresses => response.send(addresses))
+                    .catch( () => response.status(400));
             }
-            this.badRequest();
+            response.status(400);
         },
         generate: async (args: Request): Promise<void> => {
             if(Object.keys(args.body).length !== 0 && args.method === 'POST') {
-                const keyPair = await this.commandController.addresses.create();
-                this.success(`Generated new key pair! \n  Important Note: Don't lose the private key!\n\n  
-								Private key: 	${keyPair.privateKey}\n  Public key: ${keyPair.publicKey}`);
+                await this.commandController.addresses.create()
+                    .then(createdAddresses => response.send(createdAddresses))
+                    .catch(() => response.status(400));
             }
-            this.badRequest();
+            response.status(400)
         },
         balance: async (args: Request): Promise<void> => {
             if (args.method === 'GET'){
@@ -154,12 +145,19 @@ export class Api {
                         publicKey = value;
                     }
                 }
-                const balances: State[] = (args.body === 1)
-                    ? [await this.commandController.states.get(publicKey)]
-                    : await this.commandController.states.getAllImported();
 
-                this.success(`  Total balance: ${balances.reduce((sum, state) => sum + state.balance, 0)} `);
+                if(publicKey in args.body) {
+                    await this.commandController.states.get(publicKey)
+                        .then(result => response.send([result]))
+                        .catch(() => response.status(400));
+                }else {
+                    await this.commandController.states.getAllImported()
+                        .then(result => response.send(result))
+                        .catch(() => response.status(400));
+                }
+
             }
+            response.status(400)
         },
         mirror: async (args: Request): Promise<void> => {
             if (args.method === 'POST' && Object.keys(args.body).length !== 0){
@@ -171,18 +169,14 @@ export class Api {
                         mirrorMode = value;
                     }
                 }
-                await this.commandController.settings.update('mirror', mirrorMode ? 'true' : 'false');
+                if(mirrorMode === null){
+                    response.status(400)
+                }
+                await this.commandController.settings.update('mirror', mirrorMode ? 'true' : 'false')
+                    .then(mode => response.send(mode))
+                    .catch(() => response.status(400));
             }
+            response.status(400)
         },
-    };
-
-    private errorText = (msg) => `  \x1b[31m${msg}\x1b[0m`;
-
-    private badRequest = (): void => {
-        console.log(`Bad request`)
-    };
-
-    private success = (msg): void => {
-        console.log(`  ${msg}`);
     };
 }

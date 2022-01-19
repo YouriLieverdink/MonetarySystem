@@ -154,8 +154,14 @@ export class Command {
          * @param to The public key of the receiving address.
          * @param amount The amount to transfer.
          */
-        create: (from: string, to: string, amount: number): void => {
-            this.queue.push({ from, to, amount });
+        create: (from: string, to: string, amount: number): boolean => {
+            try {
+                this.queue.push({from, to, amount});
+                return true;
+            }
+            catch (e) {
+                return false;
+            }
         }
     };
 
