@@ -131,9 +131,12 @@ export class Crypto {
      * @param data The data to hash.
      * @returns The hashed string.
      */
-    public createHash<T>(data: T): string {
+    public createHash<T>(data: T, except: string[] = []): string {
         //
-        const hashable = JSON.stringify(data);
+        const copyOfData = { ...data };
+        except.forEach((key) => delete copyOfData[key]);
+
+        const hashable = JSON.stringify(copyOfData);
 
         return createHash('sha256').update(hashable).digest('hex');
     }

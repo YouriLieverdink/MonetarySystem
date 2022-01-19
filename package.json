@@ -5,6 +5,7 @@
     "serve": "node .",
     "lint": "eslint . --ext .ts --fix",
     "test": "jest",
+    "test-watch": "jest --watch",
     "build": "tsc",
     "start": "node ."
   },

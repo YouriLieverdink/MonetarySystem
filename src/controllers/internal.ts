@@ -66,7 +66,6 @@ export class Internal extends Gossip<Event<Transaction>> {
         const event: Event<Transaction> = {
             id: uuidv1(),
             timestamp: new Date(),
-            consensus: false,
             publicKey: address.publicKey,
             signature: '',
             selfParent: selfParent,
@@ -91,7 +90,7 @@ export class Internal extends Gossip<Event<Transaction>> {
      */
     protected async onTick(): Promise<void> {
         // Initiate a new consensus calcuation.
-        const events = this.consensus.doConsensus(this.items);
+        const events = this.consensus.doConsensus(this.items, this.n);
 
         // Check if mirror is enabled.
         const mirror = await this.storage.settings.get('mirror');
