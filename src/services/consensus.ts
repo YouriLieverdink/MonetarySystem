@@ -5,6 +5,8 @@ export type cEvent<T> = Event<T> & {
     consensus?: boolean;
     round?: number;
     witness?: boolean;
+    famous?: boolean;
+    roundReceived?: number;
 }
 
 //
@@ -91,8 +93,78 @@ export class Consensus<T> {
      */
     public findOrder(events: cEvent<T>[]): cEvent<T>[] {
         //
+        events.forEach((x) => {
+            // We need the witnesses of the next round to perform this step.
+            let round = x.round + 1;
+
+            // eslint-disable-next-line no-constant-condition
+            while (true) {
+                const witnesses = events.filter(
+                    (event) => event.round === round && event.witness,
+                );
+
+                if (witnesses.length === 0) {
+                    // There are no witnesses in the next round (yet).
+                    break;
+                }
+
+                const isFameDecided = witnesses.every(
+                    (witness) => witness.famous !== undefined,
+                );
+
+                if (!isFameDecided) {
+                    // We need all witnesses to have been decided their fame.
+                    break;
+                }
+
+                // The algorithm only requires the famous witnesses to be used.
+                const famousWitnesses = witnesses.filter(
+                    (witness) => witness.famous,
+                );
+
+                const isSeenByFamous = famousWitnesses.every(
+                    (famousWitness) => this.helpers.canSee(events, famousWitness, x),
+                );
+
+                if (isSeenByFamous) {
+                    // The received round is the first round all famous witnesses can see the event.
+                    x.roundReceived = round;
+                    break;
+                }
+
+                // The event was not seen, maybe next round.
+                round++;
+            }
+        });
+
         return events;
     }
+
+    /**
+     * The core methods.
+     */
+    public readonly core = {
+        /**
+         * Creates a memoizes function of the provided function.
+         * 
+         * @param fn The function to memoize.
+         */
+        memoize: <R, T extends (...args) => R>(fn: T): T => {
+            const cache: { [key: string]: R } = {};
+
+            const callable = (...args) => {
+                const key = JSON.stringify(args);
+
+                if (!cache[key]) {
+                    cache[key] = fn(...args);
+                }
+
+                return cache[key];
+            };
+
+            return callable as T;
+        }
+    };
 
     /**
      * The helper methods.
@@ -106,7 +178,7 @@ export class Consensus<T> {
          * @param y The event we are trying to see.
          * @returns Whether x can see y.
          */
-        canSee: (
+        canSee: this.core.memoize((
             events: cEvent<T>[],
             x: cEvent<T>,
             y: cEvent<T>
@@ -130,7 +202,7 @@ export class Consensus<T> {
                 this.helpers.canSee(events, selfParent, y) ||
                 this.helpers.canSee(events, otherParent, y)
             );
-        },
+        }),
         /**
          * Returns true when x can strongly see y which means that at least 2/3
          * of the computer's events must have been crossed.
@@ -141,7 +213,7 @@ export class Consensus<T> {
          * @param n The number of participating computers.
          * @returns Whether x can strongly see y.
          */
-        canStronglySee: (
+        canStronglySee: this.core.memoize((
             events: cEvent<T>[],
             x: cEvent<T>,
             y: cEvent<T>,
@@ -178,7 +250,7 @@ export class Consensus<T> {
             }));
 
             return this.helpers.superMajority(n, computers.size);
-        },
+        }),
         /**
          * Returns the parent event of the provided event.
          * 
@@ -187,7 +259,7 @@ export class Consensus<T> {
          * @param kind The kind of parent to return.
          * @returns The self or other parent.
          */
-        parent: (
+        parent: this.core.memoize((
             events: cEvent<T>[],
             x: cEvent<T>,
             kind: 'selfParent' | 'otherParent',
@@ -197,12 +269,14 @@ export class Consensus<T> {
                 return x[kind] === this.crypto.createHash(event, [
                     'consensus',
                     'round',
-                    'witness'
+                    'witness',
+                    'roundReceived',
+                    'famous'
                 ]);
             };
 
             return events.find(match);
-        },
+        }),
         /**
          * Returns both the self and other parent of x.
          * 
@@ -210,7 +284,7 @@ export class Consensus<T> {
          * @param x The current event.
          * @returns The parents of the current event.
          */
-        parents: (
+        parents: this.core.memoize((
             events: cEvent<T>[],
             x: cEvent<T>,
         ): cEvent<T>[] => {
@@ -224,7 +298,7 @@ export class Consensus<T> {
             });
 
             return parents;
-        },
+        }),
         /**
          * Returns the self parent for the provided event.
          * 
@@ -232,10 +306,10 @@ export class Consensus<T> {
          * @param x The event to return the parent for.
          * @returns The self parent.
          */
-        selfParent: (events: cEvent<T>[], x: cEvent<T>): cEvent<T> => {
+        selfParent: this.core.memoize((events: cEvent<T>[], x: cEvent<T>): cEvent<T> => {
             //
             return this.helpers.parent(events, x, 'selfParent');
-        },
+        }),
         /**
          * Returns the other parent for the provided event.
          * 
@@ -243,11 +317,10 @@ export class Consensus<T> {
          * @param x The event to return the parent for.
          * @returns The other parent.
          */
-        otherParent: (events: cEvent<T>[], x: cEvent<T>): cEvent<T> => {
+        otherParent: this.core.memoize((events: cEvent<T>[], x: cEvent<T>): cEvent<T> => {
             //
             return this.helpers.parent(events, x, 'otherParent');
-        },
-
+        }),
         /**
          * Determines if the number is a super majority (+2/3)
          *
@@ -255,9 +328,9 @@ export class Consensus<T> {
          * @param computers
          * @param compare
          */
-        superMajority: (computers: number, compare: number): boolean => {
+        superMajority: this.core.memoize((computers: number, compare: number): boolean => {
             return compare >= Math.floor(2 * computers / 3 + 1);
-        }
+        })
     };
 
     public readonly roundHelpers = {
@@ -268,7 +341,7 @@ export class Consensus<T> {
          * @param n The number of participating computers.
          * @returns returns all events with a round number
          */
-        round: (events: cEvent<T>[], event: cEvent<T>, n: number): number => {
+        round: this.core.memoize((events: cEvent<T>[], event: cEvent<T>, n: number): number => {
             let round = this.roundHelpers.getHighestParentRound(events, event);
 
             if (round === -1) {
@@ -283,15 +356,14 @@ export class Consensus<T> {
             }
 
             return round;
-        },
-
+        }),
         /**
          * Return round of parent with the highest round
          * @param events All events in the queue that
          * @param event
          * @returns returns round number
          */
-        getHighestParentRound: (events: cEvent<T>[], event: cEvent<T>): number => {
+        getHighestParentRound: this.core.memoize((events: cEvent<T>[], event: cEvent<T>): number => {
             let round = -1;
 
             if (this.helpers.selfParent(events, event)) {
@@ -305,8 +377,7 @@ export class Consensus<T> {
                 }
             }
             return round;
-        },
-
+        }),
         /**
          * Counts strongly seen witnesses in a round
          * @param events
@@ -315,7 +386,7 @@ export class Consensus<T> {
          * @param n The number of participating computers.
          * @returns The number strongly seen witnesses
          */
-        countStrongestSeenWitnesses: (events: cEvent<T>[], event: cEvent<T>, round: number, n: number): number => {
+        countStrongestSeenWitnesses: this.core.memoize((events: cEvent<T>[], event: cEvent<T>, round: number, n: number): number => {
             const parentRoundEvents = this.roundHelpers.getRoundEvents(events, round);
             const parentRoundWitnesses = this.roundHelpers.getRoundWitnesses(events, round);
 
@@ -328,9 +399,7 @@ export class Consensus<T> {
             }
 
             return count;
-        },
-
-
+        }),
         /**
          * Returns the events of a specific round
          *
@@ -338,10 +407,9 @@ export class Consensus<T> {
          * @param events
          * @param round
          */
-        getRoundEvents: (events: cEvent<T>[], round: number): cEvent<T>[] => {
+        getRoundEvents: this.core.memoize((events: cEvent<T>[], round: number): cEvent<T>[] => {
             return events.filter(element => element.round === round);
-        },
-
+        }),
         /**
          * Returns the witnesses of a specific round
          *
@@ -349,11 +417,10 @@ export class Consensus<T> {
          * @param events
          * @param round
          */
-        getRoundWitnesses: (events: cEvent<T>[], round: number): cEvent<T>[] => {
+        getRoundWitnesses: this.core.memoize((events: cEvent<T>[], round: number): cEvent<T>[] => {
             const roundEvents = this.roundHelpers.getRoundEvents(events, round);
             return roundEvents.filter(element => element.witness === true);
-        },
-
+        }),
         /**
          * Determines if the number is a super majority (+2/3)
          *
@@ -361,7 +428,7 @@ export class Consensus<T> {
          * @param events
          * @param event
          */
-        witness: (events: cEvent<T>[], event: cEvent<T>): boolean => {
+        witness: this.core.memoize((events: cEvent<T>[], event: cEvent<T>): boolean => {
             const xRound = event.round;
             let spRound = -1;
             if (this.helpers.selfParent(events, event) !== undefined) {
@@ -369,7 +436,7 @@ export class Consensus<T> {
             }
 
             return xRound > spRound;
-        }
+        })
     };
 
     public readonly fameHelpers = {
