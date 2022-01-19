@@ -89,7 +89,7 @@ export class Consensus<T> {
      * @param events The current events.
      * @returns Events which have been ordered.
      */
-    private findOrder(events: cEvent<T>[]): cEvent<T>[] {
+    public findOrder(events: cEvent<T>[]): cEvent<T>[] {
         //
         return events;
     }
