@@ -65,7 +65,7 @@ export class Internal extends Gossip<Event<Transaction>> {
 
         const event: Event<Transaction> = {
             id: uuidv1(),
-            timestamp: new Date(),
+            createdAt: new Date(),
             publicKey: address.publicKey,
             signature: '',
             selfParent: selfParent,
