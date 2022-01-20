@@ -3,9 +3,12 @@
   "version": "0.0.0",
   "main": "src/main.ts",
   "scripts": {
-    "test": "echo \"Error: run tests from root\" && exit 1"
+    "build": "tsc"
   },
   "dependencies": {
     "typescript": "^4.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^17.0.10"
   }
 }
