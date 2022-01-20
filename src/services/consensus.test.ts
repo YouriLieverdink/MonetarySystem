@@ -147,22 +147,46 @@ describe('Consensus', () => {
             });
         });
 
+        describe('sets the famous', () => {
+
+            it.each(['0', '1', '2', '3', '12', '13', '14'])(
+                'of x=%i to `true` when it is famous',
+                (id) => {
+                    const cEvents = consensus.doConsensus([...events], n);
+
+                    const event = cEvents.find((cEvent) => cEvent.id === id);
+
+                    expect(event.famous).toBe(true);
+                }
+            );
+
+            it.each(['17'])(
+                'of x=%i to `false` when it is not famous but voted on',
+                (id) => {
+                    const cEvents = consensus.doConsensus([...events], n);
+
+                    const event = cEvents.find((cEvent) => cEvent.id === id);
+
+                    expect(event.famous).toBe(false);
+                }
+            );
+
+            it.each(['7', '21'])(
+                'of an event to undefined when it has not yet been voted on',
+                (id) => {
+                    const cEvents = consensus.doConsensus([...events], n);
+
+                    const event = cEvents.find((cEvent) => cEvent.id === id);
+
+                    expect(event.famous).toBe(undefined);
+                }
+            );
+        });
+
         describe('sets the received round', () => {
 
             it('of an event to r when all the famous witnesses in round r can see it', () => {
-                let cEvents = [...events];
-
-                // Mimic the decideFame method for now.
-                [12, 13, 14, 17].forEach((id) => {
-                    const index = cEvents.findIndex(
-                        (cEvent) => cEvent.id === `${id}`,
-                    );
-
-                    // Only event 17 is not famous of the four.
-                    cEvents[index].famous = id !== 17;
-                });
-
-                cEvents = consensus.doConsensus(cEvents, n);
+                const cEvents = consensus.doConsensus([...events], n);
 
                 const event = cEvents.find((cEvent) => cEvent.id === '0');
 
@@ -172,14 +196,13 @@ describe('Consensus', () => {
             it('of an event to r+1 when all the famous witnesses in round r can\'t see it but they can in round r+1', () => {
                 let cEvents = [...events];
 
-                // Mimic the decideFame method for now.
-                [12, 13, 14, 17, 21, 22, 23, 26].forEach((id) => {
+                // With the current number of events it is impossible to decide fame for these events.
+                [21, 22, 23, 26].forEach((id) => {
                     const index = cEvents.findIndex(
                         (cEvent) => cEvent.id === `${id}`,
                     );
 
-                    // Only event 17 is not famous of the four.
-                    cEvents[index].famous = id !== 17;
+                    cEvents[index].famous = true;
                 });
 
                 cEvents = consensus.doConsensus(cEvents, n);
@@ -193,19 +216,7 @@ describe('Consensus', () => {
         describe('sets the timestamp', () => {
 
             it('of an event to the median timestamp of the creators\' event who saw it first', () => {
-                let cEvents = [...events];
-
-                // Mimic the decideFame method for now.
-                [12, 13, 14, 17].forEach((id) => {
-                    const index = cEvents.findIndex(
-                        (cEvent) => cEvent.id === `${id}`,
-                    );
-
-                    // Only event 17 is not famous of the four.
-                    cEvents[index].famous = id !== 17;
-                });
-
-                cEvents = consensus.doConsensus(cEvents, n);
+                const cEvents = consensus.doConsensus([...events], n);
 
                 const event = cEvents.find((cEvent) => cEvent.id === '8');
 
@@ -213,48 +224,6 @@ describe('Consensus', () => {
                 const median = cEvents.find((cEvent) => cEvent.id === '12');
 
                 expect(event.timestamp).toStrictEqual(median.createdAt);
-            });
-        });
-
-        describe('decideFame', () => {
-
-            it('sets famous to true when famous', () => {
-                const cEvents = consensus.doConsensus(events, n);
-
-                const event0 = cEvents.find((cEvent) => cEvent.id === events[0].id);
-                const event1 = cEvents.find((cEvent) => cEvent.id === events[1].id);
-                const event2 = cEvents.find((cEvent) => cEvent.id === events[2].id);
-                const event3 = cEvents.find((cEvent) => cEvent.id === events[3].id);
-                const event12 = cEvents.find((cEvent) => cEvent.id === events[12].id);
-                const event13 = cEvents.find((cEvent) => cEvent.id === events[13].id);
-                const event14 = cEvents.find((cEvent) => cEvent.id === events[14].id);
-
-                expect(event0.famous).toBeTruthy();
-                expect(event1.famous).toBeTruthy();
-                expect(event2.famous).toBeTruthy();
-                expect(event3.famous).toBeTruthy();
-                expect(event12.famous).toBeTruthy();
-                expect(event13.famous).toBeTruthy();
-                expect(event14.famous).toBeTruthy();
-            });
-
-            it('keeps famous undefined when not famous', () => {
-                const cEvents = consensus.doConsensus(events, n);
-
-                const event7 = cEvents.find((cEvent) => cEvent.id === events[7].id);
-                const event17 = cEvents.find((cEvent) => cEvent.id === events[17].id);
-                const event21 = cEvents.find((cEvent) => cEvent.id === events[21].id);
-
-                expect(event7.famous).toBeUndefined();
-                expect(event21.famous).toBeUndefined();
-            });
-
-            it('keeps sets famous to false when not famous but voted on', () => {
-                const cEvents = consensus.doConsensus(events, n);
-
-                const event17 = cEvents.find((cEvent) => cEvent.id === events[17].id);
-
-                expect(event17.famous).toBeFalsy();
             });
         });
     });
