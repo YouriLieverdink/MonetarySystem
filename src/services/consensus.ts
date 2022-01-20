@@ -10,7 +10,6 @@ export type cEvent<T> = Event<T> & {
     timestamp?: Date;
 }
 
-//
 export class Consensus<T> {
     /**
      * Used for cryptography.
@@ -95,95 +94,64 @@ export class Consensus<T> {
     public findOrder(events: cEvent<T>[]): cEvent<T>[] {
         //
         events.forEach((x) => {
-            // We need the witnesses of the next round to perform this step.
-            let round = x.round + 1;
+            // Set the initial round to r+1 because the witnesses in r never can see x.
+            let r = x.round + 1;
+            let famousWitnesses: cEvent<T>[];
 
-            // eslint-disable-next-line no-constant-condition
-            while (true) {
-                const witnesses = events.filter(
-                    (event) => event.round === round && event.witness,
-                );
+            for (; ;) {
+                // We can continue with at least one witness in r.
+                const witnesses = events.filter((y) => y.round === r && y.witness);
+                if (witnesses.length === 0) break;
 
-                if (witnesses.length === 0) {
-                    // There are no witnesses in the next round (yet).
-                    break;
-                }
+                // Fame has to be decided on the witnesses before we can continue.
+                const isFameDecided = witnesses.every((y) => y.famous !== undefined);
+                if (!isFameDecided) break;
 
-                const isFameDecided = witnesses.every(
-                    (witness) => witness.famous !== undefined,
-                );
+                // We only need to famous witnesses to determine the round received.
+                famousWitnesses = witnesses.filter((y) => y.famous);
 
-                if (!isFameDecided) {
-                    // We need all witnesses to have been decided their fame.
-                    break;
-                }
-
-                // The algorithm only requires the famous witnesses to be used.
-                const famousWitnesses = witnesses.filter(
-                    (witness) => witness.famous,
-                );
-
-                const isSeenByFamous = famousWitnesses.every(
-                    (famousWitness) => this.helpers.canSee(events, famousWitness, x),
-                );
+                // The round received is the first r where all famous witnesses can see x.
+                const isSeenByFamous = famousWitnesses.every((y) => {
+                    return this.helpers.canSee(events, y, x);
+                });
 
                 if (isSeenByFamous) {
-                    // The received round is the first round all famous witnesses can see the event.
-                    x.roundReceived = round;
+                    // Event x is seen by all famous witnesses in r.
+                    x.roundReceived = r;
                     break;
                 }
 
-                // The event was not seen, maybe next round.
-                round++;
+                // Check the following round.
+                r++;
             }
 
-            // We need the round received to continue.
-            if (x.roundReceived === undefined) return;
+            // We need the round received to determine the median timestamp.
+            if (!x.roundReceived) return;
 
-            const famousWitnesses = [...events].filter(
-                (event) => event.round === round && event.witness && event.famous,
-            );
+            // We need to find the first events who saw x and are self-ancestors of a famous witness.
+            const sEvents = famousWitnesses.map((y) => {
+                //
+                const move = (c: cEvent<T>): cEvent<T> => {
+                    const selfParent = this.helpers.selfParent(events, c);
 
-            const find = (event: cEvent<T>): cEvent<T> => {
-
-                const move = (current: cEvent<T>): cEvent<T> => {
-
-                    const selfParent = this.helpers.selfParent(events, current);
-
-                    if (selfParent === undefined || !this.helpers.canSee(events, selfParent, x)) {
-                        return current;
+                    if (!selfParent || !this.helpers.canSee(events, selfParent, x)) {
+                        // The current event is the last which was able to see x.
+                        return c;
                     }
 
+                    // The current event can still see x, we continue one down.
                     return move(selfParent);
                 };
 
-                return move(event);
-            };
+                return move(y);
+            });
 
-            const s = famousWitnesses.map(find);
-            const dates = s.map((sEvent) => sEvent.createdAt);
-
-            x.timestamp = this.medianOfDates(dates);
+            // Calculate and set the median timestamp.
+            const dates = sEvents.map((y) => y.createdAt.getTime());
+            x.timestamp = new Date(this.core.median(dates));
         });
 
         return events;
-    }
-
-    private medianOfDates(dates: Date[]): Date {
-
-        const arr = dates.map((date) => date.getTime());
-
-        const middle = (arr.length + 1) / 2;
-
-        // Avoid mutating when sorting
-        const sorted = arr.sort((a, b) => a - b);
-        const isEven = sorted.length % 2 === 0;
-
-        const median = isEven ? (sorted[middle - 1.5]
-            + sorted[middle - 0.5]) / 2 :
-            sorted[middle - 1];
-
-        return new Date(median);
     }
 
     /**
@@ -209,6 +177,25 @@ export class Consensus<T> {
             };
 
             return callable as T;
+        },
+        /**
+         * Returns the median of the provided items and `null` when the array
+         * is empty.
+         * 
+         * @param items The items to calculate the median for.
+         */
+        median: (items: number[]): number | null => {
+            //
+            if (items.length === 0) return null;
+
+            const middle = (items.length + 1) / 2;
+
+            const sorted = [...items].sort((a, b) => a - b);
+            const isEven = sorted.length % 2 === 0;
+
+            return isEven
+                ? (sorted[middle - 1.5] + sorted[middle - 0.5]) / 2
+                : sorted[middle - 1];
         }
     };
 
