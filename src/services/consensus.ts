@@ -7,6 +7,7 @@ export type cEvent<T> = Event<T> & {
     witness?: boolean;
     famous?: boolean;
     roundReceived?: number;
+    timestamp?: Date;
 }
 
 //
@@ -135,9 +136,54 @@ export class Consensus<T> {
                 // The event was not seen, maybe next round.
                 round++;
             }
+
+            // We need the round received to continue.
+            if (x.roundReceived === undefined) return;
+
+            const famousWitnesses = [...events].filter(
+                (event) => event.round === round && event.witness && event.famous,
+            );
+
+            const find = (event: cEvent<T>): cEvent<T> => {
+
+                const move = (current: cEvent<T>): cEvent<T> => {
+
+                    const selfParent = this.helpers.selfParent(events, current);
+
+                    if (selfParent === undefined || !this.helpers.canSee(events, selfParent, x)) {
+                        return current;
+                    }
+
+                    return move(selfParent);
+                };
+
+                return move(event);
+            };
+
+            const s = famousWitnesses.map(find);
+            const dates = s.map((sEvent) => sEvent.createdAt);
+
+            x.timestamp = this.medianOfDates(dates);
         });
 
         return events;
+    }
+
+    private medianOfDates(dates: Date[]): Date {
+
+        const arr = dates.map((date) => date.getTime());
+
+        const middle = (arr.length + 1) / 2;
+
+        // Avoid mutating when sorting
+        const sorted = arr.sort((a, b) => a - b);
+        const isEven = sorted.length % 2 === 0;
+
+        const median = isEven ? (sorted[middle - 1.5]
+            + sorted[middle - 0.5]) / 2 :
+            sorted[middle - 1];
+
+        return new Date(median);
     }
 
     /**
@@ -171,17 +217,42 @@ export class Consensus<T> {
      */
     public readonly helpers = {
         /**
-         * Returns true when x can see y which means that y is an ancestor of x.
+         * Returns true when y is a self ancestor of x.
+         * 
+         * @param events The available events.
+         * @param x The current event.
+         * @param y The event we are checking.
+         */
+        selfAncestor: this.core.memoize((
+            events: cEvent<T>[],
+            x: cEvent<T>,
+            y: cEvent<T>,
+        ): boolean => {
+            //
+            if (x === y) return true;
+
+            if (!x.otherParent && !x.selfParent) {
+                // Genesis events don't have parents, sad :(
+                return false;
+            }
+
+            const selfParent = this.helpers.selfParent(events, x);
+            if (selfParent === y) return true;
+
+            return this.helpers.selfAncestor(events, selfParent, y);
+        }),
+
+        /**
+         * Returns true when x can see y. This means that y is an ancestor of x.
          * 
          * @param events The available events.
          * @param x The current event.
          * @param y The event we are trying to see.
-         * @returns Whether x can see y.
          */
         canSee: this.core.memoize((
             events: cEvent<T>[],
             x: cEvent<T>,
-            y: cEvent<T>
+            y: cEvent<T>,
         ): boolean => {
             //
             if (x === y) return true;
@@ -271,7 +342,8 @@ export class Consensus<T> {
                     'round',
                     'witness',
                     'roundReceived',
-                    'famous'
+                    'famous',
+                    'timestamp'
                 ]);
             };
 
