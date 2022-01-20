@@ -16,17 +16,7 @@ export class Storage {
         database: Database,
     ) {
         this.database = database;
-    //     const transaction: Transaction = { from: 'MCowBQYDK2VwAyEAPmcPVlXLtPXSezmpvTYEWUy3ofngkgvIsDzr0jhWfSU=', to: 'piet', amount: 10 };
-    //     const event = {
-    //         id: '14',
-    //         timestamp: new Date(),
-    //         publicKey: 'Ed',
-    //         signature: '',
-    //         selfParent: 'c0c1ac9124d187db384905ec069650e9ee665ca7da2c323a4fa3b27d43aff6eb',
-    //         otherParent: 'a81cb7d483f1ba8490fe4882dec8b8c2d0571f48d665058bc99fd9a0ddb600ed',
-    //         data: transaction
-    // };
-    //     this.events.create(event);
+
         this.database.serialize(() => {
             // Create the tables.
             this.database.run(`
@@ -40,6 +30,7 @@ export class Storage {
             this.database.run(`
                 CREATE TABLE IF NOT EXISTS events (
                     id VARCHAR(64),
+                    createdAt DATETIME,
                     timestamp DATETIME,
                     publicKey VARCHAR(64),
                     signature VARCHAR(64),
@@ -220,7 +211,7 @@ export class Storage {
          */
         create: <T>(event: Event<T>): Promise<void> => {
             const data = JSON.stringify(event.data);
-            return this.query.run('INSERT INTO events VALUES (?, ?, ?, ?, ?, ?, ?)', event.id, event.timestamp, event.publicKey, event.signature, event.selfParent, event.otherParent, data);
+            return this.query.run('INSERT INTO events VALUES (?, ?, ?, ?, ?, ?, ?)', event.id, event.createdAt, event.publicKey, event.signature, event.selfParent, event.otherParent, data);
         },
         /**
          * Update the specified resource in storage.
