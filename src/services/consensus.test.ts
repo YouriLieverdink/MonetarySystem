@@ -150,14 +150,32 @@ describe('Consensus', () => {
                 const event13 = cEvents.find((cEvent) => cEvent.id === events[13].id);
                 const event14 = cEvents.find((cEvent) => cEvent.id === events[14].id);
 
-                expect(event0.famous).toBe(true);
-                expect(event1.famous).toBe(true);
-                expect(event2.famous).toBe(true);
-                expect(event3.famous).toBe(true);
-                expect(event12.famous).toBe(true);
-                expect(event13.famous).toBe(true);
-                expect(event14.famous).toBe(true);
+                expect(event0.famous).toBeTruthy();
+                expect(event1.famous).toBeTruthy();
+                expect(event2.famous).toBeTruthy();
+                expect(event3.famous).toBeTruthy();
+                expect(event12.famous).toBeTruthy();
+                expect(event13.famous).toBeTruthy();
+                expect(event14.famous).toBeTruthy();
+            });
 
+            it('keeps famous undefined when not famous', () => {
+                const cEvents = consensus.doConsensus(events, n);
+
+                const event7 = cEvents.find((cEvent) => cEvent.id === events[7].id);
+                const event17 = cEvents.find((cEvent) => cEvent.id === events[17].id);
+                const event21 = cEvents.find((cEvent) => cEvent.id === events[21].id);
+
+                expect(event7.famous).toBeUndefined();
+                expect(event21.famous).toBeUndefined();
+            });
+
+            it('keeps sets famous to false when not famous but voted on', () => {
+                const cEvents = consensus.doConsensus(events, n);
+
+                const event17 = cEvents.find((cEvent) => cEvent.id === events[17].id);
+
+                expect(event17.famous).toBeFalsy();
             });
         });
     });
