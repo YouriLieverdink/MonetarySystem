@@ -1,6 +1,7 @@
 {
   "scripts": {
     "build": "lerna run build",
+    "dev": "lerna run dev",
     "test": "jest"
   },
   "jest": {
