@@ -1,6 +1,7 @@
 import express from 'express';
 import ip from 'ip';
 import { Database } from 'sqlite3';
+import { Command } from './controllers/command';
 import { Internal } from './controllers/internal';
 import { Collection } from './services/collection';
 import { Queue } from './services/queue';
@@ -28,6 +29,7 @@ const main = (): void => {
     const storage = new Storage(database);
 
     new Internal(computers, queue, storage, server);
+    new Command(server);
 };
 
 main();
