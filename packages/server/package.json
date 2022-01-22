@@ -4,7 +4,9 @@
   "main": "src/main.ts",
   "scripts": {
     "build": "tsc",
-    "dev": "ts-node-dev ./src/main.ts"
+    "dev": "ts-node-dev ./src/main.ts",
+    "prestart": "npm run build",
+    "start": "node ./lib/main.js"
   },
   "devDependencies": {
     "typescript": "^4.5.4",
