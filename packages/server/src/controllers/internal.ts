@@ -1,11 +1,13 @@
 import { Express } from 'express';
 import { v1 as uuidv1 } from 'uuid';
 import { containsHash } from '../helpers';
+import { Collection } from '../services/collection';
 import { Consensus } from '../services/consensus';
 import { Crypto } from '../services/crypto';
 import { Gossip } from '../services/gossip';
 import { Queue } from '../services/queue';
 import { Storage } from '../services/storage';
+import { Computer } from '../types/computer';
 import { Event } from '../types/event';
 import { Transaction } from '../types/transaction';
 
@@ -33,16 +35,18 @@ export class Internal extends Gossip<Event<Transaction>> {
     /**
      * Class constructor.
      * 
+     * @param computers The known computers.
      * @param queue The queue with transactions.
      * @param storage The storage service.
      * @param server The express server.
      */
     constructor(
+        computers: Collection<Computer>,
         queue: Queue<Transaction>,
         storage: Storage,
         server: Express,
     ) {
-        super(server);
+        super(server, computers);
 
         this.consensus = new Consensus();
         this.crypto = new Crypto();
@@ -67,7 +71,11 @@ export class Internal extends Gossip<Event<Transaction>> {
         const addresses = await this.storage.addresses.index();
 
         // We must have an address before we can sign transactions.
-        if (addresses.length === 0) return;
+        if (addresses.length === 0) {
+            const { publicKey, privateKey } = this.crypto.createAddress();
+            await this.storage.addresses.create(publicKey, privateKey, 1);
+            return;
+        }
 
         const address = addresses[0];
 
@@ -97,28 +105,8 @@ export class Internal extends Gossip<Event<Transaction>> {
      * Called every constant `interval`.
      */
     protected async onTick(): Promise<void> {
-        // Initiate a new consensus calcuation.
-        const events = this.consensus.doConsensus(this.items, this.n);
-
-        // Check if mirror is enabled.
-        const mirror = await this.storage.settings.get('mirror');
-
-        const promises: Promise<void>[] = [];
-
-        // We have reached consensus on these events.
-        events.forEach((event) => {
-            // We remove after 5 seconds to ensure everyone has it.
-            setTimeout(() => {
-                const index = this.items.indexOf(event);
-                if (index > -1) {
-                    this.items.splice(index, 1);
-                }
-            }, 5000);
-
-            if (mirror && mirror.value === 'true') {
-                promises.push(this.storage.events.create(event));
-            }
-        });
+        //
+        console.log(this.items.length);
     }
 
     /**

@@ -1,13 +1,14 @@
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import { Express } from 'express';
 import _ from 'lodash';
 import { Computer } from '../types/computer';
+import { Collection } from './collection';
 
 export abstract class Gossip<T> {
     /**
-     * The active computers in the network.
+     * The known computers in the network.
      */
-    private computers: Computer[];
+    private computers: Collection<Computer>;
 
     /**
      * The items this class is responsible for distributing.
@@ -20,25 +21,15 @@ export abstract class Gossip<T> {
     protected lastItem: T;
 
     /**
-     * `This` computer.
-     */
-    private me: Computer;
-
-    /**
      * Class constructor.
      */
     constructor(
         server: Express,
+        computers: Collection<Computer>,
     ) {
         //
-        this.computers = []
-        this.me = { ip: '0.0.0.0', port: 3001 };
+        this.computers = computers;
         this.items = [];
-
-        // Add `this` computer when not already present.
-        if (!this.computers.some((c) => _.isEqual(c, this.me))) {
-            this.computers.push(this.me);
-        }
 
         // Initialise the listener and sender.
         this.initServer(server);
@@ -51,17 +42,7 @@ export abstract class Gossip<T> {
      */
     private initServer(server: Express): void {
         //
-        server.post('/blab', async (request, response) => {
-            //
-            const computers: Computer[] = request.body.computers;
-
-            computers.forEach((computer) => {
-                // Add the computer when we don't already know it.    
-                if (!this.computers.some((c) => _.isEqual(c, computer))) {
-                    this.computers.push(computer);
-                }
-            });
-
+        server.post('/gossip', async (request, response) => {
             const items: T[] = request.body.items;
             const lastItem: T = request.body.lastItem;
 
@@ -80,18 +61,9 @@ export abstract class Gossip<T> {
         //
         this.onTick();
 
-        // We remove `this` computer so we don't gossip with ourselves.
-        const computers = this.computers.filter(
-            (computer) => !_.isEqual(computer, this.me),
-        );
+        const computer = this.computers.random();
 
-        if (computers.length === 0) return;
-
-        // Choose a random computer to gossip with.
-        const index = Math.floor(Math.random() * computers.length);
-        const chosen = computers[index];
-
-        await this.doHandshake(chosen);
+        await this.doHandshake(computer);
     }
 
     /**
@@ -100,39 +72,16 @@ export abstract class Gossip<T> {
      * 
      * @param computer The computer to communicate with.
      */
-    private async doHandshake(computer: Computer, retry = 3): Promise<void> {
+    private async doHandshake(computer: Computer): Promise<void> {
         //
-        if (retry <= 0) {
-            // We remove the computer because it is no longer active.
-            const index = this.computers.indexOf(computer);
-
-            if (index > -1) {
-                this.computers.splice(index, 1);
-            }
-
-            return;
-        } //
-
         try {
             // Send everything we know.
             await axios.post(
-                `http://${computer.ip}:${computer.port}/blab`,
-                {
-                    computers: this.computers,
-                    items: this.items,
-                    lastItem: this.lastItem
-                },
+                `http://${computer.ip}:${computer.port}/gossip`,
+                { items: this.items, lastItem: this.lastItem },
             );
         } //
-        catch (e) {
-            // For auto-completion.
-            const error: AxiosError = e;
-
-            if (!error.response && error.request) {
-                // The request could not be deliverd.
-                await this.doHandshake(computer, retry - 1);
-            }
-        }
+        catch (_) { }
     }
 
     /**
@@ -169,11 +118,4 @@ export abstract class Gossip<T> {
      * @param lastItem The last item the other computer created.
      */
     protected abstract onItems(items: T[], lastItem: T): void;
-
-    /**
-     * The number of connected computers.
-     */
-    protected get n(): number {
-        return this.computers.length;
-    }
 }

@@ -30,6 +30,17 @@ export class Signal {
         this.computers = computers;
         this.me = me;
 
+        // Initialise the listener and sender.
+        this.initServer(server);
+        setInterval(this.doSignal.bind(this), 500);
+    }
+
+    /**
+     * Initialises the express application which listens for incoming http
+     * requests from the other computers in the network.
+     */
+    private initServer(server: Express): void {
+        //
         server.post('/signal', (req, res) => {
             const computers: Computer[] = req.body.computers;
 
@@ -40,12 +51,11 @@ export class Signal {
 
             res.sendStatus(200);
         });
-
-        setInterval(this.doSignal.bind(this), 2000);
     }
 
     /**
-     * Initiate a new signal message.
+     * Initiate a new gossip sync with another computer in the network at a 
+     * constant `interval`.
      */
     private async doSignal(): Promise<void> {
         //
