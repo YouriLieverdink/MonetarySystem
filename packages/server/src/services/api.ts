@@ -28,6 +28,6 @@ export class Api {
      */
     public async handle(request: Request, response: Response): Promise<void> {
         //
-        response.status(200).send();
+        response.status(200).send('pong');
     }
 }
