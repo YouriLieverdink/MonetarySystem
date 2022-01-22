@@ -1,23 +1,21 @@
 import express from 'express';
-import { Database } from 'sqlite3';
-import { Command } from './controllers/command';
-import { Internal } from './controllers/internal';
-import { Queue } from './services/queue';
-import { Storage } from './services/storage';
-import { Transaction } from './types/transaction';
+import ip from 'ip';
+import { Collection } from './services/collection';
+import { Signal } from './services/signal';
+import { Computer } from './types/computer';
 
-const main = () => {
+const main = (): void => {
     //
-    const queue = new Queue<Transaction>();
-
-    const database = new Database('db.sqlite3');
-    const storage = new Storage(database);
-
     const server = express();
-    server.listen(3001);
+    server.use(express.json());
+    server.listen(3001, '0.0.0.0');
 
-    new Internal(queue, storage, server);
-    new Command(server);
+    const computers = new Collection<Computer>();
+    computers.add({ ip: '10.5.0.5', port: 3001 });
+
+    const me: Computer = { ip: ip.address(), port: 3001 };
+
+    new Signal(server, computers, me);
 };
 
 main();

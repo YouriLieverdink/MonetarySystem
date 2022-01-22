@@ -1,11 +1,29 @@
 version: "2"
 
 services:
-  node:
+  root:
     build: .
-    command: npm run start
-    volumes:
-      - .:/usr/app
-      - /usr/app/node_modules
+    command: npm run serve
     ports:
       - "3001"
+    networks:
+      tritium:
+        ipv4_address: 10.5.0.5
+
+  node:
+    build: .
+    command: npm run serve
+    ports:
+      - "3001"
+    networks:
+      - tritium
+    depends_on:
+      - root
+
+networks:
+  tritium:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/16
+          gateway: 10.5.0.1
