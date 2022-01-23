@@ -55,8 +55,16 @@ export class Collection<T> {
     /**
      * Gets a random item from the collection.
      */
-    public random(): T {
+    public random(): T | null {
         if (this.size === 0) return null;
         return _.sample(this._items);
+    }
+
+    /**
+     * Removes the first item from the collection.
+     */
+    public shift(): T | null {
+        if (this.size === 0) return null;
+        return this._items.shift();
     }
 }

@@ -1,60 +1,48 @@
 import { Express } from 'express';
 import { v1 as uuidv1 } from 'uuid';
 import { containsHash } from '../helpers';
-import { Collection, Consensus, Crypto, Gossip, Queue, Storage } from '../services/*';
+import { Collection, Consensus, Crypto, Gossip, Storage } from '../services/*';
 import { Computer, Event, Transaction } from '../types/*';
 
 export class Internal extends Gossip<Event<Transaction>> {
     /**
-    * The algorithm for reaching consensus.
-    */
+     * Performs the consensus algorithm.
+     */
     private consensus: Consensus<Transaction>;
 
     /**
-     * Used for cryptography.
+     * Used for cryptographic operations.
      */
     private crypto: Crypto;
 
     /**
-     * Transactions created by the user for distribution.
-     */
-    private queue: Queue<Transaction>;
-
-    /** 
-     * Used to store things in the database.
-     */
-    private storage: Storage;
-
-    /**
      * Class constructor.
      * 
-     * @param computers The known computers.
-     * @param queue The queue with transactions.
-     * @param storage The storage service.
-     * @param server The express server.
+     * @param computers The available computers to communicate with.
+     * @param server The active express server.
+     * @param pending The collection for pending transactions.
+     * @param storage The interface for the database.
      */
     constructor(
         computers: Collection<Computer>,
-        queue: Queue<Transaction>,
-        storage: Storage,
         server: Express,
+        private pending: Collection<Transaction>,
+        private storage: Storage,
     ) {
         super(server, computers);
 
         this.consensus = new Consensus();
         this.crypto = new Crypto();
-        this.queue = queue;
-        this.storage = storage;
 
         // Set the initial event.
         this.addEvent();
     }
 
     /**
-     * Adds a new event to this items.
+     * Adds a new event to be distributed.
      * 
-     * @param selfParent The parent of the event created by this computer.
-     * @param otherParent The parent of the event created by another.
+     * @param selfParent The last event this computer has created.
+     * @param otherParent The last event the other computer has created.
      */
     protected async addEvent(
         selfParent?: string,
@@ -82,9 +70,9 @@ export class Internal extends Gossip<Event<Transaction>> {
         };
 
         // Add a single transactions (when available) to the event.
-        const transactions = this.queue.pop();
-        if (transactions.length > 0) {
-            event.data = transactions[0];
+        const transaction = this.pending.shift();
+        if (transaction !== null) {
+            event.data = transaction;
         }
 
         // Signs the message.

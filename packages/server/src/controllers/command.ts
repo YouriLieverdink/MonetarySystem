@@ -1,5 +1,6 @@
 import { Express } from 'express';
-import { Api } from "../services/*";
+import { Api, Collection, Storage } from "../services/*";
+import { Transaction } from '../types/*';
 
 /**
  * Responsible for handling the operations requested by the user via the api
@@ -9,13 +10,17 @@ export class Command {
     /**
      * Class constructor.
      * 
+     * @param pending The collection for pending transactions.
      * @param server The active express server.
+     * @param storage The interface for the database.
      */
     constructor(
-        server: Express,
+        private pending: Collection<Transaction>,
+        private server: Express,
+        private storage: Storage,
     ) {
         //
         const api = new Api(this);
-        server.get('/api/*', api.handle);
+        this.server.get('/api/*', api.handle);
     }
 }
