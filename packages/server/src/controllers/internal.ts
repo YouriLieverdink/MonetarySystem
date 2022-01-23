@@ -1,15 +1,8 @@
 import { Express } from 'express';
 import { v1 as uuidv1 } from 'uuid';
 import { containsHash } from '../helpers';
-import { Collection } from '../services/collection';
-import { Consensus } from '../services/consensus';
-import { Crypto } from '../services/crypto';
-import { Gossip } from '../services/gossip';
-import { Queue } from '../services/queue';
-import { Storage } from '../services/storage';
-import { Computer } from '../types/computer';
-import { Event } from '../types/event';
-import { Transaction } from '../types/transaction';
+import { Collection, Consensus, Crypto, Gossip, Queue, Storage } from '../services/*';
+import { Computer, Event, Transaction } from '../types/*';
 
 export class Internal extends Gossip<Event<Transaction>> {
     /**

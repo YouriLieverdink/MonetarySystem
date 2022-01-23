@@ -1,5 +1,5 @@
 import { Express } from 'express';
-import { Api } from "../services/api";
+import { Api } from "../services/*";
 
 /**
  * Responsible for handling the operations requested by the user via the api

@@ -1,10 +1,5 @@
 import { Database } from 'sqlite3';
-import { Address } from '../types/address';
-import { Computer } from '../types/computer';
-import { Event } from '../types/event';
-import { Setting } from '../types/setting';
-import { State } from '../types/state';
-import { Transaction } from '../types/transaction';
+import { Address, Computer, Event, Setting, State, Transaction } from '../types/*';
 
 export class Storage {
     /**

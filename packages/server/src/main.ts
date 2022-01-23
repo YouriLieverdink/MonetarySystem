@@ -1,14 +1,9 @@
 import express from 'express';
 import ip from 'ip';
 import { Database } from 'sqlite3';
-import { Command } from './controllers/command';
-import { Internal } from './controllers/internal';
-import { Collection } from './services/collection';
-import { Queue } from './services/queue';
-import { Signal } from './services/signal';
-import { Storage } from './services/storage';
-import { Computer } from './types/computer';
-import { Transaction } from './types/transaction';
+import { Command, Internal } from './controllers/*';
+import { Collection, Queue, Signal, Storage } from './services/*';
+import { Computer, Transaction } from './types/*';
 
 const main = (): void => {
     //

@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { Express } from 'express';
 import _ from 'lodash';
-import { Computer } from '../types/computer';
-import { Collection } from './collection';
+import { Computer } from '../types/*';
+import { Collection } from '../services/*';
 
 export abstract class Gossip<T> {
     /**

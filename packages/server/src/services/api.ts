@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Command } from '../controllers/command';
+import { Command } from '../controllers/*';
 
 /**
  * Responsible for parsing incoming Http requests and directing them to the

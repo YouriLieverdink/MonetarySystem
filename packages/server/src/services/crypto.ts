@@ -1,5 +1,5 @@
 import { createHash, createPublicKey, generateKeyPairSync, sign, verify } from 'crypto';
-import { Address } from '../types/address';
+import { Address } from '../types/*';
 
 export class Crypto {
     /**

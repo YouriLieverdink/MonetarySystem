@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import { Express } from "express";
-import { Computer } from "../types/computer";
-import { Collection } from "./collection";
+import { Computer } from "../types/*";
+import { Collection } from "../services/*";
 
 /**
  * A discovery service for locating, and connecting with, other nodes in the
