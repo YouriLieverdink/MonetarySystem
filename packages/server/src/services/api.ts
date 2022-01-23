@@ -7,18 +7,13 @@ import { Command } from '../controllers/*';
  */
 export class Api {
     /**
-     * The instance which should receive all commands.
-     */
-    private command: Command;
-
-    /**
      * Class constructor.
+     * 
+     * @param command The controller which handles the user input.
      */
     constructor(
-        command: Command,
-    ) {
-        this.command = command;
-    }
+        private command: Command,
+    ) { }
 
     /**
      * Handle incoming requests.
