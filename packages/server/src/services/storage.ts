@@ -1,5 +1,5 @@
 import { Database } from 'sqlite3';
-import { Address, Computer, Event, Setting, State, Transaction } from '../types/*';
+import { Address, Computer, Event, Setting, State, Transaction } from '../types/_';
 
 export class Storage {
     /**

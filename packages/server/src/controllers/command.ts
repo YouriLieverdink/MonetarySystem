@@ -1,6 +1,6 @@
 import { Express } from 'express';
-import { Api, Collection, Crypto, Storage } from "../services/*";
-import { Address, Setting, State, Transaction } from '../types/*';
+import { Api, Collection, Crypto, Storage } from "../services/_";
+import { Address, Setting, State, Transaction } from '../types/_';
 
 /**
  * Responsible for handling the operations requested by the user via the api

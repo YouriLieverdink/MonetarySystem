@@ -1,8 +1,8 @@
 import { Express } from 'express';
 import _ from 'lodash';
 import { v1 as uuidv1 } from 'uuid';
-import { Collection, Consensus, Crypto, Gossip, Storage } from '../services/*';
-import { Computer, Event, Transaction } from '../types/*';
+import { Collection, Consensus, Crypto, Gossip, Storage } from '../services/_';
+import { Computer, Event, Transaction } from '../types/_';
 
 export class Blab {
     /**

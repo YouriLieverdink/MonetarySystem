@@ -1,5 +1,5 @@
-import { Crypto } from '../services/*';
-import { Event } from '../types/*';
+import { Crypto } from './_';
+import { Event } from '../types/_';
 
 export type cEvent<T> = Event<T> & {
     consensus?: boolean;

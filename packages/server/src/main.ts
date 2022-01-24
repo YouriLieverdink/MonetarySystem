@@ -2,9 +2,9 @@ import express from 'express';
 import ip from 'ip';
 import { Database } from 'sqlite3';
 import { config } from './config';
-import { Blab, Command, Signal } from './controllers/*';
-import { Collection, Storage } from './services/*';
-import { Computer, Transaction } from './types/*';
+import { Blab, Command, Signal } from './controllers/_';
+import { Collection, Storage } from './services/_';
+import { Computer, Transaction } from './types/_';
 
 const main = (): void => {
     // Initialise the express server for incoming connections.

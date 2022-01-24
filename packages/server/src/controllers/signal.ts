@@ -1,6 +1,6 @@
 import { Express } from 'express';
-import { Collection, Gossip } from '../services/*';
-import { Computer } from '../types/*';
+import { Collection, Gossip } from '../services/_';
+import { Computer } from '../types/_';
 
 export class Signal {
     /**

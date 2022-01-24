@@ -2,8 +2,8 @@ import axios, { AxiosError } from 'axios';
 import { Express } from 'express';
 import _ from 'lodash';
 import { SignalDispatcher, SimpleEventDispatcher } from 'strongly-typed-events';
-import { Collection } from '../services/*';
-import { Computer } from '../types/*';
+import { Collection } from './_';
+import { Computer } from '../types/_';
 
 export class Gossip<T> {
     /**
