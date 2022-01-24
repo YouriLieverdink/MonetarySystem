@@ -1,6 +1,6 @@
 export type Event<T> = {
     id: string;
-    timestamp: Date;
+    createdAt: Date;
     publicKey: string;
     signature: string;
     selfParent?: string;
