@@ -132,7 +132,7 @@ export class Blab {
 
         const event: Event<Transaction> = {
             id: uuidv1(),
-            timestamp: new Date(),
+            createdAt: new Date(),
             publicKey: addresses[0].publicKey,
             signature: '',
             selfParent,
