@@ -62,11 +62,40 @@ export class Consensus<T> {
      * @returns Events divided into rounds.
      */
     public divideRounds(events: cEvent<T>[], n: number): cEvent<T>[] {
-        events.forEach((event) => {
-            if (!event.round) {
-                event.round = this.roundHelpers.round(events, event, n);
+        //
+        events.forEach((x) => {
+            //
+            if (x.round) return;
+
+            // Set the initial round to 0.
+            let r = 0;
+
+            const { selfParent, otherParent } = this.helpers.parents(events, x);
+
+            if (selfParent && otherParent) {
+                // The initial round of the event is the max of it's parents.
+                r = Math.max(selfParent.round, otherParent.round);
             }
-            event.witness = this.roundHelpers.witness(events, event);
+
+            const witnesses = events.filter((y) => {
+                return y.round === r && y.witness && this.helpers.canStronglySee(events, x, y, n);
+            });
+
+            if (this.helpers.superMajority(n, witnesses.length)) {
+                // The event can see the supermajority of witnesses.
+                x.round = r + 1;
+            } //
+            else {
+                x.round = r;
+            }
+
+            // The event is a witness when it has no self parent.
+            if (!selfParent) {
+                x.witness = true;
+            } //
+            else {
+                x.witness = x.round > selfParent.round;
+            }
         });
 
         return events;
@@ -134,7 +163,7 @@ export class Consensus<T> {
             const sEvents = famousWitnesses.map((y) => {
                 //
                 const move = (c: cEvent<T>): cEvent<T> => {
-                    const selfParent = this.helpers.selfParent(events, c);
+                    const { selfParent } = this.helpers.parents(events, c);
 
                     if (!selfParent || !this.helpers.canSee(events, selfParent, x)) {
                         // The current event is the last which was able to see x.
@@ -225,7 +254,7 @@ export class Consensus<T> {
                 return false;
             }
 
-            const selfParent = this.helpers.selfParent(events, x);
+            const { selfParent } = this.helpers.parents(events, x);
             if (selfParent === y) return true;
 
             return this.helpers.selfAncestor(events, selfParent, y);
@@ -251,11 +280,8 @@ export class Consensus<T> {
                 return false;
             }
 
-            const selfParent = this.helpers.selfParent(events, x);
-            if (selfParent === y) return true;
-
-            const otherParent = this.helpers.otherParent(events, x);
-            if (otherParent === y) return true;
+            const { selfParent, otherParent } = this.helpers.parents(events, x);
+            if (selfParent === y || otherParent === y) return true;
 
             // Recursive calls to see whether it is the parent of the parent.
             return (
@@ -289,9 +315,9 @@ export class Consensus<T> {
                 if (x === y) return [path];
 
                 // Retrieve the parents for the current event.
-                const parents: cEvent<T>[] = this.helpers.parents(events, x);
+                const { selfParent, otherParent } = this.helpers.parents(events, x);
 
-                parents.forEach((parent) => {
+                [selfParent, otherParent].forEach((parent) => {
                     // Stop when we have reached a genesis event.
                     if (!parent) return;
 
@@ -312,33 +338,6 @@ export class Consensus<T> {
             return this.helpers.superMajority(n, computers.size);
         }),
         /**
-         * Returns the parent event of the provided event.
-         * 
-         * @param events The available events.
-         * @param x The event to return the parent for.
-         * @param kind The kind of parent to return.
-         * @returns The self or other parent.
-         */
-        parent: this.core.memoize((
-            events: cEvent<T>[],
-            x: cEvent<T>,
-            kind: 'selfParent' | 'otherParent',
-        ): cEvent<T> => {
-            //
-            const match = (event: cEvent<T>) => {
-                return x[kind] === this.crypto.createHash(event, [
-                    'consensus',
-                    'round',
-                    'witness',
-                    'roundReceived',
-                    'famous',
-                    'timestamp'
-                ]);
-            };
-
-            return events.find(match);
-        }),
-        /**
          * Returns both the self and other parent of x.
          * 
          * @param events The available events.
@@ -348,39 +347,19 @@ export class Consensus<T> {
         parents: this.core.memoize((
             events: cEvent<T>[],
             x: cEvent<T>,
-        ): cEvent<T>[] => {
+        ): { selfParent: cEvent<T>, otherParent: cEvent<T> } => {
             //
-            const parents: cEvent<T>[] = [];
+            const match = (event: cEvent<T>, kind: string) => {
+                return x[kind] === this.crypto.createHash(
+                    event,
+                    ['consensus', 'round', 'witness', 'roundReceived', 'famous', 'timestamp'],
+                );
+            };
 
-            ['selfParent', 'otherParent'].forEach((kind) => {
-                const parent = this.helpers[kind](events, x);
-
-                if (parent) parents.push(parent);
-            });
-
-            return parents;
-        }),
-        /**
-         * Returns the self parent for the provided event.
-         * 
-         * @param events The available events.
-         * @param x The event to return the parent for.
-         * @returns The self parent.
-         */
-        selfParent: this.core.memoize((events: cEvent<T>[], x: cEvent<T>): cEvent<T> => {
-            //
-            return this.helpers.parent(events, x, 'selfParent');
-        }),
-        /**
-         * Returns the other parent for the provided event.
-         * 
-         * @param events The available events.
-         * @param x The event to return the parent for.
-         * @returns The other parent.
-         */
-        otherParent: this.core.memoize((events: cEvent<T>[], x: cEvent<T>): cEvent<T> => {
-            //
-            return this.helpers.parent(events, x, 'otherParent');
+            return {
+                selfParent: events.find((e) => match(e, 'selfParent')),
+                otherParent: events.find((e) => match(e, 'otherParent')),
+            };
         }),
         /**
          * Determines if the number is a super majority (+2/3)
@@ -412,91 +391,6 @@ export class Consensus<T> {
         getRoundWitnesses: this.core.memoize((events: cEvent<T>[], round: number): cEvent<T>[] => {
             const roundEvents = this.helpers.getRoundEvents(events, round);
             return roundEvents.filter(element => element.witness === true);
-        })
-    };
-
-    public readonly roundHelpers = {
-        /**
-         * Calculates the round of a transaction
-         * @param events All events in the queue that
-         * @param event
-         * @param n The number of participating computers.
-         * @returns returns all events with a round number
-         */
-        round: this.core.memoize((events: cEvent<T>[], event: cEvent<T>, n: number): number => {
-            let round = this.roundHelpers.getHighestParentRound(events, event);
-
-            if (round === -1) {
-                return 0;
-            }
-
-            const count = this.roundHelpers.countStrongestSeenWitnesses(events, event, round, n);
-
-            // If there is a super-majority of strongly-seen witnesses, increment the round
-            if (this.helpers.superMajority(n, count)) {
-                round++;
-            }
-
-            return round;
-        }),
-        /**
-         * Return round of parent with the highest round
-         * @param events All events in the queue that
-         * @param event
-         * @returns returns round number
-         */
-        getHighestParentRound: this.core.memoize((events: cEvent<T>[], event: cEvent<T>): number => {
-            let round = -1;
-
-            if (this.helpers.selfParent(events, event)) {
-                round = this.helpers.selfParent(events, event).round;
-            }
-
-            if (this.helpers.otherParent(events, event)) {
-                const opRound = this.helpers.otherParent(events, event).round;
-                if (opRound > round) {
-                    round = opRound;
-                }
-            }
-            return round;
-        }),
-        /**
-         * Counts strongly seen witnesses in a round
-         * @param events
-         * @param event
-         * @param round
-         * @param n The number of participating computers.
-         * @returns The number strongly seen witnesses
-         */
-        countStrongestSeenWitnesses: this.core.memoize((events: cEvent<T>[], event: cEvent<T>, round: number, n: number): number => {
-            const parentRoundEvents = this.helpers.getRoundEvents(events, round);
-            const parentRoundWitnesses = this.helpers.getRoundWitnesses(events, round);
-
-            let count = 0;
-            for (let i = 0, len = parentRoundWitnesses.length; i < len; i++) {
-                const ss = this.helpers.canStronglySee(parentRoundEvents, event, parentRoundWitnesses[i], n);
-                if (ss) {
-                    count++;
-                }
-            }
-
-            return count;
-        }),
-        /**
-         * Determines if the number is a super majority (+2/3)
-         *
-         * @returns boolean true if x sees y
-         * @param events
-         * @param event
-         */
-        witness: this.core.memoize((events: cEvent<T>[], event: cEvent<T>): boolean => {
-            const xRound = event.round;
-            let spRound = -1;
-            if (this.helpers.selfParent(events, event) !== undefined) {
-                spRound = this.helpers.selfParent(events, event).round;
-            }
-
-            return xRound > spRound;
         })
     };
 

@@ -350,41 +350,5 @@ describe('Consensus', () => {
                 },
             );
         });
-
-        describe('selfParent', () => {
-
-            it('returns undefined when the event is a genesis event', () => {
-                const x = events.find((event) => event.id === '0');
-
-                const result = consensus.helpers.selfParent([...events], x);
-                expect(result).toBeUndefined();
-            });
-
-            it('returns selfParent when the selfParent is found', () => {
-                const x = events.find((event) => event.id === '11');
-                const y = events.find((event) => event.id === '7');
-
-                const result = consensus.helpers.selfParent([...events], x);
-                expect(result).toEqual(y);
-            });
-        });
-
-        describe('otherParent', () => {
-
-            it('returns undefined when the event is a genesis event', () => {
-                const x = events.find((event) => event.id === '0');
-
-                const result = consensus.helpers.otherParent([...events], x);
-                expect(result).toBeUndefined();
-            });
-
-            it('returns otherParent when the otherParent is found', () => {
-                const x = events.find((event) => event.id === '11');
-                const y = events.find((event) => event.id === '9');
-
-                const result = consensus.helpers.otherParent([...events], x);
-                expect(result).toEqual(y);
-            });
-        });
     });
 });
