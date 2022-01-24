@@ -140,4 +140,17 @@ export class Crypto {
 
         return createHash('sha256').update(hashable).digest('hex');
     }
+
+    /**
+     * Returns true when the hash of an item equals hash.
+     * 
+     * @param items The items to check the hashes o.
+     * @param hash The hash to find.
+     */
+    public containsHash<T>(items: T[], hash: string): boolean {
+        //
+        return items.some((item) => {
+            return this.createHash(item) === hash;
+        });
+    }
 }

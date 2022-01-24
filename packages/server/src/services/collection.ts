@@ -14,57 +14,50 @@ export class Collection<T> {
     }
 
     /**
-     * Getter for the items.
+     * Gets the internal items.
      */
     public get items(): T[] {
         return [...this._items];
     }
 
     /**
-     * Returns the size of the collection.
-     */
-    public get size(): number {
-        return this._items.length;
-    }
-
-    /**
-     * Adds an item to the collection. Note: duplicates are not added.
+     * Adds the item(s) to the collection.
      * 
-     * @param item The item to add.
+     * @param items The item(s) to add.
      */
-    public add(item: T): void {
-        // Don't add when the item already exists.
-        const exists = this._items.some((i) => _.isEqual(item, i));
-        if (exists) return;
+    public add(...items: T[]): void {
+        items.forEach((item) => {
+            const exists = this._items.some((i) => _.isEqual(item, i));
+            if (exists) return;
 
-        this._items.push(item);
+            this._items.push(item);
+        });
     }
 
     /**
-     * Removes an item from the collection.
+     * Removes the item(s) from the collection.
      * 
-     * @param item The item to remove.
+     * @param items The item(s) to remove.
      */
-    public remove(item: T): void {
-        const index = this._items.indexOf(item);
-        if (index !== -1) {
-            this._items.splice(index, 1);
-        }
+    public remove(...items: T[]): void {
+        items.forEach((item) => {
+            _.remove(this._items, (i) => _.isEqual(item, i));
+        });
     }
 
     /**
-     * Gets a random item from the collection.
+     * Returns a random item from the collection.
      */
     public random(): T | null {
-        if (this.size === 0) return null;
+        if (this._items.length === 0) return null;
         return _.sample(this._items);
     }
 
     /**
-     * Removes the first item from the collection.
+     * Removes the first item of the collection.
      */
     public shift(): T | null {
-        if (this.size === 0) return null;
+        if (this._items.length === 0) return null;
         return this._items.shift();
     }
 }
