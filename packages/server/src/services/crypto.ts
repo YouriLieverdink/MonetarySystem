@@ -151,7 +151,7 @@ export class Crypto {
     public containsHash<T>(items: T[], hash: string): boolean {
         //
         return items.some((item) => {
-            return this.createHash(item) === hash;
+            return this.createHash(item, ['consensus', 'round', 'witness', 'roundReceived', 'famous', 'timestamp', 'index']) === hash;
         });
     }
 }

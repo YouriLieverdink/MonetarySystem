@@ -7,7 +7,7 @@ export type cEvent<T> = Event<T> & {
     witness?: boolean;
     roundReceived?: number;
     famous?: boolean;
-    timestamp?: Date;
+    timestamp?: number;
     index?: number;
 }
 
@@ -16,11 +16,6 @@ export class Consensus<T> {
      * Used for cryptography.
      */
     private crypto: Crypto;
-
-    /**
-     * The events to which consensus has not been reached.
-     */
-    private events: cEvent<T>[];
 
     /**
      * Class constructor.
@@ -32,7 +27,6 @@ export class Consensus<T> {
     ) {
         //
         this.crypto = crypto || new Crypto();
-        this.events = [];
     }
 
     /**
@@ -44,8 +38,6 @@ export class Consensus<T> {
      */
     public doConsensus(events: cEvent<T>[], n: number): cEvent<T>[] {
         //
-        events.push(...this.events);
-
         events = this.divideRounds(events, n);
         events = this.decideFame(events, n);
         events = this.findOrder(events);
@@ -151,8 +143,8 @@ export class Consensus<T> {
             });
 
             // Calculate and set the median timestamp.
-            const dates = sEvents.map((y) => y.createdAt.getTime());
-            x.timestamp = new Date(this.core.median(dates));
+            const dates = sEvents.map((y) => y.createdAt);
+            x.timestamp = this.core.median(dates);
             x.consensus = true;
         });
 
@@ -175,8 +167,8 @@ export class Consensus<T> {
             if (x.roundReceived < y.roundReceived) return -1;
 
             // 2. When that ties, we sort by the median timestamp.
-            if (x.timestamp.getTime() > y.timestamp.getTime()) return 1;
-            if (x.timestamp.getTime() < y.timestamp.getTime()) return -1;
+            if (x.timestamp > y.timestamp) return 1;
+            if (x.timestamp < y.timestamp) return -1;
 
             // 3. When that ties, we sort by a whithened signature.
             const random = Math.random();

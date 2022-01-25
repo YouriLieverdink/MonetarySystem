@@ -149,10 +149,17 @@ export class Gossip<T> {
      */
     private async doHandshake(computer: Computer): Promise<void> {
         //
+
+        const items = this._items.map((item) => {
+            return _.omit(item as Object, ['consensus', 'round', 'witness', 'roundReceived', 'famous', 'timestamp', 'index']);
+        });
+
+        const lastItem = _.omit(this._lastItem as Object, ['consensus', 'round', 'witness', 'roundReceived', 'famous', 'timestamp', 'index']);
+
         try {
             await axios.post(
                 `http://${computer.ip}:${computer.port}/${this.endpoint}`,
-                { items: this._items, lastItem: this._lastItem },
+                { items: items, lastItem: lastItem },
             );
         } //
         catch (e) {

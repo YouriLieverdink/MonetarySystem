@@ -1,7 +1,7 @@
 import { Express } from 'express';
 import _ from 'lodash';
 import { v1 as uuidv1 } from 'uuid';
-import { Collection, Consensus, Crypto, Gossip, Storage } from '../services/_';
+import { cEvent, Collection, Consensus, Crypto, Gossip, Storage } from '../services/_';
 import { Computer, Event, Transaction } from '../types/_';
 
 export class Blab {
@@ -58,10 +58,14 @@ export class Blab {
      * Handles the `onTick` event.
      */
     private async onTick(): Promise<void> {
-        //
-        // TODO: Initiate the Consensus algorithm.
+        // We use the latest events from gossip.
+        let events: cEvent<Transaction>[] = this.instance.items.getItems();
 
-        // TODO: Validate the transaction on which consensus has been reached.
+        events = this.consensus.doConsensus(
+            events,
+            // TODO: Find a way to calculate n.
+            this.computers.items.length,
+        );
     }
 
     /**
@@ -83,11 +87,11 @@ export class Blab {
             item.signature = signature;
 
             // We only accept items we don't know yet.
-            const isUnknown = this.instance.items.getItems().some((i) => _.isEqual(i, item));
-            if (!isUnknown) return;
+            const isKnown = this.instance.items.getItems().some((i) => _.isEqual(i, item));
+            if (isKnown) return;
 
             // We only accept items if they are genesis or we have both parents.
-            if (!(item.selfParent && item.otherParent)) {
+            if (item.selfParent && item.otherParent) {
                 //
                 const hasSelf = this.crypto.containsHash(
                     this.instance.items.getItems(),
@@ -107,8 +111,8 @@ export class Blab {
 
         // Create an event to commemorate the sync.
         this.addEvent(
-            this.crypto.createHash(this.instance.items.getLastItem()),
-            this.crypto.createHash(args.lastItem),
+            this.crypto.createHash(this.instance.items.getLastItem(), ['consensus', 'round', 'witness', 'roundReceived', 'famous', 'timestamp', 'index']),
+            this.crypto.createHash(args.lastItem, ['consensus', 'round', 'witness', 'roundReceived', 'famous', 'timestamp', 'index']),
         );
     }
 
@@ -134,11 +138,11 @@ export class Blab {
 
         const event: Event<Transaction> = {
             id: uuidv1(),
-            createdAt: new Date(),
+            createdAt: Date.now(),
             publicKey: addresses[0].publicKey,
             signature: '',
-            selfParent,
-            otherParent
+            selfParent: selfParent,
+            otherParent: otherParent,
         };
 
         // Add a transaction when available.

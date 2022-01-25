@@ -1,5 +1,6 @@
 import { Consensus, cEvent } from './consensus';
 import { Crypto } from './crypto';
+import { v1 as uuidv1 } from 'uuid';
 
 describe('Consensus', () => {
     //
@@ -33,14 +34,14 @@ describe('Consensus', () => {
 
     beforeAll(() => {
         events = [];
-        const now = new Date('January 10, 2022 10:00:00');
+        const now = new Date('January 10, 2022 10:00:00').getTime();
 
         // Construct a new hashgraph for every test.
         for (let i = 0; i < 35; i++) {
             // Create a predictable set of times for testing.
-            const date = new Date(now.getTime() + (i * 60000));
+            const date = now + (i * 60000)
 
-            events.push({ id: `${i}`, createdAt: date, publicKey: '', signature: '' });
+            events.push({ id: `${i}`, createdAt: date, publicKey: '', signature: uuidv1() });
         }
 
         // Set the signature for each event.
