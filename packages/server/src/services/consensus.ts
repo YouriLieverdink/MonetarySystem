@@ -109,8 +109,88 @@ export class Consensus<T> {
      * @returns Events which have received fame when necessary.
      */
     private decideFame(events: cEvent<T>[], n: number): cEvent<T>[] {
-        //
-        this.fameHelpers.fame(events, n);
+        const votes = {}; //votes[x][y] = vote;
+
+        function vote(xID: string, yID: string, vote: boolean) {
+            if (votes[xID] === undefined) {
+                votes[xID] = {};
+            }
+            votes[xID][yID] = vote;
+        }
+
+        const pendingRounds = this.helpers.pendingRounds(events);
+
+        //for every undecided round r
+        for (let r = 0; r < pendingRounds.length; r++) {
+            const pendingRound = pendingRounds[r];
+            const roundWitnesses = this.helpers.getRoundWitnesses(events, pendingRound); //get all witnesses from that round r
+
+            //for every witness - x
+            for (let x = 0; x < roundWitnesses.length; x++) {
+                const witness = roundWitnesses[x];
+
+                if (witness.famous !== undefined) {
+                    continue; //if it is decided continue
+                }
+
+                //The vote loop. Should check for the oldest known round may need to be changed later.
+                // This is done to check all the rounds before the round that is being checked
+                voteLoop:
+                    for (let j = pendingRound + 1; j <= Math.max(...pendingRounds); j++) {
+                        const comparingWitnesses = this.helpers.getRoundWitnesses(events, j); //get all witnesses from that round j
+                        for (let y = 0; y < comparingWitnesses.length; y++) {
+                            const comparingWitness = comparingWitnesses[y];
+                            const diff = j - pendingRound;
+
+                            if (diff === 1) {
+                                vote(comparingWitness.id, witness.id, this.helpers.canSee(events, comparingWitness, witness));
+                            } else {
+                                const jPrevRoundWitnesses = this.helpers.getRoundWitnesses(events, j - 1);
+                                const jPrevRoundEvents = this.helpers.getRoundEvents(events, j - 1);
+
+                                // collection of witnesses from round j-1 that are
+                                // strongly seen by y, based on round j-1 PeerSet.
+                                const ssWitnesses = [];
+                                for (let w = 0; w < jPrevRoundWitnesses.length; w++) {
+                                    const jPrevRoundWitness = jPrevRoundWitnesses[w];
+                                    //this should be with the amount of nodes in this spicific round. Maybe fix later.
+                                    if (this.helpers.canStronglySee(events, comparingWitness, jPrevRoundWitness, n)) {
+                                        ssWitnesses.push(jPrevRoundWitness);
+                                    }
+                                }
+
+                                //collect votes from the ssWitnesses.
+                                let yes = 0;
+                                let no = 0;
+                                for (let w = 0; w < ssWitnesses.length; w++) {
+                                    const ssWitness = ssWitnesses[w];
+                                    if (votes[ssWitness.id][witness.id]) {
+                                        yes++;
+                                    } else {
+                                        no++;
+                                    }
+                                }
+                                let v = false;
+                                let t = no;
+
+                                if (yes >= no) {
+                                    v = true;
+                                    t = yes;
+                                }
+
+                                //here comes logic for a coin round or normal round. For now only normal round
+                                if (this.helpers.superMajority(this.helpers.numberOfNodes(jPrevRoundEvents, j - 1), t)) {
+                                    witness.famous = v;
+                                    vote(comparingWitness.id, witness.id, v);
+                                    break voteLoop;
+                                } else {
+                                    vote(comparingWitness.id, witness.id, v);
+                                }
+                            }
+                        }
+                    }
+            }
+        }
         return events;
     }
 
@@ -502,100 +582,6 @@ export class Consensus<T> {
             }
             return count;
         }),
-    };
-
-    public readonly fameHelpers = {
-        /**
-         * decide if witnesses are famous
-         * @param events
-         * @param n The number of participating computers.
-         * @returns returns all events with a round number
-         */
-        fame: (events: cEvent<T>[], n: number): cEvent<T>[] => {
-            const votes = {}; //votes[x][y] = vote;
-
-            function vote(xID: string, yID: string, vote: boolean) {
-                if (votes[xID] === undefined) {
-                    votes[xID] = {};
-                }
-                votes[xID][yID] = vote;
-            }
-
-            const pendingRounds = this.fameHelpers.pendingRounds(events);
-
-            //for every undecided round r
-            for (let r = 0; r < pendingRounds.length; r++) {
-                const pendingRound = pendingRounds[r];
-                const roundWitnesses = this.helpers.getRoundWitnesses(events, pendingRound); //get all witnesses from that round r
-
-                //for every witness - x
-                for (let x = 0; x < roundWitnesses.length; x++) {
-                    const witness = roundWitnesses[x];
-
-                    if (witness.famous !== undefined) {
-                        continue; //if it is decided continue
-                    }
-
-                    //The vote loop. Should check for the oldest known round may need to be changed later.
-                    // This is done to check all the rounds before the round that is being checked
-                    voteLoop:
-                    for (let j = pendingRound + 1; j <= Math.max(...pendingRounds); j++) {
-                        const comparingWitnesses = this.helpers.getRoundWitnesses(events, j); //get all witnesses from that round j
-                        for (let y = 0; y < comparingWitnesses.length; y++) {
-                            const comparingWitness = comparingWitnesses[y];
-                            const diff = j - pendingRound;
-
-                            if (diff === 1) {
-                                vote(comparingWitness.id, witness.id, this.helpers.canSee(events, comparingWitness, witness));
-                            } else {
-                                const jPrevRoundWitnesses = this.helpers.getRoundWitnesses(events, j - 1);
-                                const jPrevRoundEvents = this.helpers.getRoundEvents(events, j - 1);
-
-                                // collection of witnesses from round j-1 that are
-                                // strongly seen by y, based on round j-1 PeerSet.
-                                const ssWitnesses = [];
-                                for (let w = 0; w < jPrevRoundWitnesses.length; w++) {
-                                    const jPrevRoundWitness = jPrevRoundWitnesses[w];
-                                    //this should be with the amount of nodes in this spicific round. Maybe fix later.
-                                    if (this.helpers.canStronglySee(events, comparingWitness, jPrevRoundWitness, n)) {
-                                        ssWitnesses.push(jPrevRoundWitness);
-                                    }
-                                }
-
-                                //collect votes from the ssWitnesses.
-                                let yes = 0;
-                                let no = 0;
-                                for (let w = 0; w < ssWitnesses.length; w++) {
-                                    const ssWitness = ssWitnesses[w];
-                                    if (votes[ssWitness.id][witness.id]) {
-                                        yes++;
-                                    } else {
-                                        no++;
-                                    }
-                                }
-                                let v = false;
-                                let t = no;
-
-                                if (yes >= no) {
-                                    v = true;
-                                    t = yes;
-                                }
-
-                                //here comes logic for a coin round or normal round. For now only normal round
-                                if (this.helpers.superMajority(this.helpers.numberOfNodes(jPrevRoundEvents, j - 1), t)) {
-                                    witness.famous = v;
-                                    vote(comparingWitness.id, witness.id, v);
-                                    break voteLoop;
-                                } else {
-                                    vote(comparingWitness.id, witness.id, v);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            return events;
-        },
 
         /**
          * returns list of different round numbers in events.
