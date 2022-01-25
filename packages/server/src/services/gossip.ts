@@ -38,12 +38,14 @@ export class Gossip<T> {
      * @param endpoint The endpoint this class should use.
      * @param interval The interval at which this gossip should operate.
      * @param computers The known computers in the network.
+     * @param me This computer.
      */
     constructor(
         private server: Express,
         private endpoint: string,
         private interval: number,
         private computers: Collection<Computer>,
+        private me: Computer,
     ) {
         this._items = [];
 
@@ -133,7 +135,7 @@ export class Gossip<T> {
         //
         this._onTick.dispatch();
 
-        const computer = this.computers.random();
+        const computer = this.computers.random(this.me);
         if (!computer) return;
 
         this.doHandshake(computer);

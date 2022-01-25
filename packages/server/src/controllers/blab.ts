@@ -28,6 +28,7 @@ export class Blab {
      * @param interval The interval at which to operate.
      * @param pending The pending transaction from this computer's user.
      * @param storage The interface for the database.
+     * @param me This computer.
      */
     constructor(
         private server: Express,
@@ -35,13 +36,14 @@ export class Blab {
         private interval: number,
         private pending: Collection<Transaction>,
         private storage: Storage,
+        private me: Computer,
     ) {
         //
         this.consensus = new Consensus();
         this.crypto = new Crypto();
 
         this.instance = new Gossip(
-            this.server, 'blab', this.interval, this.computers,
+            this.server, 'blab', this.interval, this.computers, this.me
         );
 
         // Add the initial event to start blabber.

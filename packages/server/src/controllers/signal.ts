@@ -14,15 +14,17 @@ export class Signal {
      * @param server The active express server.
      * @param computers The known computers in the network.
      * @param interval The interval at which to operate.
+     * @param me This computer.
      */
     constructor(
         private server: Express,
         private computers: Collection<Computer>,
         private interval: number,
+        private me: Computer,
     ) {
         //
         this._instance = new Gossip(
-            this.server, 'signal', this.interval, this.computers,
+            this.server, 'signal', this.interval, this.computers, this.me,
         );
 
         // We add the provided computers to bootstrap.
