@@ -8,6 +8,7 @@ export type cEvent<T> = Event<T> & {
     roundReceived?: number;
     famous?: boolean;
     timestamp?: Date;
+    index?: number;
 }
 
 export class Consensus<T> {
@@ -48,6 +49,7 @@ export class Consensus<T> {
         events = this.divideRounds(events, n);
         events = this.decideFame(events, n);
         events = this.findOrder(events);
+        events = this.setOrder(events);
 
         return events;
     }
@@ -151,6 +153,43 @@ export class Consensus<T> {
             // Calculate and set the median timestamp.
             const dates = sEvents.map((y) => y.createdAt.getTime());
             x.timestamp = new Date(this.core.median(dates));
+            x.consensus = true;
+        });
+
+        return events;
+    }
+
+    /**
+     * Sets the order of the provided events by creating an index on which the
+     * events can easily be sorted later.
+     * 
+     * @param events The available events.
+     */
+    private setOrder(events: cEvent<T>[]): cEvent<T>[] {
+        // We only sort the events on which consensus has been reached.
+        const tEvents = events.filter((e) => e.consensus);
+
+        tEvents.sort((x, y) => {
+            // 1. We sort by the round received.
+            if (x.roundReceived > y.roundReceived) return 1;
+            if (x.roundReceived < y.roundReceived) return -1;
+
+            // 2. When that ties, we sort by the median timestamp.
+            if (x.timestamp.getTime() > y.timestamp.getTime()) return 1;
+            if (x.timestamp.getTime() < y.timestamp.getTime()) return -1;
+
+            // 3. When that ties, we sort by a whithened signature.
+            const random = Math.random();
+            if ((parseInt(x.signature) ^ random) > (parseInt(y.signature) ^ random)) return 1;
+
+            return -1;
+        });
+
+        tEvents.forEach((x, order) => {
+            // We retrieve the index of the original array so we can modify the item.
+            const index = events.findIndex((e) => e.id === x.id);
+
+            events[index].index = order;
         });
 
         return events;
@@ -332,7 +371,8 @@ export class Consensus<T> {
                     'witness',
                     'roundReceived',
                     'famous',
-                    'timestamp'
+                    'timestamp',
+                    'index'
                 ]);
             };
 

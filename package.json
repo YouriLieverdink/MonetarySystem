@@ -2,7 +2,8 @@
   "scripts": {
     "build": "lerna run build",
     "dev": "lerna run dev",
-    "test": "jest"
+    "test": "jest",
+    "test-watch": "jest --watch"
   },
   "jest": {
     "preset": "ts-jest",

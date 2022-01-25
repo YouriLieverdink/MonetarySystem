@@ -226,6 +226,25 @@ describe('Consensus', () => {
                 expect(event.timestamp).toStrictEqual(median.createdAt);
             });
         });
+
+        describe('sets the index', () => {
+
+            it('of an event to 0 when it has the lowest median timestamp', () => {
+                const cEvents = consensus.doConsensus([...events], n);
+
+                const event = cEvents.find((cEvent) => cEvent.id === '1');
+
+                expect(event.index).toBe(0);
+            });
+
+            it('of an event to 1 by comparing whithened signatures when timestamps are equal', () => {
+                const cEvents = consensus.doConsensus([...events], n);
+
+                const event = cEvents.find((cEvent) => cEvent.id === '4');
+
+                expect(event.index).toBe(1);
+            });
+        });
     });
 
     describe('helpers', () => {
