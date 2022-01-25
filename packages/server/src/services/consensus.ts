@@ -64,12 +64,40 @@ export class Consensus<T> {
     public divideRounds(events: cEvent<T>[], n: number): cEvent<T>[] {
         events.forEach((event) => {
             if (!event.round) {
-                event.round = this.roundHelpers.round(events, event, n);
+                let round = this.helpers.getHighestParentRound(events, event);
+
+                if (round === -1) {
+                    event.round = 0;
+                } else {
+                    let count = this.helpers.countStrongestSeenWitnesses(events, event, round, n);
+                    if (this.helpers.superMajority(n, count)) {
+                        round++;
+                    }
+                    event.round = round
+                }
             }
-            event.witness = this.roundHelpers.witness(events, event);
+
+            event.witness = this.witness(events, event);
         });
 
         return events;
+    }
+
+    /**
+     * Determines if the event is a witness
+     *
+     * @returns boolean true if the event is a witness
+     * @param events
+     * @param event
+     */
+    public witness(events: cEvent<T>[], event: cEvent<T>): boolean {
+        const round = event.round;
+        let spRound = -1;
+        if (this.helpers.selfParent(events, event) !== undefined) {
+        spRound = this.helpers.selfParent(events, event).round;
+        }
+
+        return round > spRound;
     }
 
     /**
@@ -430,26 +458,8 @@ export class Consensus<T> {
             }
 
             return nodes.length;
-        }
-    };
+        },
 
-    public readonly roundHelpers = {
-        /**
-         * Calculates the round of a transaction
-         * @param events All events in the queue that
-         * @param event
-         * @param n The number of participating computers.
-         * @returns returns all events with a round number
-         */
-        round: this.core.memoize((events: cEvent<T>[], event: cEvent<T>, n: number): number => {
-            let round = this.roundHelpers.getHighestParentRound(events, event);
-
-            if (round === -1) {
-                return 0;
-            }
-
-            return this.roundHelpers.countStrongestSeenWitnesses(events, event, round, n);
-        }),
         /**
          * Return round of parent with the highest round
          * @param events All events in the queue that
@@ -490,30 +500,8 @@ export class Consensus<T> {
                     count++;
                 }
             }
-
-            // If there is a super-majority of strongly-seen witnesses, increment the round
-            if (this.helpers.superMajority(n, count)) {
-                round++;
-            }
-
-            return round;
+            return count;
         }),
-        /**
-         * Determines if the event is a witness
-         *
-         * @returns boolean true if the event is a witness
-         * @param events
-         * @param event
-         */
-        witness: this.core.memoize((events: cEvent<T>[], event: cEvent<T>): boolean => {
-            const round = event.round;
-            let spRound = -1;
-            if (this.helpers.selfParent(events, event) !== undefined) {
-                spRound = this.helpers.selfParent(events, event).round;
-            }
-
-            return round > spRound;
-        })
     };
 
     public readonly fameHelpers = {
