@@ -1,11 +1,11 @@
 <template>
   <el-card shadow="always" class="wallet_setup">
-    <template #header>
-      <span class="title">Welcome to TRITIUM</span>
-    </template>
-
     <div class="content">
-      <el-empty description="tritium logo here" />
+      <el-empty :image="logo" :image-size="192">
+        <template #description>
+          <span class="title">TRITIUM Network</span>
+        </template>
+      </el-empty>
 
       <el-steps :active="active" finish-status="success" align-center>
         <el-step>
@@ -49,11 +49,13 @@
 </template>
 
 <script>
+import logo from '@/static/icon.png'
 
 export default {
   name: 'WalletSetup',
   data() {
     return {
+      logo,
       active: 0,
       btnLoading: false,
       agree: false

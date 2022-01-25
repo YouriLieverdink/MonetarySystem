@@ -5,14 +5,12 @@
 </template>
 
 <script>
-import 'element-theme-dark';
-
 export default {
   name: 'default',
 };
 </script>
 
-<style scoped>
+<style>
 .app {
   height: fit-content;
   width: 75%;
