@@ -62,6 +62,10 @@ export class Storage {
                 )
             `);
         });
+
+        //input default settings
+        const setting = {key: 'mirror', value: 'false'}
+        this.settings.create(setting)
     }
 
     /**
@@ -365,6 +369,14 @@ export class Storage {
      * The settings methods.
      */
     public readonly settings = {
+        /**
+         * Display a listing of the resource.
+         *
+         * @throws {Error} When an exception occurs.
+         */
+        index: (): Promise<Setting[]> => {
+            return this.query.all<Setting>('SELECT * FROM settings');
+        },
         /**
          * Display the specified resource.
          *
