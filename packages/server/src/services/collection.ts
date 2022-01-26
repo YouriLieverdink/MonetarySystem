@@ -14,9 +14,9 @@ export class Collection<T> {
     }
 
     /**
-     * Gets the internal items.
+     * Returns all items. 
      */
-    public get items(): T[] {
+    public all(): T[] {
         return [...this._items];
     }
 

@@ -27,11 +27,11 @@ const main = async (): Promise<void> => {
 
     new Command(pending, server, storage);
 
-    new Signal(server, computers, 100, me);
+    new Signal(computers, 100, me, server);
 
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    new Blab(server, computers, 2000, pending, storage, me);
+    new Blab(computers, 500, me, pending, server, storage);
 };
 
 main();

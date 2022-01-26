@@ -1,69 +1,74 @@
-import { Express } from 'express';
 import { Collection, Gossip } from '../services/_';
 import { Computer } from '../types/_';
+import { Express } from 'express';
 
-export class Signal {
+export class Signal extends Gossip<Computer> {
     /**
-     * The gossip instance.
-     */
-    private _instance: Gossip<Computer>;
-
-    /**
-     * Class constructor.
+     * Class construtor.
      * 
-     * @param server The active express server.
      * @param computers The known computers in the network.
-     * @param interval The interval at which to operate.
+     * @param endpoint The endpoint this class should use.
+     * @param interval The interval at which this computer should gossip.
      * @param me This computer.
+     * @param server The active express server.
      */
     constructor(
-        private server: Express,
-        private computers: Collection<Computer>,
-        private interval: number,
-        private me: Computer,
+        protected computers: Collection<Computer>,
+        interval: number,
+        me: Computer,
+        server: Express,
     ) {
         //
-        this._instance = new Gossip(
-            this.server, 'signal', this.interval, this.computers, this.me,
-        );
+        super(computers, 'signal', interval, me, server);
 
-        // We add the provided computers to bootstrap.
-        this._instance.items.add(...this.computers.items);
-
-        this._instance.onTick.subscribe(this.onTick.bind(this));
-        this._instance.onItems.subscribe(this.onItems.bind(this));
-        this._instance.onError.subscribe(this.onError.bind(this));
+        // Set the initial items to bootstrap.
+        this.items.add(...this.computers.all());
     }
 
     /**
-     * Handles the `onTick` event.
+     * This array contains all the keys the class does not wish to be send over
+     * the network or to be used in equality comparisons.
      */
-    private async onTick(): Promise<void> {
+    public except(): string[] {
+        //
+        return [];
+    }
+
+    /**
+     * This method is called everytime the gossip service initiates a new
+     * handshake with a randomly selected computer.
+     */
+    public onTick(): void {
         //
     }
 
     /**
-     * Handles the `onItems` event.
+     * This method is called whenever the gossip service has received items that
+     * it did not already know.
      * 
-     * @param args The event arguments.
+     * @param items The newly received items.
+     * @param last The last item the other computer has created.
      */
-    private async onItems(args: { items: Computer[], lastItem: Computer }): Promise<void> {
+    public onItems(items: Computer[], last: Computer): void {
         //
-        this._instance.items.add(...args.items);
-        this.computers.add(...args.items);
+        this.items.add(...items);
+        this.computers.add(...items);
     }
 
     /**
-     * Handles the `onError` event.
+     * This method is called whenever the axios post request to another computer
+     * throws an error.
      * 
-     * @param args The event arguments.
+     * @param kind The kind of error that was thrown.
+     * @param computer The computer to which the gossip service was communicating.
+     * @param error The actual error object.
      */
-    private async onError(args: { kind: string, computer: Computer }): Promise<void> {
+    public onError(kind: string, computer: Computer, error?: Error): void {
         //
-        if (args.kind === 'error-request') {
+        if (kind === 'error-request') {
             // The computer is unreachable.
-            this._instance.items.remove(args.computer);
-            this.computers.remove(args.computer);
+            this.items.remove(computer);
+            this.computers.remove(computer);
         }
     }
 }

@@ -1,4 +1,5 @@
 import { createHash, createPublicKey, generateKeyPairSync, sign, verify } from 'crypto';
+import _ from 'lodash';
 import { Address } from '../types/_';
 
 export class Crypto {
@@ -129,15 +130,12 @@ export class Crypto {
      * Hashes the provided data using sha256.
      *
      * @param data The data to hash.
-     * @param except
-     * @returns The hashed string.
+     * @param except The keys to exclude.
      */
     public createHash<T>(data: T, except: string[] = []): string {
         //
-        const copyOfData = { ...data };
-        except.forEach((key) => delete copyOfData[key]);
-
-        const hashable = JSON.stringify(copyOfData);
+        data = _.omit(data as Object, except) as T;
+        const hashable = JSON.stringify(data);
 
         return createHash('sha256').update(hashable).digest('hex');
     }
@@ -147,11 +145,10 @@ export class Crypto {
      * 
      * @param items The items to check the hashes o.
      * @param hash The hash to find.
+     * @param except The keys to exclude.
      */
-    public containsHash<T>(items: T[], hash: string): boolean {
+    public containsHash<T>(items: T[], hash: string, except: string[] = []): boolean {
         //
-        return items.some((item) => {
-            return this.createHash(item, ['consensus', 'round', 'witness', 'roundReceived', 'famous', 'timestamp', 'index']) === hash;
-        });
+        return items.some((item) => this.createHash(item, except) === hash);
     }
 }
