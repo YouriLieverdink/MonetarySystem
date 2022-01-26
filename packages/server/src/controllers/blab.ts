@@ -87,7 +87,7 @@ export class Blab {
             item.signature = signature;
 
             // We only accept items we don't know yet.
-            const isKnown = this.instance.items.getItems().some((i) => _.isEqual(i, item));
+            const isKnown = this.instance.items.getItems().some((i) => i.id === item.id);
             if (isKnown) return;
 
             // We only accept items if they are genesis or we have both parents.
