@@ -11,6 +11,10 @@ export default {
 </script>
 
 <style>
+html, body {
+  background: #111;
+  font-family: monospace;
+}
 .app {
   height: fit-content;
   width: 75%;

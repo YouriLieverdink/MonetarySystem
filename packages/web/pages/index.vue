@@ -1,15 +1,9 @@
 <template>
   <div>
-    <WalletSetup />
+    <wallet-view />
   </div>
 </template>
 
 <script>
-import WalletSetup from '~/components/WalletSetup';
-
-export default {
-  components: {
-    WalletSetup
-  }
-}
+export default {}
 </script>

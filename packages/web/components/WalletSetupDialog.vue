@@ -1,5 +1,8 @@
 <template>
-  <el-card shadow="always" class="wallet_setup">
+  <el-dialog
+    :visible.sync="show"
+    :before-close="handleClose"
+    append-to-body>
     <div class="content">
       <el-empty :image="logo" :image-size="192">
         <template #description>
@@ -30,7 +33,7 @@
         <div v-show="active >= 2">
           here's your key: <i class="el-icon-key"/>
           <el-checkbox
-            label="I accept the Terms and Agreements"
+            label="I made a backup of the private key"
             v-model="agree"
             class="accept_terms"
             @change="agreed"
@@ -45,14 +48,21 @@
         @click="next"
       />
     </div>
-  </el-card>
+  </el-dialog>
 </template>
 
 <script>
 import logo from '@/static/icon.png'
 
 export default {
-  name: 'WalletSetup',
+  name: 'WalletSetupDialog',
+  props: {
+    show: {
+      type: Boolean,
+      default: false,
+      required: true
+    }
+  },
   data() {
     return {
       logo,
@@ -71,7 +81,7 @@ export default {
           this.generateWallet()
           break
         case 2:
-          this.$router.push('wallet')
+          this.$emit('close')
       }
     },
     generateWallet() {
@@ -85,6 +95,10 @@ export default {
     },
     agreed(checked) {
       this.agree = checked
+    },
+    handleClose(done) {
+      this.$emit('close')
+      done();
     }
   },
   computed: {
@@ -96,18 +110,20 @@ export default {
         ? this.active === 0 ? 'Continue' : 'Generate'
         : 'To the wallet'
     }
+  },
+  watch: {
+    show() {
+      this.active = 0
+      this.btnLoading = false
+      this.agree = false
+    }
   }
 }
 </script>
 
 <style scoped>
-.wallet_setup {
-  height: 100%;
-  overflow-y: scroll;
-  background: #333;
-}
 .title {
-  color: #03a00b;
+  /*color: #03a00b;*/
   font-size: 20px;
 }
 .content {
