@@ -1,22 +1,22 @@
 <template>
   <el-card class="view" :body-style="{padding: 0}">
     <div class="wallet_header">
-      <el-tooltip class="header_item" content="Create new address" placement="bottom">
+      <el-tooltip class="header_item" content="Add address" placement="bottom">
         <el-button
           plain
-          size="mini"
+          circle
+          size="medium"
           @click="showDialog.walletSetup = true"
           class="el-icon-plus"
-          circle
         />
       </el-tooltip>
-      <el-tooltip class="item" content="Import address" placement="bottom">
+      <el-tooltip class="header_item" content="Send funds" placement="bottom">
         <el-button
           plain
-          size="mini"
-          @click="() => {}"
-          class="el-icon-plus"
           circle
+          size="medium"
+          @click="() => {}"
+          class="el-icon-money"
         />
       </el-tooltip>
     </div>
@@ -24,11 +24,14 @@
       <el-tab-pane>
         <span slot="label">Wallet Overview <i class="el-icon-wallet"></i></span>
         <el-skeleton :rows="6" animated />
-<!--        <el- -->
       </el-tab-pane>
       <el-tab-pane>
         <span slot="label">Addresses <i class="el-icon-notebook-1"></i></span>
-        <el-skeleton :rows="4" animated />
+        <el-table :data="addresses">
+          <el-table-column
+            prop="publicKey"
+            label="Public key" />
+        </el-table>
       </el-tab-pane>
       <el-tab-pane>
         <span slot="label">Transactions <i class="el-icon-coin"></i></span>
@@ -47,6 +50,8 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
+
 export default {
   name: 'WalletView',
   data() {
@@ -55,6 +60,9 @@ export default {
         walletSetup: false
       }
     }
+  },
+  computed: {
+    ...mapState("wallet", ["addresses"])
   }
 }
 </script>
@@ -75,6 +83,6 @@ export default {
   border-radius: 0 0 4px 4px;
 }
 .header_item {
-  margin-left: 8px;
+  margin-left: 12px;
 }
 </style>

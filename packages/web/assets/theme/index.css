@@ -9551,7 +9551,8 @@
   max-width: 100%;
   background-color: #111;
   font-size: 14px;
-  color: #dedede
+  color: #dedede;
+  border: 1px solid #555;
 }
 
 .el-table__empty-block {
@@ -9703,7 +9704,7 @@
 }
 
 .el-table tr {
-  background-color: #111
+  background-color: #333;
 }
 
 .el-table tr input[type=checkbox] {
@@ -28589,7 +28590,7 @@
 }
 
 .el-divider {
-  background-color: #252525;
+  background-color: #555;
   position: relative
 }
 
@@ -28611,7 +28612,7 @@
 
 .el-divider__text {
   position: absolute;
-  background-color: #111;
+  background-color: #222;
   padding: 0 20px;
   font-weight: 500;
   color: #eaeaea;

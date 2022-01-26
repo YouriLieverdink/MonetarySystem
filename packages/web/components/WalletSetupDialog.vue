@@ -9,55 +9,54 @@
       <el-button size="mini" circle style="background: #ff605c" @click="$emit('close')"/>
     </template>
     <div class="content">
-      <el-empty :image="logo" :image-size="192">
-        <template #description>
-          <span class="title">TRITIUM Network</span>
-        </template>
-      </el-empty>
-
-      <el-steps :active="active" finish-status="success" align-center>
-        <el-step>
-          <template #title>
-            <span class="step_title">Introduction</span>
-          </template>
-        </el-step>
-        <el-step>
-          <template #title>
-            <span class="step_title">Wallet setup</span>
-          </template>
-        </el-step>
-      </el-steps>
-
-      <div class="steps_content">
-        <div v-show="active === 0">
-          short intro blabla
-        </div>
-        <div v-show="active === 1">
-          press generate
-        </div>
-        <div v-show="active >= 2">
-          here's your key: <i class="el-icon-key"/>
-          <el-checkbox
-            label="I made a backup of the private key"
-            v-model="agree"
-            class="accept_terms"
-            @change="agreed"
-          />
-        </div>
+      <div class="description">
+        Generating or importing a private key will not affect your existing keys
       </div>
-      <el-button
-        type="primary"
-        v-text="btnText"
-        class="next-btn"
-        :disabled="btnDisabled"
-        @click="next"
-      />
+<!--      here's your key: <i class="el-icon-key"/>-->
+<!--      <el-checkbox-->
+<!--        label="I have a backup of the private key"-->
+<!--        v-model="agree"-->
+<!--        class="accept_terms"-->
+<!--        @change="agreed"-->
+<!--      />-->
+
+      <div ref="generateKey">
+        <el-button
+          type="primary"
+          icon="el-icon-setting"
+          :loading="generateLoading"
+          @click="generateWallet"
+          class="btn">
+          {{ generateLoading ? 'Generating' : 'Generate' }}
+        </el-button>
+      </div>
+
+      <el-divider class="divider">OR</el-divider>
+
+      <div ref="importKey">
+        <el-form @submit.prevent.native="importPrivateKey">
+          <el-input
+            type="text"
+            placeholder="Enter private key here"
+            v-model="privateKeyInput" />
+          <el-button
+            type="primary"
+            icon="el-icon-plus"
+            :loading="importLoading"
+            @click="importPrivateKey"
+            class="btn">
+            {{ importLoading ? 'Importing' : 'Import' }}
+          </el-button>
+        </el-form>
+      </div>
     </div>
   </el-dialog>
 </template>
 
 <script>
 import logo from '@/static/icon.png'
+import { mapActions } from 'vuex'
+import { apiRequest } from '@/core/service/apiService';
 
 export default {
   name: 'WalletSetupDialog',
@@ -71,56 +70,59 @@ export default {
   data() {
     return {
       logo,
-      active: 0,
-      btnLoading: false,
-      agree: false
+      privateKeyInput: "",
+      generateLoading: false,
+      importLoading: false
     }
   },
   methods: {
-    next() {
-      switch (this.active) {
-        case 0:
-          this.active = 1
-          break
-        case 1:
-          this.generateWallet()
-          break
-        case 2:
-          this.$emit('close')
-      }
-    },
+    ...mapActions("wallet", [
+      'importAddress'
+    ]),
     generateWallet() {
-      this.btnLoading = true
+      this.generateLoading = true
 
-      // simulate api call
-      setTimeout(() => {
-        this.btnLoading = false;
-        this.active = 2;
-      }, 2000)
+      apiRequest.generateKeys()
+        .then(address => {
+          this.importAddress(address.data.privateKey)
+          this.$message({
+            message: 'Import successful',
+            type: 'success'
+          })
+        })
+        .catch(error => this.$message({
+            message: error,
+            type: 'error'
+          }))
+        .finally(() => this.generateLoading = false)
     },
-    agreed(checked) {
-      this.agree = checked
+    importPrivateKey() {
+      this.importLoading = true
+
+      apiRequest.importPrivateKey(this.privateKeyInput)
+        .then(address => {
+          this.importAddress(address.data.privateKey)
+          this.$message({
+            message: 'Import successful',
+            type: 'success'
+          })
+        })
+        .catch(error => this.$message({
+          message: error,
+          type: 'error'
+        }))
+        .finally(() => this.importLoading = false)
     },
     handleClose(done) {
       this.$emit('close')
       done();
     }
   },
-  computed: {
-    btnDisabled() {
-      return (this.active >= 2 && !this.agree) || this.btnLoading
-    },
-    btnText() {
-      return this.active < 2
-        ? this.active === 0 ? 'Continue' : 'Generate'
-        : 'To the wallet'
-    }
-  },
   watch: {
     show() {
-      this.active = 0
-      this.btnLoading = false
-      this.agree = false
+      this.generateLoading = false
+      this.importLoading = false
+      this.privateKeyInput = ""
     }
   }
 }
@@ -130,26 +132,20 @@ export default {
 .dialog {
   border-radius: 4px;
 }
-.title {
-  /*color: #03a00b;*/
-  font-size: 20px;
-}
 .content {
   margin: 0 auto;
   width: 400px;
-}
-.next-btn {
-  display: block;
-  margin: 36px auto 12px auto;
-}
-.step_title {
-  font-size: 14px;
-}
-.steps_content {
-  margin-top: 24px;
   text-align: center;
+  word-break: break-word;
 }
-.accept_terms {
-  margin-top: 24px;
+.btn {
+  display: block;
+  margin: 24px auto;
+}
+.divider {
+  margin: 36px 0;
+}
+.description {
+  margin-bottom: 36px;
 }
 </style>

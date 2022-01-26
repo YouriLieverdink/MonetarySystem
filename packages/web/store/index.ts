@@ -11,7 +11,6 @@ const vuexPersist = new VuexPersistence({
   modules: ["wallet"],
 })
 
-
 const modules: ModuleTree<RootState> = {
   wallet
 }

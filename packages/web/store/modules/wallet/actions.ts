@@ -5,10 +5,10 @@ import { WalletState } from '~/store/modules/wallet/state';
 import { IMPORT_ADDRESS } from '~/store/modules/wallet/types';
 
 export const walletActions: ActionTree<WalletState, RootState> = {
-  importAddress({ commit }, address) {
+  importAddress({ commit }, privateKey) {
     commit({
       type: IMPORT_ADDRESS,
-      address
+      privateKey
     })
   },
 }
