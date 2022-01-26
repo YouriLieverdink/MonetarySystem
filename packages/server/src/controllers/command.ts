@@ -60,17 +60,17 @@ export class Command {
          * 
          * @param privateKey The private key of the address.
          */
-        import: (privateKey: string): Promise<void> => {
+        import: async (privateKey: string): Promise<string> => {
             const publicKey = this.crypto.derivePublicKey(privateKey);
-
-            return this.storage.addresses.create(publicKey, privateKey, 0);
+            await this.storage.addresses.create(publicKey, privateKey, 0);
+            return publicKey;
         },
         /**
          * Remove an address from this computer.
          * 
          * @param publicKey The public key of the address.
          */
-        remove: (publicKey: string): Promise<void> => {
+        remove: (publicKey: string): Promise<boolean> => {
             return this.storage.addresses.destroy(publicKey);
         }
     };
@@ -115,8 +115,9 @@ export class Command {
          * @param to The public key of the receiving address.
          * @param amount The amount to transfer.
          */
-        create: (from: string, to: string, amount: number): void => {
-            this.pending.add({ from, to, amount });
+        create: async (from: string, to: string, amount: number): Promise<Transaction> => {
+            await this.pending.add({ from, to, amount });
+            return {from, to, amount};
         }
     };
 
@@ -171,8 +172,9 @@ export class Command {
          * @param key The key of the setting.
          * @param value The value of the setting.
          */
-        update: (key: string, value: string): Promise<void> => {
-            return this.storage.settings.update({ key, value });
+        update: (key: string, value: string): Promise<boolean> => {
+            return this.storage.settings.update({ key, value })
+                .then(() => (value !== 'true'));
         }
     };
 }

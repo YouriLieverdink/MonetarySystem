@@ -1,6 +1,8 @@
 import { Request, Response, response } from 'express';
 import { Command } from '../controllers/_';
 import { Address } from '../types/address';
+import {Transaction} from "../../lib/types/transaction";
+import {State} from "../../lib/types/state";
 
 /**
  * Responsible for parsing incoming Http requests and directing them to the
@@ -25,163 +27,147 @@ export class Api {
      */
     public async handle(request: Request, response: Response) {
         const splitURL = request.url.trim().split('/');
-        const command = splitURL.pop();
+        let command;
+        if (splitURL.at(-1).includes("?")) {
+            const endPointString = splitURL.pop().trim().split('?');
+            command = endPointString.shift();
+        }
+        else command = splitURL.pop();
 
-        // const r = await this.commandController.addresses.create();
-        // response.send(r);
-
-        const r = await this.core.generate(request);
-        response.send(r);
-
-        // try {
-        //     const jo = await this.core.generate(request, response);
-        //     response.send(JSON.stringify(jo));
-        // }
-        // catch (e) {
-        //     response.status(400).send(e.message);
-        // }
+        try {
+            if (Object.keys(this.core).includes(command)) {
+                const res = await this.core[command](request);
+                response.send(JSON.stringify(res));
+            }
+        }
+        catch (e) {
+            response.status(400).send(e.message);
+        }
     }
 
     private readonly core = {
-        import: async (args: Request): Promise<Response> => {
-            if (Object.keys(args.body).length !== 0 && args.method === 'POST') {
+        import: async (args: Request): Promise<string> => {
+            if (args.method === 'POST') {
 
-                let privateKey;
+                const value = Object.values(args.body).toString();
 
-                for (const [key, value] of args.body) {
-                    if (key === 'privateKey') {
-                        privateKey = value;
-                    }
-                }
-
-                return await this.commandController.addresses.import(privateKey)
-                    .then(res => response.send(res))
-                    .catch(() => response.send("Something went wrong"));
+                return await this.commandController.addresses.import(value);
             }
-            return response.status(400)
+            throw Error("ERROR import");
         },
-        remove: async (args: Request): Promise<Response> => {
-            if (Object.keys(args.body).length !== 0 && args.method === 'POST') {
-                let publicKey;
+        remove: async (args: Request): Promise<string> => {
+            if (args.method === 'POST') {
 
-                for (const [key, value] of args.body) {
-                    if (key === 'publicKey') {
-                        publicKey = value;
-                    }
+                if(args.body.constructor === Object && Object.keys(args.body).length === 0) {
+                    throw Error("Empty body");
                 }
+                const value = Object.values(args.body).toString();
 
-                return await this.commandController.addresses.remove(publicKey)
-                    .then(() => response.status(200))
-                    .catch(() => response.status(400));
+                const success = await this.commandController.addresses.remove(value);
+
+                if (success){
+                    return "success";
+                }
+                throw Error("Couldnt remove key")
             }
-            return response.status(400);
+            throw Error("ERROR addresses");
         },
-        transactions: async (args: Request): Promise<Response> => {
-
+        transactions: async (args: Request): Promise<Transaction|Transaction[]|Error> => {
             const method = args.method;
-
-            let publicKeySender: string;
-            let publicKeyReceiver: string;
-            let amount: number;
-
-
+            //splits url by /
+            let splitURL = args.url.trim().split('/');
+            //pop the endpoint
+            splitURL.pop();
+            //pop the address id or publicKey to const
+            const sender = splitURL.pop();
 
             if (method === 'GET') {
-
-
-                return (publicKeySender.length !== 0)
-                    ? await this.commandController.transactions.get(publicKeySender)
-                        .then(transactions => response.send(transactions))
-                        .catch(() => response.status(400))
-                    : await this.commandController.transactions.getAllImported()
-                        .then(transactions => response.send(transactions))
-                        .catch(() => response.status(400));
+                return (sender.length !== 0)
+                    ? await this.commandController.transactions.get(sender)
+                    : await this.commandController.transactions.getAllImported();
             }
             if (method === 'POST') {
-                if (Object.keys(args.body).length === 0) {
-                    response.status(400);
+                let keys = Object.keys(args.body);
+                if (keys.length === null || keys.length === 0) {
+                    throw Error("no body");
                 }
+                let receiver: string;
+                let amount: number;
 
-                for (const [key, value] of args.body) {
-                    switch (key) {
-                        case 'publicKey':
-                            publicKeyReceiver = value;
-                            break;
-                        case 'publicKeySender':
-                            publicKeySender = value;
-                            break;
+                const info = args.body;
+                for(let i in info){
+                    switch (i) {
                         case 'amount':
-                            amount = value;
+                            amount = info[i];
+                            break;
+                        case 'receiver':
+                            receiver = info[i];
                             break;
                         default:
-                            console.log("Wrong key");
+                            break;
                     }
                 }
-
-                this.commandController.transactions.create(publicKeySender, publicKeyReceiver, amount);
-
-                return response.status(200).send();
+                if(receiver === undefined || amount === undefined){
+                    throw Error("key undefined");
+                }
+                if (sender === 'api'){
+                    throw Error("wrong endpoint used");
+                }
+                return await this.commandController.transactions.create(sender, receiver, amount);
             }
+
         },
-        address: async (args: Request): Promise<Response> => {
+        address: async (args: Request): Promise<Address[]> => {
             if (args.method === 'GET') {
-                return await this.commandController.addresses.getAll()
-                    .then(addresses => response.send(addresses))
-                    .catch(() => response.status(400));
+                return await this.commandController.addresses.getAll();
             }
-            return response.status(400);
+            throw Error("ERROR addresses");
         },
-        generate: async (args: Request): Promise<Address> => {
-            return this.commandController.addresses.create();
-
-
-            // if (args.method === 'POST') {
-            //     return await this.commandController.addresses.create()
-            //         .then(createdAddresses => response.send(createdAddresses))
-            //         .catch(() => response.status(400).send('ho'));
-            // }
-            // return response.status(400)
+        generate: async (args: Request): Promise<Address|string> => {
+            if (args.method === 'POST') {
+                return await this.commandController.addresses.create()
+                    .then(createdAddresses => createdAddresses)
+                    .catch(() => "could not create address");
+            }
+            throw Error("Wrong method")
         },
-        balance: async (args: Request): Promise<Response> => {
+        balance: async (args: Request): Promise<State[]> => {
             if (args.method === 'GET') {
-                let publicKey;
-                for (const [key, value] of args.body) {
-                    if (key == 'publicKey') {
-                        publicKey = value;
-                    }
-                }
+                //splits url by /
+                let splitURL = args.url.trim().split('/');
+                //pop the endpoint
+                splitURL.pop();
+                //pop the address id or publicKey to const
+                const sender = splitURL.pop();
 
-                if (publicKey in args.body) {
-                    return await this.commandController.states.get(publicKey)
-                        .then(result => response.send([result]))
-                        .catch(() => response.status(400));
-                } else {
-                    return await this.commandController.states.getAllImported()
-                        .then(result => response.send(result))
-                        .catch(() => response.status(400));
-                }
-
+                return(sender !== 'api' || sender.length !== 0)
+                    ? await this.commandController.states.get(sender)
+                    : await this.commandController.states.getAllImported();
             }
-            return response.status(400)
+            throw Error("wrong method");
         },
-        mirror: async (args: Request): Promise<Response> => {
-            if (args.method === 'POST' && Object.keys(args.body).length !== 0) {
+        mirror: async (args: Request): Promise<boolean> => {
+            if (args.method === 'POST') {
+                let keys = Object.keys(args.body);
+                if (keys.length === null || keys.length === 0) {
+                    throw Error("no body");
+                }
+                let mirrormode: boolean;
 
-                let mirrorMode: boolean;
-
-                for (const [key, value] of args.body) {
-                    if (key == 'enabled') {
-                        mirrorMode = value;
+                const info = args.body;
+                for(let i in info){
+                    if (i === 'enabled') {
+                        mirrormode = info[i];
+                    } else {
+                        throw Error("wrong key")
                     }
                 }
-                if (mirrorMode === null) {
-                    return response.status(400)
+                if(typeof mirrormode !== "boolean"){
+                    throw Error("key undefined");
                 }
-                return await this.commandController.settings.update('mirror', mirrorMode ? 'true' : 'false')
-                    .then(mode => response.send(mode))
-                    .catch(() => response.status(400));
+                return await this.commandController.settings.update('mirror', mirrormode ? 'true' : 'false');
             }
-            return response.status(400)
+            throw Error("wrong method")
         },
     };
 }
