@@ -1,5 +1,6 @@
 import { Request, Response, response } from 'express';
 import { Command } from '../controllers/_';
+import { Address } from '../types/address';
 
 /**
  * Responsible for parsing incoming Http requests and directing them to the
@@ -14,7 +15,7 @@ export class Api {
      */
     constructor(
         private commandController: Command,
-    ) {}
+    ) { }
 
     /**
      * Handle incoming requests.
@@ -22,17 +23,23 @@ export class Api {
      * @param request The received request.
      * @param response The object used to send a response.
      */
-    public async handle(request: Request, response: Response){
+    public async handle(request: Request, response: Response) {
         const splitURL = request.url.trim().split('/');
         const command = splitURL.pop();
 
-        try {
-            const jo = await this.core.generate(request);
-            response.send(JSON.stringify(jo));
-        }
-        catch (e) {
-            response.status(400).send(e.message);
-        }
+        // const r = await this.commandController.addresses.create();
+        // response.send(r);
+
+        const r = await this.core.generate(request);
+        response.send(r);
+
+        // try {
+        //     const jo = await this.core.generate(request, response);
+        //     response.send(JSON.stringify(jo));
+        // }
+        // catch (e) {
+        //     response.status(400).send(e.message);
+        // }
     }
 
     private readonly core = {
@@ -79,7 +86,7 @@ export class Api {
 
 
 
-            if (method === 'GET'){
+            if (method === 'GET') {
 
 
                 return (publicKeySender.length !== 0)
@@ -87,11 +94,11 @@ export class Api {
                         .then(transactions => response.send(transactions))
                         .catch(() => response.status(400))
                     : await this.commandController.transactions.getAllImported()
-                        .then( transactions => response.send(transactions))
-                        .catch( () => response.status(400));
+                        .then(transactions => response.send(transactions))
+                        .catch(() => response.status(400));
             }
-            if (method === 'POST'){
-                if (Object.keys(args.body).length === 0){
+            if (method === 'POST') {
+                if (Object.keys(args.body).length === 0) {
                     response.status(400);
                 }
 
@@ -117,23 +124,26 @@ export class Api {
             }
         },
         address: async (args: Request): Promise<Response> => {
-                if (args.method === 'GET') {
-                    return await this.commandController.addresses.getAll()
-                        .then(addresses => response.send(addresses))
-                        .catch( () => response.status(400));
-                }
-                return response.status(400);
-        },
-        generate: async (args: Request): Promise<Response> => {
-            if(args.method === 'POST') {
-                return await this.commandController.addresses.create()
-                    .then(createdAddresses => response.send(createdAddresses))
-                    .catch(() => response.status(400).send('ho'));
+            if (args.method === 'GET') {
+                return await this.commandController.addresses.getAll()
+                    .then(addresses => response.send(addresses))
+                    .catch(() => response.status(400));
             }
-            return response.status(400)
+            return response.status(400);
+        },
+        generate: async (args: Request): Promise<Address> => {
+            return this.commandController.addresses.create();
+
+
+            // if (args.method === 'POST') {
+            //     return await this.commandController.addresses.create()
+            //         .then(createdAddresses => response.send(createdAddresses))
+            //         .catch(() => response.status(400).send('ho'));
+            // }
+            // return response.status(400)
         },
         balance: async (args: Request): Promise<Response> => {
-            if (args.method === 'GET'){
+            if (args.method === 'GET') {
                 let publicKey;
                 for (const [key, value] of args.body) {
                     if (key == 'publicKey') {
@@ -141,11 +151,11 @@ export class Api {
                     }
                 }
 
-                if(publicKey in args.body) {
+                if (publicKey in args.body) {
                     return await this.commandController.states.get(publicKey)
                         .then(result => response.send([result]))
                         .catch(() => response.status(400));
-                }else {
+                } else {
                     return await this.commandController.states.getAllImported()
                         .then(result => response.send(result))
                         .catch(() => response.status(400));
@@ -155,7 +165,7 @@ export class Api {
             return response.status(400)
         },
         mirror: async (args: Request): Promise<Response> => {
-            if (args.method === 'POST' && Object.keys(args.body).length !== 0){
+            if (args.method === 'POST' && Object.keys(args.body).length !== 0) {
 
                 let mirrorMode: boolean;
 
@@ -164,7 +174,7 @@ export class Api {
                         mirrorMode = value;
                     }
                 }
-                if(mirrorMode === null){
+                if (mirrorMode === null) {
                     return response.status(400)
                 }
                 return await this.commandController.settings.update('mirror', mirrorMode ? 'true' : 'false')

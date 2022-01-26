@@ -28,7 +28,7 @@ export class Command {
         this.crypto = new Crypto();
 
         const api = new Api(this);
-        this.server.all('/api/*', api.handle);
+        this.server.all('/api/*', api.handle.bind(api));
     }
 
     /**
