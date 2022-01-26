@@ -1,8 +1,13 @@
 <template>
   <el-dialog
+    class="dialog"
     :visible.sync="show"
     :before-close="handleClose"
+    :show-close="false"
     append-to-body>
+    <template #title>
+      <el-button size="mini" circle style="background: #ff605c" @click="$emit('close')"/>
+    </template>
     <div class="content">
       <el-empty :image="logo" :image-size="192">
         <template #description>
@@ -122,6 +127,9 @@ export default {
 </script>
 
 <style scoped>
+.dialog {
+  border-radius: 4px;
+}
 .title {
   /*color: #03a00b;*/
   font-size: 20px;
