@@ -1,24 +1,31 @@
 <template>
   <el-card class="view" :body-style="{padding: 0}">
     <div class="wallet_header">
-      <el-tooltip class="header_item" content="Add address" placement="bottom">
-        <el-button
-          plain
-          circle
-          size="medium"
-          @click="showDialog.walletSetup = true"
-          class="el-icon-plus"
-        />
-      </el-tooltip>
-      <el-tooltip class="header_item" content="Send funds" placement="bottom">
-        <el-button
-          plain
-          circle
-          size="medium"
-          @click="() => {}"
-          class="el-icon-money"
-        />
-      </el-tooltip>
+      <div class="dialog_controls">
+        <close-button disabled />
+        <minimize-button disabled />
+        <resize-button disabled />
+      </div>
+      <div class="action_buttons">
+        <el-tooltip class="header_item" content="Send funds" placement="bottom">
+          <el-button
+            plain
+            circle
+            size="medium"
+            @click="() => {}"
+            class="el-icon-money"
+          />
+        </el-tooltip>
+        <el-tooltip class="header_item" content="Add address" placement="bottom">
+          <el-button
+            plain
+            circle
+            size="medium"
+            @click="showDialog.walletSetup = true"
+            class="el-icon-plus"
+          />
+        </el-tooltip>
+      </div>
     </div>
     <el-tabs type="border-card" tab-position="left" class="tabs" stretch>
       <el-tab-pane>
@@ -62,7 +69,7 @@ export default {
     }
   },
   computed: {
-    ...mapState("wallet", ["addresses"])
+    ...mapState("wallet", ["addresses"]),
   }
 }
 </script>
@@ -72,11 +79,18 @@ export default {
   background: #444;
 }
 .wallet_header {
-  display: flex;
-  flex-direction: row-reverse;
+  display: flow-root;
   padding: 12px;
   background: #222;
   border-radius: 4px 4px 0 0;
+}
+.dialog_controls {
+  float: left;
+  margin-top: 10px;
+
+}
+.action_buttons {
+  float: right;
 }
 .tabs {
   height: 500px;

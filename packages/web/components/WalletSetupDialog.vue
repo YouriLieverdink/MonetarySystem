@@ -1,34 +1,53 @@
 <template>
   <el-dialog
-    class="dialog"
     :visible.sync="show"
     :before-close="handleClose"
     :show-close="false"
+    :fullscreen="fullscreen"
     append-to-body>
     <template #title>
-      <el-button size="mini" circle style="background: #ff605c" @click="$emit('close')"/>
+      <div>
+        <close-button @click="$emit('close')"/>
+        <minimize-button disabled/>
+        <resize-button @click="fullscreen  = !fullscreen"/>
+      </div>
     </template>
     <div class="content">
       <div class="description">
         Generating or importing a private key will not affect your existing keys
       </div>
-<!--      here's your key: <i class="el-icon-key"/>-->
-<!--      <el-checkbox-->
-<!--        label="I have a backup of the private key"-->
-<!--        v-model="agree"-->
-<!--        class="accept_terms"-->
-<!--        @change="agreed"-->
-<!--      />-->
+      <div>
+        <el-popover
+          placement="bottom"
+          width="400"
+          height="200"
+          trigger="manual"
+          v-model="showNewPrivKey">
+          <template #default>
+            <span style="font-size: 13px">Your new private key has been added to your wallet.</span><br>
+            <el-tooltip class="header_item" content="Click to copy" placement="bottom">
+              <el-input
+                ref="generatedKey"
+                readonly
+                prefix-icon="el-icon-key"
+                :value="generatedPrivateKey"
+                type="text"
+                size="medium"
+                @click.native="copyPrivateKey"
+              />
+            </el-tooltip>
+          </template>
 
-      <div ref="generateKey">
-        <el-button
-          type="primary"
-          icon="el-icon-setting"
-          :loading="generateLoading"
-          @click="generateWallet"
-          class="btn">
-          {{ generateLoading ? 'Generating' : 'Generate' }}
-        </el-button>
+          <el-button
+            slot="reference"
+            v-text="generateLoading ? 'Generating' : 'Generate'"
+            class="btn"
+            type="primary"
+            icon="el-icon-setting"
+            :loading="generateLoading"
+            @click="generatePrivateKey"
+          />
+        </el-popover>
       </div>
 
       <el-divider class="divider">OR</el-divider>
@@ -42,11 +61,11 @@
           <el-button
             type="primary"
             icon="el-icon-plus"
+            class="btn"
+            v-text="importLoading ? 'Importing' : 'Import'"
             :loading="importLoading"
             @click="importPrivateKey"
-            class="btn">
-            {{ importLoading ? 'Importing' : 'Import' }}
-          </el-button>
+            />
         </el-form>
       </div>
     </div>
@@ -72,14 +91,17 @@ export default {
       logo,
       privateKeyInput: "",
       generateLoading: false,
-      importLoading: false
+      importLoading: false,
+      showNewPrivKey: true,
+      generatedPrivateKey: "reFAfafadff",
+      fullscreen: false
     }
   },
   methods: {
     ...mapActions("wallet", [
       'importAddress'
     ]),
-    generateWallet() {
+    generatePrivateKey() {
       this.generateLoading = true
 
       apiRequest.generateKeys()
@@ -116,6 +138,11 @@ export default {
     handleClose(done) {
       this.$emit('close')
       done();
+    },
+    copyPrivateKey() {
+      this.$refs.generatedKey.focus()
+      this.$refs.generatedKey.select()
+      document.execCommand('copy')
     }
   },
   watch: {
@@ -129,9 +156,6 @@ export default {
 </script>
 
 <style scoped>
-.dialog {
-  border-radius: 4px;
-}
 .content {
   margin: 0 auto;
   width: 400px;
