@@ -1,6 +1,7 @@
 import {cEvent} from "./consensus";
 import {Storage} from "./storage";
-import {Setting} from "../types/setting";
+import {Transaction} from "../types/transaction";
+import {State} from "../types/state";
 
 export class Digester<T> {
 
@@ -19,12 +20,12 @@ export class Digester<T> {
      * @param events All events that are not yet processed and have reached consensus
      *
      */
-    public async digest(events: cEvent<T>[]): Promise<void> {
+    public async digest(events: cEvent<Transaction[]>[]): Promise<void> {
         for (let i = 0; i < events.length; i++) {
             const event = events[i];
-            if (this.validate(event)) {
-                this.updateState(event);
-            }
+
+            await this.handleTransactions(event.data)
+
 
             if (await this.mirrorIsActive()) {
                 this.mirror(event);
@@ -35,22 +36,57 @@ export class Digester<T> {
     /**
      * Checks if a transaction from a consensus event can be made
      *
-     * @param events All events
      * @returns boolean if the transaction is possible
      *
+     * @param transactions
      */
-    public validate(events: cEvent<T>): boolean {
-        return true
+    public async handleTransactions(transactions: Transaction[]): Promise<void> {
+
+        for (let i = 0; i < transactions.length; i++) {
+            const from = await this.storage.states.read(transactions[i].from)
+            const to = await this.storage.states.read(transactions[i].to)
+
+            if (await this.validate(from, to, transactions[i])) {
+                await this.executeTransaction(from, to, transactions[i]);
+            }
+        }
+
+    }
+
+    /**
+     * Checks if a transaction from a consensus event can be made
+     *
+     * @returns boolean if the transaction is possible
+     *
+     * @param from
+     * @param to
+     * @param transaction
+     */
+    private async validate(from: State, to: State, transaction: Transaction): Promise<boolean> {
+
+        if (from && to){
+            if (from.balance >= transaction.amount){
+                return true
+            }
+        }
+
+        return false
     }
 
     /**
      * updates the state depending on a validated transaction
      *
-     * @param events All events
      *
+     * @param from
+     * @param to
+     * @param transaction
      */
-    public updateState(events: cEvent<T>): void {
-        //update state
+    private async executeTransaction(from: State, to: State, transaction: Transaction): Promise<void> {
+        from.balance -= transaction.amount
+        to.balance += transaction.amount
+
+        await this.storage.states.update(from)
+        await this.storage.states.update(to)
     }
 
     /**
@@ -70,7 +106,7 @@ export class Digester<T> {
      * @param event
      *
      */
-    public mirror(event: cEvent<T>): void {
+    public mirror(event: cEvent<Transaction[]>): void {
         //put event in database
     }
 
