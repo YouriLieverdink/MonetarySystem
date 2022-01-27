@@ -87,7 +87,6 @@ export default {
 .dialog_controls {
   float: left;
   margin-top: 10px;
-
 }
 .action_buttons {
   float: right;

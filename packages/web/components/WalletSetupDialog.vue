@@ -92,7 +92,7 @@ export default {
       privateKeyInput: "",
       generateLoading: false,
       importLoading: false,
-      showNewPrivKey: true,
+      showNewPrivKey: false,
       generatedPrivateKey: "reFAfafadff",
       fullscreen: false
     }
