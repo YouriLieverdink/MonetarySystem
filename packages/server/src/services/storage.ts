@@ -370,14 +370,6 @@ export class Storage {
      */
     public readonly settings = {
         /**
-         * Display a listing of the resource.
-         *
-         * @throws {Error} When an exception occurs.
-         */
-        index: (): Promise<Setting[]> => {
-            return this.query.all<Setting>('SELECT * FROM settings');
-        },
-        /**
          * Display the specified resource.
          *
          * @param key The key of the setting to retrieve.
