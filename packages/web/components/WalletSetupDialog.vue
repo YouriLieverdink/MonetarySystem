@@ -18,19 +18,19 @@
       </div>
       <div>
         <el-popover
+          v-model="showPrivateKeyOutput"
           placement="bottom"
-          width="400"
+          width="300"
           height="200"
-          trigger="manual"
-          v-model="showNewPrivKey">
+          trigger="manual">
           <template #default>
-            <span style="font-size: 13px">Your new private key has been added to your wallet.</span><br>
+            <span class="keyOutput_description">Your new private key has been added to your wallet.</span>
             <el-tooltip class="header_item" content="Click to copy" placement="bottom">
               <el-input
-                ref="generatedKey"
+                ref="keyOutput"
                 readonly
                 prefix-icon="el-icon-key"
-                :value="generatedPrivateKey"
+                :value="privateKeyOutput"
                 type="text"
                 size="medium"
                 @click.native="copyPrivateKey"
@@ -40,17 +40,17 @@
 
           <el-button
             slot="reference"
-            v-text="generateLoading ? 'Generating' : 'Generate'"
+            v-text="generateLoading ? ' Generating' : ' Generate'"
             class="btn"
             type="primary"
-            icon="el-icon-setting"
             :loading="generateLoading"
             @click="generatePrivateKey"
           />
         </el-popover>
       </div>
 
-      <el-divider class="divider">OR</el-divider>
+      <div ref="spacing" :class="[showPrivateKeyOutput ? 'spacing_active' : 'spacing']"></div>
+      <el-divider>OR</el-divider>
 
       <div ref="importKey">
         <el-form @submit.prevent.native="importPrivateKey">
@@ -60,9 +60,8 @@
             v-model="privateKeyInput" />
           <el-button
             type="primary"
-            icon="el-icon-plus"
             class="btn"
-            v-text="importLoading ? 'Importing' : 'Import'"
+            v-text="importLoading ? ' Importing' : ' Import'"
             :loading="importLoading"
             @click="importPrivateKey"
             />
@@ -90,10 +89,10 @@ export default {
     return {
       logo,
       privateKeyInput: "",
+      privateKeyOutput: "",
+      showPrivateKeyOutput: false,
       generateLoading: false,
       importLoading: false,
-      showNewPrivKey: false,
-      generatedPrivateKey: "reFAfafadff",
       fullscreen: false
     }
   },
@@ -107,6 +106,8 @@ export default {
       apiRequest.generateKeys()
         .then(address => {
           this.importAddress(address.data.privateKey)
+          this.privateKeyOutput = address.data.privateKey
+          this.showPrivateKeyOutput = true
           this.$message({
             message: 'Import successful',
             type: 'success'
@@ -140,16 +141,22 @@ export default {
       done();
     },
     copyPrivateKey() {
-      this.$refs.generatedKey.focus()
-      this.$refs.generatedKey.select()
+      this.$refs.keyOutput.focus()
+      this.$refs.keyOutput.select()
       document.execCommand('copy')
     }
   },
   watch: {
     show() {
-      this.generateLoading = false
-      this.importLoading = false
-      this.privateKeyInput = ""
+      this.generateLoading
+        = this.importLoading
+        = this.showPrivateKeyOutput
+        = this.fullscreen
+        = false
+
+      this.privateKeyInput
+        = this.privateKeyOutput
+        = ""
     }
   }
 }
@@ -166,10 +173,18 @@ export default {
   display: block;
   margin: 24px auto;
 }
-.divider {
-  margin: 36px 0;
-}
 .description {
   margin-bottom: 36px;
+}
+.keyOutput_description {
+  font-size: 13px;
+  margin: 6px 0 12px;
+  display:block;
+}
+.spacing {
+  margin: 36px;
+}
+.spacing_active {
+  height: 108px
 }
 </style>
