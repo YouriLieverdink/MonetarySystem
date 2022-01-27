@@ -1,5 +1,6 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import readline from 'readline';
+import { Address } from '../types/_';
 
 /**
  * Responsible for providing an interactive shell for the user to interact
@@ -62,7 +63,7 @@ export class Shell {
         });
 
         const ask = () => rl.question(
-            '\x1b[0mtritium> ',
+            '\n\x1b[0mtritium> ',
             async (request) => {
                 await this.handle(request);
                 ask();
@@ -88,9 +89,11 @@ export class Shell {
         catch (e) {
             //
             if (e.name === 'TypeError') {
+
+                console.log(e);
                 // The command was not found.
                 Shell.response.error('Invalid command');
-                Shell.response.log('Enter \'help\' to display command line options.\n');
+                Shell.response.log('Enter \'help\' to display command line options.');
             } //
             else if (e.name === 'AxiosError') {
                 const error: AxiosError = e;
@@ -151,7 +154,7 @@ export class Shell {
                 '   ██║    ██╔══██╗ ██║    ██║    ██║ ██║   ██║ ██║╚██╔╝██║\n' +
                 '   ██║    ██║  ██║ ██║    ██║    ██║ ╚██████╔╝ ██║ ╚═╝ ██║\n' +
                 '   ╚═╝    ╚═╝  ╚═╝ ╚═╝    ╚═╝    ╚═╝  ╚═════╝  ╚═╝     ╚═╝\n' +
-                '\n Enter \'help\' to display command line options.\n'
+                '\n Enter \'help\' to display command line options.'
             );
         }
     };
@@ -160,8 +163,61 @@ export class Shell {
      * The available commands.
      */
     private readonly commands = {
+        clear: async (): Promise<void> => {
+            Shell.response.clear();
+        },
         exit: async (): Promise<void> => {
             process.exit(0);
+        },
+        import: async (args: string[]): Promise<void> => {
+            if (args.length !== 1) {
+                return Shell.response.bad();
+            }
+
+            const privateKey = args[0];
+            await this.http.post('address/import', { privateKey });
+
+            Shell.response.log('Address imported successfully.');
+        },
+        remove: async (args: string[]): Promise<void> => {
+            if (args.length !== 1) {
+                return Shell.response.bad();
+            }
+
+            const publicKey = args[0];
+            await this.http.post('address/remove', { publicKey });
+
+            Shell.response.log('Address removed successfully.');
+        },
+        generate: async (args: string[]): Promise<void> => {
+            if (args.length > 0) {
+                return Shell.response.bad();
+            }
+
+            const response = await this.http.post('generate');
+            const address: Address = response.data;
+
+            Shell.response.log(`Generated a new address!\n    Public key:  ${address.publicKey}\n    Private key: ${address.privateKey}\n\n  Imporant note: Don't lose the private key. No keys no cheese!`);
+        },
+        list: async (args: string[]): Promise<void> => {
+            const showPrivate = args.includes('--private');
+
+            if (args.length === 1 && !showPrivate) {
+                return Shell.response.bad();
+            }
+
+            const response = await this.http.get('address');
+            const addresses: Address[] = response.data;
+
+            if (addresses.length === 0) {
+                return Shell.response.error('Please import your addresses, or generate one with \'generate\'.');
+            }
+
+            addresses.forEach((address, index) => {
+                const i = (index + 1) < 10 ? ` ${index + 1}` : `${index + 1}`;
+
+                Shell.response.log(`  ${i}. Public key:  ${address.publicKey}${showPrivate ? '\n        Private key: ' + address.privateKey : ''}`);
+            });
         },
     };
 }
