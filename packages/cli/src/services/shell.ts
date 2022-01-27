@@ -17,7 +17,7 @@ export class Shell {
      * 
      * @param port The port on which the node is.
      */
-    public static async instance(port: number): Promise<void> {
+    public static async instance(port: number): Promise<Shell> {
         try {
             const http = axios.create({
                 baseURL: `http://0.0.0.0:${port}/api`,
@@ -26,7 +26,7 @@ export class Shell {
             // Ping the node to see if it is available.
             await http.get('/ping');
 
-            new Shell(http);
+            return new Shell(http);
         } //
         catch (e) {
             //
@@ -78,7 +78,7 @@ export class Shell {
      * 
      * @param request The incoming line.
      */
-    private async handle(request: string): Promise<void> {
+    public async handle(request: string): Promise<void> {
         const args = request.trim().split(' ');
         const command = args.shift();
 
