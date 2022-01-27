@@ -174,8 +174,10 @@ export class Storage {
          *
          * @throws {Error} When an exception occurs.
          */
-        destroy: (publicKey: string): Promise<void> => {
-            return this.query.run('DELETE FROM addresses WHERE publicKey=?', publicKey);
+        destroy: async (publicKey: string): Promise<boolean> => {
+            return await this.query.run('DELETE FROM addresses WHERE publicKey=?', publicKey)
+                .then(() => true)
+                .catch(() => false);
         }
     };
 
