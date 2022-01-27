@@ -36,9 +36,8 @@ export class Digester<T> {
     /**
      * handles all the transactions from an event
      *
-     * @returns boolean if the transaction is possible
-     *
      * @param transactions
+     *
      */
     public async handleTransactions(transactions: Transaction[]): Promise<void> {
 
@@ -56,7 +55,7 @@ export class Digester<T> {
     /**
      * Checks if a transaction from a consensus event can be made
      *
-     * @returns boolean if the transaction is possible
+     * @returns boolean if the transaction is possible return true
      *
      * @param from
      * @param to
