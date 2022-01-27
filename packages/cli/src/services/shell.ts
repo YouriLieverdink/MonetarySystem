@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
+import { performance } from 'perf_hooks';
 import readline from 'readline';
 import { Address, State, Transaction } from '../types/_';
 
@@ -286,9 +287,11 @@ export class Shell {
                 return Shell.response.bad();
             }
 
-            const response = await this.http.get('ping');
+            const t1 = performance.now();
+            await this.http.get('ping');
+            const t2 = performance.now();
 
-            Shell.response.log(response.data);
+            Shell.response.log(`Pong (${Math.round(t2 - t1)}ms)`);
         },
         transactions: async (args: string[]): Promise<void> => {
             if (args.length > 1) {
