@@ -24,7 +24,7 @@ export class Digester<T> {
         for (let i = 0; i < events.length; i++) {
             const event = events[i];
 
-            await this.handleTransactions(event.data)
+            await this.handleTransactions(event.data, event.publicKey)
 
 
             if (await this.mirrorIsActive()) {
@@ -37,15 +37,16 @@ export class Digester<T> {
      * handles all the transactions from an event
      *
      * @param transactions
+     * @param creator the creator of the event
      *
      */
-    public async handleTransactions(transactions: Transaction[]): Promise<void> {
+    public async handleTransactions(transactions: Transaction[], creator: string): Promise<void> {
 
         for (let i = 0; i < transactions.length; i++) {
             const from = await this.storage.states.read(transactions[i].from)
             const to = await this.storage.states.read(transactions[i].to)
 
-            if (await this.validate(from, to, transactions[i])) {
+            if (await this.validate(from, to, transactions[i], creator)) {
                 await this.executeTransaction(from, to, transactions[i]);
             }
         }
@@ -60,16 +61,23 @@ export class Digester<T> {
      * @param from
      * @param to
      * @param transaction
+     * @param creator the creator of the event
      */
-    private async validate(from: State, to: State, transaction: Transaction): Promise<boolean> {
+    private async validate(from: State, to: State, transaction: Transaction, creator: String): Promise<boolean> {
 
-        if (from && to){
-            if (from.balance >= transaction.amount){
-                return true
-            }
+        if (!from && !to){
+            return false
         }
 
-        return false
+        if (from.balance < transaction.amount){
+            return false
+        }
+
+        if (from.publicKey != creator){
+            return false
+        }
+
+        return true
     }
 
     /**

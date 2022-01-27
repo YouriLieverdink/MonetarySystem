@@ -18,16 +18,17 @@ describe('Digester', () => {
 
         //create test events
         events = [];
-        const publicKeys = ['piet', 'henk', 'klaas', 'jan', 'geert'];
+        const publicKeys = ['piet', 'henk', 'klaas', 'jan', 'geert', 'hacker'];
         const transactions = [
             {from: 'piet', to: 'henk', amount: 101},
             {from: 'henk', to: 'klaas', amount: 34},
             {from: 'klaas', to: 'jan', amount: 59},
             {from: 'jan', to: 'geert', amount: 32},
-            {from: 'geert', to: 'piet', amount: 18}
+            {from: 'geert', to: 'piet', amount: 18},
+            {from: 'piet', to: 'hacker', amount: 18}
         ]
 
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 6; i++) {
             events.push({
                 id: `${i}`,
                 createdAt: new Date(),
@@ -50,8 +51,8 @@ describe('Digester', () => {
             }
         });
 
-        it('does not execute transaction if validation is false', async () => {
-            await digester.handleTransactions(events[0].data)
+        it('does not execute transaction if not enough coins', async () => {
+            await digester.handleTransactions(events[0].data, events[0].publicKey)
 
             const from = await storage.states.read(events[0].data[0].from)
             const to = await storage.states.read(events[0].data[0].to)
@@ -60,8 +61,18 @@ describe('Digester', () => {
             expect(to.balance).toBe(100)
         });
 
+        it('does not execute transaction if transaction made by not authorized person', async () => {
+            await digester.handleTransactions(events[5].data, events[5].publicKey)
+
+            const from = await storage.states.read(events[5].data[0].from)
+            const to = await storage.states.read(events[5].data[0].to)
+
+            expect(from.balance).toBe(100)
+            expect(to.balance).toBe(100)
+        });
+
         it('does execute a transaction if validation is true', async () => {
-            await digester.handleTransactions(events[1].data)
+            await digester.handleTransactions(events[1].data, events[1].publicKey)
 
             const from = await storage.states.read(events[1].data[0].from)
             const to = await storage.states.read(events[1].data[0].to)
@@ -71,7 +82,7 @@ describe('Digester', () => {
         });
 
         it('handles events that have multiple transactions', async () => {
-            await digester.handleTransactions(events[2].data)
+            await digester.handleTransactions(events[2].data, events[2].publicKey)
 
             const from = await storage.states.read(events[2].data[0].from)
             const to = await storage.states.read(events[2].data[0].to)
