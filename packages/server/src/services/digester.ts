@@ -34,7 +34,7 @@ export class Digester<T> {
     }
 
     /**
-     * Checks if a transaction from a consensus event can be made
+     * handles all the transactions from an event
      *
      * @returns boolean if the transaction is possible
      *
