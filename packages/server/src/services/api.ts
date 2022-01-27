@@ -44,6 +44,9 @@ export class Api {
     }
 
     private readonly core = {
+        ping: async (args: Request): Promise<string> => {
+            return 'pong';
+        },
         import: async (args: Request): Promise<string> => {
             if (args.method === 'POST') {
 
