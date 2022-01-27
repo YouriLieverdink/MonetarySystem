@@ -100,7 +100,6 @@ describe('Consensus', () => {
                 const cEvents = consensus.doConsensus([...events], n);
 
                 const event = cEvents.find((cEvent) => cEvent.id === '1');
-
                 expect(event.round).toBe(0);
             });
 
@@ -148,7 +147,7 @@ describe('Consensus', () => {
             });
         });
 
-        describe('sets the famous', () => {
+        describe('sets the fame', () => {
 
             it.each(['0', '1', '2', '3', '12', '13', '14'])(
                 'of x=%i to `true` when it is famous',
@@ -405,6 +404,26 @@ describe('Consensus', () => {
                 const result = consensus.helpers.otherParent([...events], x);
                 expect(result).toEqual(y);
             });
+        });
+
+        describe('numberOfNodes', () => {
+
+            it('returns the number of nodes of a specific round', () => {
+                consensus.doConsensus(events, n);
+
+                const result = consensus.helpers.numberOfNodes(events, 1)
+
+                expect(result).toEqual(4);
+            });
+
+            it('returns the number of nodes that participated in a round', () => {
+                consensus.doConsensus(events, n);
+
+                const result = consensus.helpers.numberOfNodes(events, 3)
+
+                expect(result).toEqual(3);
+            });
+
         });
     });
 });

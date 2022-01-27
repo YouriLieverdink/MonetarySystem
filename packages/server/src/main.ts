@@ -9,8 +9,12 @@ import { Computer, Transaction } from './types/_';
 const main = async (): Promise<void> => {
     // Initialise the express server for incoming connections.
     const server = express();
-    server.use(express.json());
-    server.listen(config.port, '0.0.0.0');
+    server.use(express.json({limit: '5mb'}));
+    server.use(express.urlencoded({limit: '5mb'}));
+    server.listen(config.port, '0.0.0.0', () =>
+        {console.log( `server started at http://localhost:${ config.port }`);}
+        );
+
 
     // We provide a multiple seed computers to bootstrap.
     const computers = new Collection<Computer>();
