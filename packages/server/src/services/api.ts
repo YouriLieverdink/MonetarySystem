@@ -1,8 +1,6 @@
-import { Request, Response} from 'express';
+import { Request, Response } from 'express';
 import { Command } from '../controllers/_';
-import { Address } from '../types/address';
-import {Transaction} from "../../lib/types/transaction";
-import {State} from "../../lib/types/state";
+import { Address, Transaction, State } from '../types/_';
 
 /**
  * Responsible for parsing incoming Http requests and directing them to the
@@ -28,11 +26,11 @@ export class Api {
     public async handle(request: Request, response: Response) {
         let splittedURL;
         let command;
-        if (request.url.includes('?')){
+        if (request.url.includes('?')) {
             splittedURL = request.url.trim().split('?');
             splittedURL = splittedURL[0].trim().split('/');
             command = splittedURL.pop();
-        }else{
+        } else {
             splittedURL = request.url.trim().split('/');
             command = splittedURL.pop();
         }
@@ -41,6 +39,9 @@ export class Api {
             if (Object.keys(this.core).includes(command)) {
                 const res = await this.core[command](request);
                 response.send(JSON.stringify(res));
+            } //
+            else {
+                response.sendStatus(400);
             }
         }
         catch (e) {
@@ -49,9 +50,12 @@ export class Api {
     }
 
     private readonly core = {
+        ping: async (args: Request): Promise<string> => {
+            return 'pong';
+        },
         import: async (args: Request): Promise<string> => {
             if (args.method === 'POST') {
-                if (args.query){
+                if (args.query) {
                     throw Error("Can't use params");
                 }
                 const value = Object.values(args.body).toString();
@@ -62,25 +66,25 @@ export class Api {
         },
         remove: async (args: Request): Promise<string> => {
             if (args.method === 'POST') {
-                if (args.query){
+                if (args.query) {
                     throw Error("Can't use params");
                 }
-                if(args.body.constructor === Object && Object.keys(args.body).length === 0) {
+                if (args.body.constructor === Object && Object.keys(args.body).length === 0) {
                     throw Error("Empty body");
                 }
                 const value = Object.values(args.body).toString();
 
                 const success = await this.commandController.addresses.remove(value);
 
-                if (success){
+                if (success) {
                     return "success";
                 }
                 throw Error("Couldnt remove key")
             }
             throw Error("ERROR addresses");
         },
-        transactions: async (args: Request): Promise<Transaction|Transaction[]|Error> => {
-            if (!args.query.address){
+        transactions: async (args: Request): Promise<Transaction | Transaction[] | Error> => {
+            if (!args.query.address) {
                 throw Error("no params");
             }
 
@@ -102,7 +106,7 @@ export class Api {
                 let amount: number;
 
                 const info = args.body;
-                for(let i in info){
+                for (let i in info) {
                     switch (i) {
                         case 'amount':
                             amount = info[i];
@@ -114,13 +118,13 @@ export class Api {
                             break;
                     }
                 }
-                if(receiver === undefined || amount === undefined){
+                if (receiver === undefined || amount === undefined) {
                     throw Error("key undefined");
                 }
                 if (typeof amount !== 'number' || typeof receiver !== 'string') {
                     throw Error("wrong types");
                 }
-                if (address === 'api'){
+                if (address === 'api') {
                     throw Error("wrong endpoint used");
                 }
                 return await this.commandController.transactions.create(sender, receiver, amount);
@@ -129,16 +133,16 @@ export class Api {
         },
         address: async (args: Request): Promise<Address[]> => {
             if (args.method === 'GET') {
-                if (args.query){
+                if (args.query) {
                     throw Error("Can't use params");
                 }
                 return await this.commandController.addresses.getAll();
             }
             throw Error("ERROR addresses");
         },
-        generate: async (args: Request): Promise<Address|string> => {
+        generate: async (args: Request): Promise<Address | string> => {
             if (args.method === 'POST') {
-                if (args.query){
+                if (args.query) {
                     throw Error("Can't use params");
                 }
                 return await this.commandController.addresses.create()
@@ -149,14 +153,14 @@ export class Api {
         },
         balance: async (args: Request): Promise<State[]> => {
             if (args.method === 'GET') {
-                if (!args.query.address){
+                if (!args.query.address) {
                     throw Error("no params");
                 }
 
                 const address = args.query.address;
                 const sender = address.toString();
 
-                return(sender !== 'api' || sender.length !== 0)
+                return (sender !== 'api' || sender.length !== 0)
                     ? await this.commandController.states.get(sender)
                     : await this.commandController.states.getAllImported();
             }
@@ -164,7 +168,7 @@ export class Api {
         },
         mirror: async (args: Request): Promise<boolean> => {
             if (args.method === 'POST') {
-                if (args.query){
+                if (args.query) {
                     throw Error("Can't use params");
                 }
                 let keys = Object.keys(args.body);
@@ -174,14 +178,14 @@ export class Api {
                 let mirrormode: boolean;
 
                 const info = args.body;
-                for(let i in info){
+                for (let i in info) {
                     if (i === 'enabled') {
                         mirrormode = info[i];
                     } else {
                         throw Error("wrong key")
                     }
                 }
-                if(typeof mirrormode !== "boolean"){
+                if (typeof mirrormode !== "boolean") {
                     throw Error("wrong value");
                 }
                 return await this.commandController.settings.update('mirror', mirrormode ? 'true' : 'false');
