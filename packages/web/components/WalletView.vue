@@ -27,24 +27,36 @@
         </el-tooltip>
       </div>
     </div>
-    <el-tabs type="border-card" tab-position="left" class="tabs" stretch>
-      <el-tab-pane>
+    <el-tabs type="border-card" tab-position="left" class="tabs" stretch value="addresses">
+      <el-tab-pane name="overview">
         <span slot="label">Wallet Overview <i class="el-icon-wallet"></i></span>
         <el-skeleton :rows="6" animated />
       </el-tab-pane>
-      <el-tab-pane>
+      <el-tab-pane name="addresses">
         <span slot="label">Addresses <i class="el-icon-notebook-1"></i></span>
-        <el-table :data="addresses">
+        <el-table :data="addresses" max-height="468px">
           <el-table-column
             prop="publicKey"
             label="Public key" />
+          <el-table-column
+            align="right">
+            <template #header>
+              Total: {{addresses.length}}
+            </template>
+            <template slot-scope="{ row }">
+              <el-button
+                size="mini"
+                type="danger"
+                @click="handleRemoveAddress(row.publicKey)">Remove</el-button>
+            </template>
+          </el-table-column>
         </el-table>
       </el-tab-pane>
-      <el-tab-pane>
+      <el-tab-pane name="transactions">
         <span slot="label">Transactions <i class="el-icon-coin"></i></span>
         <el-skeleton :rows="3" animated />
       </el-tab-pane>
-      <el-tab-pane>
+      <el-tab-pane name="settings">
         <span slot="label">Settings <i class="el-icon-setting"></i></span>
         <el-skeleton :rows="5" animated />
       </el-tab-pane>
@@ -57,7 +69,8 @@
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapActions, mapState } from 'vuex';
+import { apiRequest } from '@/core/service/apiService';
 
 export default {
   name: 'WalletView',
@@ -71,7 +84,32 @@ export default {
   computed: {
     ...mapState("wallet", {
       addresses: state => state.addresses
-    }),
+    })
+  },
+  mounted() {
+     this.refreshAddresses()
+  },
+  methods: {
+    ...mapActions("wallet", [
+      "removeAddress",
+      "setAddresses"
+    ]),
+    async handleRemoveAddress(pubKey) {
+      try {
+        await apiRequest.addresses.remove(pubKey)
+        this.removeAddress(pubKey)
+      } catch(e) {
+        this.$message.error('Error - Address not removed')
+      }
+    },
+    async refreshAddresses() {
+      try {
+        const res = await apiRequest.addresses.get()
+        this.setAddresses(res.data)
+      } catch (e) {
+        this.$message('Error updating your addresses')
+      }
+    }
   }
 }
 </script>

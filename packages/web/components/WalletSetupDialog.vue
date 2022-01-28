@@ -9,7 +9,7 @@
       <div>
         <close-button @click="$emit('close')"/>
         <minimize-button disabled/>
-        <resize-button @click="fullscreen  = !fullscreen"/>
+        <resize-button @click="fullscreen = !fullscreen"/>
       </div>
     </template>
     <div class="content">
@@ -45,7 +45,7 @@
             class="btn"
             type="primary"
             :loading="generateLoading"
-            @click="generatePrivateKey"
+            @click="handleGenerateAddress"
           />
         </el-popover>
       </div>
@@ -54,7 +54,7 @@
       <el-divider>OR</el-divider>
 
       <div ref="importKey">
-        <el-form @submit.prevent.native="importPrivateKey">
+        <el-form @submit.prevent.native="handleImportAddress">
           <el-input
             type="text"
             placeholder="Enter private key here"
@@ -64,7 +64,7 @@
             class="btn"
             v-text="importLoading ? ' Importing' : ' Import'"
             :loading="importLoading"
-            @click="importPrivateKey"
+            @click="handleImportAddress"
             />
         </el-form>
       </div>
@@ -101,41 +101,47 @@ export default {
     ...mapActions("wallet", [
       'importAddress'
     ]),
-    generatePrivateKey() {
+    async handleGenerateAddress() {
       this.generateLoading = true
 
-      apiRequest.generateKeys()
-        .then(address => {
-          this.importAddress(address.data)
-          this.privateKeyOutput = address.data.privateKey
-          this.showPrivateKeyOutput = true
-          this.$message({
-            message: 'Import successful',
-            type: 'success'
-          })
+      try {
+        const res = await apiRequest.addresses.generate()
+        this.importAddress(res.data)
+        this.privateKeyOutput = res.data.privateKey
+        this.showPrivateKeyOutput = true
+        this.$message({
+          message: 'Import successful',
+          type: 'success'
         })
-        .catch(error => this.$message({
+      } catch(error) {
+          this.$message({
             message: error,
             type: 'error'
-          }))
-        .finally(() => this.generateLoading = false)
+          })
+      } finally {
+        this.generateLoading = false
+      }
     },
-    importPrivateKey() {
+    async handleImportAddress() {
       this.importLoading = true
 
-      apiRequest.importPrivateKey(this.privateKeyInput)
-        .then(address => {
-          this.importAddress(address.data.privateKey)
-          this.$message({
-            message: 'Import successful',
-            type: 'success'
-          })
+      try {
+        const res = await apiRequest.addresses.import(this.privateKeyInput)
+        this.importAddress(res.data)
+        this.privateKeyOutput = res.data.privateKey
+        this.showPrivateKeyOutput = true
+        this.$message({
+          message: 'Import successful',
+          type: 'success'
         })
-        .catch(error => this.$message({
+      } catch(error) {
+        this.$message({
           message: error,
           type: 'error'
-        }))
-        .finally(() => this.importLoading = false)
+        })
+      } finally {
+        this.importLoading = false
+      }
     },
     handleClose(done) {
       this.$emit('close')

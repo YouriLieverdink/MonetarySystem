@@ -1,1 +1,3 @@
 export const IMPORT_ADDRESS = "IMPORT_ADDRESS";
+export const REMOVE_ADDRESS = "REMOVE_ADDRESS";
+export const SET_ADDRESSES = "SET_ADDRESSES";

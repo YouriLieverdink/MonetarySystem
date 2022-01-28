@@ -5,11 +5,18 @@ const api = axiosInstance({
 })
 
 export const apiRequest = {
-  generateKeys() {
-    return api.post("generate")
-  },
-
-  importPrivateKey(privateKey: string) {
-    return api.post("import", privateKey)
+  addresses: {
+    generate() {
+      return api.post("generate")
+    },
+    import(privateKey: string) {
+      return api.post("import", privateKey)
+    },
+    remove(pubKey: string) {
+      return api.post("address/remove", { public_key: pubKey })
+    },
+    get() {
+      return api.get("address")
+    }
   }
 }
