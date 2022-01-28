@@ -7,7 +7,8 @@ export type cEvent<T> = Event<T> & {
     witness?: boolean;
     roundReceived?: number;
     famous?: boolean;
-    timestamp?: Date;
+    timestamp?: number;
+    index?: number;
 }
 
 export class Consensus<T> {
@@ -15,11 +16,6 @@ export class Consensus<T> {
      * Used for cryptography.
      */
     private crypto: Crypto;
-
-    /**
-     * The events to which consensus has not been reached.
-     */
-    private events: cEvent<T>[];
 
     /**
      * Class constructor.
@@ -31,7 +27,6 @@ export class Consensus<T> {
     ) {
         //
         this.crypto = crypto || new Crypto();
-        this.events = [];
     }
 
     /**
@@ -43,11 +38,10 @@ export class Consensus<T> {
      */
     public doConsensus(events: cEvent<T>[], n: number): cEvent<T>[] {
         //
-        events.push(...this.events);
-
         events = this.divideRounds(events, n);
         events = this.decideFame(events, n);
         events = this.findOrder(events);
+        events = this.setOrder(events);
 
         return events;
     }
@@ -64,12 +58,40 @@ export class Consensus<T> {
     public divideRounds(events: cEvent<T>[], n: number): cEvent<T>[] {
         events.forEach((event) => {
             if (!event.round) {
-                event.round = this.roundHelpers.round(events, event, n);
+                let round = this.helpers.getHighestParentRound(events, event);
+
+                if (round === -1) {
+                    event.round = 0;
+                } else {
+                    let count = this.helpers.countStrongestSeenWitnesses(events, event, round, n);
+                    if (this.helpers.superMajority(n, count)) {
+                        round++;
+                    }
+                    event.round = round
+                }
             }
-            event.witness = this.roundHelpers.witness(events, event);
+
+            event.witness = this.witness(events, event);
         });
 
         return events;
+    }
+
+    /**
+     * Determines if the event is a witness
+     *
+     * @returns boolean true if the event is a witness
+     * @param events
+     * @param event
+     */
+    public witness(events: cEvent<T>[], event: cEvent<T>): boolean {
+        const round = event.round;
+        let spRound = -1;
+        if (this.helpers.selfParent(events, event) !== undefined) {
+        spRound = this.helpers.selfParent(events, event).round;
+        }
+
+        return round > spRound;
     }
 
     /**
@@ -81,8 +103,88 @@ export class Consensus<T> {
      * @returns Events which have received fame when necessary.
      */
     private decideFame(events: cEvent<T>[], n: number): cEvent<T>[] {
-        //
-        this.fameHelpers.fame(events, n);
+        const votes = {}; //votes[x][y] = vote;
+
+        function vote(xID: string, yID: string, vote: boolean) {
+            if (votes[xID] === undefined) {
+                votes[xID] = {};
+            }
+            votes[xID][yID] = vote;
+        }
+
+        const pendingRounds = this.helpers.pendingRounds(events);
+
+        //for every undecided round r
+        for (let r = 0; r < pendingRounds.length; r++) {
+            const pendingRound = pendingRounds[r];
+            const roundWitnesses = this.helpers.getRoundWitnesses(events, pendingRound); //get all witnesses from that round r
+
+            //for every witness - x
+            for (let x = 0; x < roundWitnesses.length; x++) {
+                const witness = roundWitnesses[x];
+
+                if (witness.famous !== undefined) {
+                    continue; //if it is decided continue
+                }
+
+                //The vote loop. Should check for the oldest known round may need to be changed later.
+                // This is done to check all the rounds before the round that is being checked
+                voteLoop:
+                    for (let j = pendingRound + 1; j <= Math.max(...pendingRounds); j++) {
+                        const comparingWitnesses = this.helpers.getRoundWitnesses(events, j); //get all witnesses from that round j
+                        for (let y = 0; y < comparingWitnesses.length; y++) {
+                            const comparingWitness = comparingWitnesses[y];
+                            const diff = j - pendingRound;
+
+                            if (diff === 1) {
+                                vote(comparingWitness.id, witness.id, this.helpers.canSee(events, comparingWitness, witness));
+                            } else {
+                                const jPrevRoundWitnesses = this.helpers.getRoundWitnesses(events, j - 1);
+                                const jPrevRoundEvents = this.helpers.getRoundEvents(events, j - 1);
+
+                                // collection of witnesses from round j-1 that are
+                                // strongly seen by y, based on round j-1 PeerSet.
+                                const ssWitnesses = [];
+                                for (let w = 0; w < jPrevRoundWitnesses.length; w++) {
+                                    const jPrevRoundWitness = jPrevRoundWitnesses[w];
+                                    //this should be with the amount of nodes in this spicific round. Maybe fix later.
+                                    if (this.helpers.canStronglySee(events, comparingWitness, jPrevRoundWitness, n)) {
+                                        ssWitnesses.push(jPrevRoundWitness);
+                                    }
+                                }
+
+                                //collect votes from the ssWitnesses.
+                                let yes = 0;
+                                let no = 0;
+                                for (let w = 0; w < ssWitnesses.length; w++) {
+                                    const ssWitness = ssWitnesses[w];
+                                    if (votes[ssWitness.id][witness.id]) {
+                                        yes++;
+                                    } else {
+                                        no++;
+                                    }
+                                }
+                                let v = false;
+                                let t = no;
+
+                                if (yes >= no) {
+                                    v = true;
+                                    t = yes;
+                                }
+
+                                //here comes logic for a coin round or normal round. For now only normal round
+                                if (this.helpers.superMajority(this.helpers.numberOfNodes(jPrevRoundEvents, j - 1), t)) {
+                                    witness.famous = v;
+                                    vote(comparingWitness.id, witness.id, v);
+                                    break voteLoop;
+                                } else {
+                                    vote(comparingWitness.id, witness.id, v);
+                                }
+                            }
+                        }
+                    }
+            }
+        }
         return events;
     }
 
@@ -149,8 +251,45 @@ export class Consensus<T> {
             });
 
             // Calculate and set the median timestamp.
-            const dates = sEvents.map((y) => y.createdAt.getTime());
-            x.timestamp = new Date(this.core.median(dates));
+            const dates = sEvents.map((y) => y.createdAt);
+            x.timestamp = this.core.median(dates);
+            x.consensus = true;
+        });
+
+        return events;
+    }
+
+    /**
+     * Sets the order of the provided events by creating an index on which the
+     * events can easily be sorted later.
+     * 
+     * @param events The available events.
+     */
+    private setOrder(events: cEvent<T>[]): cEvent<T>[] {
+        // We only sort the events on which consensus has been reached.
+        const tEvents = events.filter((e) => e.consensus);
+
+        tEvents.sort((x, y) => {
+            // 1. We sort by the round received.
+            if (x.roundReceived > y.roundReceived) return 1;
+            if (x.roundReceived < y.roundReceived) return -1;
+
+            // 2. When that ties, we sort by the median timestamp.
+            if (x.timestamp > y.timestamp) return 1;
+            if (x.timestamp < y.timestamp) return -1;
+
+            // 3. When that ties, we sort by a whithened signature.
+            const random = Math.random();
+            if ((parseInt(x.signature) ^ random) > (parseInt(y.signature) ^ random)) return 1;
+
+            return -1;
+        });
+
+        tEvents.forEach((x, order) => {
+            // We retrieve the index of the original array so we can modify the item.
+            const index = events.findIndex((e) => e.id === x.id);
+
+            events[index].index = order;
         });
 
         return events;
@@ -332,7 +471,8 @@ export class Consensus<T> {
                     'witness',
                     'roundReceived',
                     'famous',
-                    'timestamp'
+                    'timestamp',
+                    'index'
                 ]);
             };
 
@@ -385,7 +525,7 @@ export class Consensus<T> {
         /**
          * Determines if the number is a super majority (+2/3)
          *
-         * @returns boolean true if x sees y
+         * @returns boolean if the compare number is a supermajority this depends on the number of nodes/computers
          * @param computers
          * @param compare
          */
@@ -412,33 +552,26 @@ export class Consensus<T> {
         getRoundWitnesses: this.core.memoize((events: cEvent<T>[], round: number): cEvent<T>[] => {
             const roundEvents = this.helpers.getRoundEvents(events, round);
             return roundEvents.filter(element => element.witness === true);
-        })
-    };
-
-    public readonly roundHelpers = {
-        /**
-         * Calculates the round of a transaction
-         * @param events All events in the queue that
-         * @param event
-         * @param n The number of participating computers.
-         * @returns returns all events with a round number
-         */
-        round: this.core.memoize((events: cEvent<T>[], event: cEvent<T>, n: number): number => {
-            let round = this.roundHelpers.getHighestParentRound(events, event);
-
-            if (round === -1) {
-                return 0;
-            }
-
-            const count = this.roundHelpers.countStrongestSeenWitnesses(events, event, round, n);
-
-            // If there is a super-majority of strongly-seen witnesses, increment the round
-            if (this.helpers.superMajority(n, count)) {
-                round++;
-            }
-
-            return round;
         }),
+
+        /**
+         * returns the number of different nodes in a round.
+         * @param events
+         * @param round
+         * @returns returns the amount of nodes
+         */
+        numberOfNodes: (events: cEvent<T>[], round: number): number => {
+            const nodes = [];
+
+            for (let i = 0; i < events.length; i++) {
+                if (events[i].publicKey !== undefined && !nodes.includes(events[i].publicKey) && events[i].round === round) {
+                    nodes.push(events[i].publicKey);
+                }
+            }
+
+            return nodes.length;
+        },
+
         /**
          * Return round of parent with the highest round
          * @param events All events in the queue that
@@ -474,124 +607,13 @@ export class Consensus<T> {
 
             let count = 0;
             for (let i = 0, len = parentRoundWitnesses.length; i < len; i++) {
-                const ss = this.helpers.canStronglySee(parentRoundEvents, event, parentRoundWitnesses[i], n);
+                const ss = this.helpers.canStronglySee(parentRoundEvents, event, parentRoundWitnesses[i], this.helpers.numberOfNodes(parentRoundEvents, round));
                 if (ss) {
                     count++;
                 }
             }
-
             return count;
         }),
-        /**
-         * Determines if the number is a super majority (+2/3)
-         *
-         * @returns boolean true if x sees y
-         * @param events
-         * @param event
-         */
-        witness: this.core.memoize((events: cEvent<T>[], event: cEvent<T>): boolean => {
-            const xRound = event.round;
-            let spRound = -1;
-            if (this.helpers.selfParent(events, event) !== undefined) {
-                spRound = this.helpers.selfParent(events, event).round;
-            }
-
-            return xRound > spRound;
-        })
-    };
-
-    public readonly fameHelpers = {
-        /**
-         * decide if witnesses are famous
-         * @param events
-         * @param n The number of participating computers.
-         * @returns returns all events with a round number
-         */
-        fame: (events: cEvent<T>[], n: number): cEvent<T>[] => {
-            //make something to save votes
-            const votes = {}; //votes[x][y] = vote;
-
-            function vote(xID: string, yID: string, vote: boolean) {
-                if (votes[xID] === undefined) {
-                    votes[xID] = {};
-                }
-                votes[xID][yID] = vote;
-            }
-
-            const pendingRounds = this.fameHelpers.pendingRounds(events);
-
-            //for every undecided round r
-            for (let r = 0; r < pendingRounds.length; r++) {
-                const pendingRound = pendingRounds[r];
-                const roundWitnesses = this.helpers.getRoundWitnesses(events, pendingRound); //get all witnesses from that round r
-
-                //for every witness - x
-                for (let x = 0; x < roundWitnesses.length; x++) {
-                    const witness = roundWitnesses[x];
-
-                    if (witness.famous !== undefined) {
-                        continue; //if it is decided continue
-                    }
-
-                    //The vote loop. Should check for the oldest known round may need to be changed later.
-                    // This is done to check all the rounds before the round that is being checked
-                    voteLoop:
-                    for (let j = pendingRound + 1; j <= Math.max(...pendingRounds); j++) {
-                        const comparingWitnesses = this.helpers.getRoundWitnesses(events, j); //get all witnesses from that round j
-                        for (let y = 0; y < comparingWitnesses.length; y++) {
-                            const comparingWitness = comparingWitnesses[y];
-                            const diff = j - pendingRound;
-
-                            if (diff === 1) {
-                                vote(comparingWitness.id, witness.id, this.helpers.canSee(events, comparingWitness, witness));
-                            } else {
-                                const jPrevRoundWitnesses = this.helpers.getRoundWitnesses(events, j - 1);
-
-                                // collection of witnesses from round j-1 that are
-                                // strongly seen by y, based on round j-1 PeerSet.
-                                const ssWitnesses = [];
-                                for (let w = 0; w < jPrevRoundWitnesses.length; w++) {
-                                    const jPrevRoundWitness = jPrevRoundWitnesses[w];
-                                    //this should be with the amount of nodes in this spicific round. Maybe fix later.
-                                    if (this.helpers.canStronglySee(events, comparingWitness, jPrevRoundWitness, n)) {
-                                        ssWitnesses.push(jPrevRoundWitness);
-                                    }
-                                }
-
-                                //collect votes from the ssWitnesses.
-                                let yes = 0;
-                                let no = 0;
-                                for (let w = 0; w < ssWitnesses.length; w++) {
-                                    const ssWitness = ssWitnesses[w];
-                                    if (votes[ssWitness.id][witness.id]) {
-                                        yes++;
-                                    } else {
-                                        no++;
-                                    }
-                                }
-                                let v = false;
-                                let t = no;
-
-                                if (yes >= no) {
-                                    v = true;
-                                    t = yes;
-                                }
-
-                                //here comes logic for a coin round or normal round. For now only normal round
-                                if (this.helpers.superMajority(n, t)) {
-                                    witness.famous = v;
-                                    vote(comparingWitness.id, witness.id, v);
-                                    break voteLoop;
-                                } else {
-                                    vote(comparingWitness.id, witness.id, v);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            return events;
-        },
 
         /**
          * returns list of different round numbers in events.
@@ -608,7 +630,6 @@ export class Consensus<T> {
             }
 
             return numbers;
-        }
-
+        },
     };
 }

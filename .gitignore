@@ -2,5 +2,5 @@
 **/lib
 **/*.sqlite3
 **/.env
-**/.idea
-**/dist
+/dist/
+/**/.idea/

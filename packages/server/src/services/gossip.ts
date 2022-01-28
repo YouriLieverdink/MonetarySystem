@@ -1,156 +1,69 @@
 import axios, { AxiosError } from 'axios';
 import { Express } from 'express';
 import _ from 'lodash';
-import { SignalDispatcher, SimpleEventDispatcher } from 'strongly-typed-events';
-import { Collection } from './_';
 import { Computer } from '../types/_';
+import { Collection } from './_';
 
-export class Gossip<T> {
+export abstract class Gossip<T> {
     /**
-     * The items to distribute using gossip.
+     * The items to distribute whilst gossiping.
      */
-    private _items: T[];
+    protected items: Collection<T>;
 
     /**
-     * The last item this computer created.
+     * The last item this computer has created.
      */
-    private _lastItem: T;
+    protected last: T;
 
     /**
-     * The event for dispatching a tick.
-     */
-    private _onTick: SignalDispatcher;
-
-    /**
-     * The event for dispatching new items.
-     */
-    private _onItems: SimpleEventDispatcher<{ items: T[], lastItem: T }>;
-
-    /**
-     * The event for dispatching errors.
-     */
-    private _onError: SimpleEventDispatcher<{ kind: string, computer: Computer }>;
-
-    /**
-     * Class constructor.
+     * Class construtor.
      * 
-     * @param server The active express server.
-     * @param endpoint The endpoint this class should use.
-     * @param interval The interval at which this gossip should operate.
      * @param computers The known computers in the network.
+     * @param endpoint The endpoint this class should use.
+     * @param interval The interval at which this computer should gossip.
+     * @param me This computer.
+     * @param server The active express server.
      */
     constructor(
-        private server: Express,
+        protected computers: Collection<Computer>,
         private endpoint: string,
-        private interval: number,
-        private computers: Collection<Computer>,
+        interval: number,
+        private me: Computer,
+        server: Express,
     ) {
-        this._items = [];
-
-        // Initialise the events.
-        this._onTick = new SignalDispatcher();
-        this._onItems = new SimpleEventDispatcher();
-        this._onError = new SimpleEventDispatcher();
-
-        this.initListener();
-        this.initSender();
-    }
-
-    /**
-     * Gets the onTick event.
-     */
-    public get onTick() {
-        return this._onTick.asEvent();
-    }
-
-    /**
-     * Gets the onItems event.
-     */
-    public get onItems() {
-        return this._onItems.asEvent();
-    }
-
-    /**
-     * Gets the onError event.
-     */
-    public get onError() {
-        return this._onError.asEvent();
-    }
-
-    /**
-     * Public methods for manipulating the items.
-     */
-    public readonly items = {
-        getItems: (): T[] => {
-            return [...this._items];
-        },
-        getLastItem: (): T => {
-            return { ...this._lastItem };
-        },
-        add: (...items: T[]): void => {
-            this._items.push(...items);
-        },
-        addLast: (item: T): void => {
-            this._lastItem = item;
-        },
-        remove: (...items: T[]): void => {
-            items.forEach((item) => {
-                _.remove(this._items, (i) => _.isEqual(item, i));
-            });
-        },
-    };
-
-    /**
-     * Initialises the express application which listens for incoming http
-     * requests from the other computers in the network.
-     */
-    private initListener(): void {
         //
-        this.server.post(`/${this.endpoint}`, async (req, res) => {
+        this.items = new Collection();
+
+        // Initiate the listener.
+        server.post(`/${this.endpoint}`, async (req, res) => {
             //
             const items: T[] = req.body.items;
-            const lastItem: T = req.body.lastItem;
+            const last: T = req.body.last;
 
-            await this.handleHandshake(items, lastItem);
+            await this.handleHandshake(items, last);
 
             res.sendStatus(200);
         });
+
+        // Initiate the sender.
+        setInterval(this.doHandshake.bind(this), interval);
     }
 
     /**
-     * Starts the gossip service to be run every `interval`.
+     * Initiates a new handshake with a randomly selected computer from the list
+     * of known computers in the network.
      */
-    private initSender(): void {
+    private async doHandshake(): Promise<void> {
         //
-        setInterval(this.tick.bind(this), this.interval);
-    }
+        this.onTick();
 
-    /**
-    * Initiate a new handshake with another computer in the network at a 
-    * constant `interval`.
-    */
-    private async tick(): Promise<void> {
-        //
-        this._onTick.dispatch();
-
-        const computer = this.computers.random();
+        const computer = this.computers.random(this.me);
         if (!computer) return;
 
-        this.doHandshake(computer);
-    }
-
-    /**
-     * Performs a handshake with the provided computer. This computer will
-     * tell the randomly selected everything it knows.
-     * 
-     * @param computer The computer to perform the handshake with.
-     */
-    private async doHandshake(computer: Computer): Promise<void> {
-        //
         try {
             await axios.post(
                 `http://${computer.ip}:${computer.port}/${this.endpoint}`,
-                { items: this._items, lastItem: this._lastItem },
+                { items: this.items.all(), last: this.last },
             );
         } //
         catch (e) {
@@ -158,17 +71,15 @@ export class Gossip<T> {
 
             if (error.response) {
                 // The other computer returned a response outside 2xx.
-                this._onError.dispatch({
-                    kind: 'error-response',
-                    computer: computer,
-                });
+                this.onError('error-response', computer, e);
             } //
             else if (error.request) {
                 // The other computer did not respond.
-                this._onError.dispatch({
-                    kind: 'error-request',
-                    computer: computer,
-                });
+                this.onError('error-request', computer, e);
+            } //
+            else {
+                // An unknown error has occured.
+                this.onError('error-unknown', computer, e);
             }
         }
     }
@@ -178,13 +89,47 @@ export class Gossip<T> {
      * `this` is missing.
      * 
      * @param items The received items from the network.
-     * @param lastItem The last item the other computer has created.
-     */
-    private async handleHandshake(items: T[], lastItem: T): Promise<void> {
-        //
-        const newItems: T[] = _.differenceWith(items, this._items, _.isEqual);
-        if (newItems.length === 0) return;
+     * @param last The last item the other computer has created.
+    */
+    private async handleHandshake(items: T[], last: T): Promise<void> {
+        // We remove the keys from `this.except` so we don't use them for comparisons.
+        items = items.map((item) => _.omit(item as Object, this.except())) as T[];
 
-        this._onItems.dispatch({ items: newItems, lastItem });
+        // We only care about the new items.
+        items = _.differenceWith(items, this.items.all(), _.isEqual);
+        if (items.length === 0) return;
+
+        this.onItems(items, last);
     }
+
+    /**
+     * This array contains all the keys the class does not wish to be send over
+     * the network or to be used in equality comparisons.
+     */
+    public abstract except(): string[];
+
+    /**
+     * This method is called everytime the gossip service initiates a new
+     * handshake with a randomly selected computer.
+     */
+    public abstract onTick(): void;
+
+    /**
+     * This method is called whenever the gossip service has received items that
+     * it did not already know.
+     * 
+     * @param items The newly received items.
+     * @param last The last item the other computer has created.
+     */
+    public abstract onItems(items: T[], last: T): void;
+
+    /**
+     * This method is called whenever the axios post request to another computer
+     * throws an error.
+     * 
+     * @param kind The kind of error that was thrown.
+     * @param computer The computer to which the gossip service was communicating.
+     * @param error The actual error object.
+     */
+    public abstract onError(kind: string, computer: Computer, error?: Error): void;
 }
