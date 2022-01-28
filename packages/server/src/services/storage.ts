@@ -62,6 +62,10 @@ export class Storage {
                 )
             `);
         });
+
+        //input default settings
+        const setting = {key: 'mirror', value: 'false'}
+        this.settings.create(setting)
     }
 
     /**
