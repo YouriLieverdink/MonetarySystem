@@ -1,5 +1,6 @@
 import express from 'express';
 import ip from 'ip';
+import cors from 'cors';
 import { Database } from 'sqlite3';
 import { config } from './config';
 import { Blab, Command, Signal } from './controllers/_';
@@ -9,6 +10,10 @@ import { Computer, Transaction } from './types/_';
 const main = async (): Promise<void> => {
     // Initialise the express server for incoming connections.
     const server = express();
+    server.use(cors({
+        origin: 'http://localhost:3000',
+        methods: "GET, POST, PUT, OPTIONS, PATCH"
+    }))
     server.use(express.json({limit: '5mb'}));
     server.use(express.urlencoded({limit: '5mb'}));
     server.listen(config.port, '0.0.0.0', () =>

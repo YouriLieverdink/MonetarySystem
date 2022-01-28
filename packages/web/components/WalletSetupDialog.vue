@@ -29,9 +29,10 @@
               <el-input
                 ref="keyOutput"
                 readonly
+                autosize
                 prefix-icon="el-icon-key"
                 :value="privateKeyOutput"
-                type="text"
+                type="textarea"
                 size="medium"
                 @click.native="copyPrivateKey"
               />
@@ -105,7 +106,7 @@ export default {
 
       apiRequest.generateKeys()
         .then(address => {
-          this.importAddress(address.data.privateKey)
+          this.importAddress(address.data)
           this.privateKeyOutput = address.data.privateKey
           this.showPrivateKeyOutput = true
           this.$message({
@@ -185,6 +186,6 @@ export default {
   margin: 36px;
 }
 .spacing_active {
-  height: 108px
+  height: 148px
 }
 </style>

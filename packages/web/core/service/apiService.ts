@@ -6,7 +6,7 @@ const api = axiosInstance({
 
 export const apiRequest = {
   generateKeys() {
-    return api.get("generate")
+    return api.post("generate")
   },
 
   importPrivateKey(privateKey: string) {

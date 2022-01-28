@@ -5,11 +5,7 @@ export type WalletState = {
 }
 
 export const walletState: WalletState = {
-  addresses: [
-    {publicKey: 'testKey', privateKey: 'test', default: false},
-    {publicKey: 'testKey1', privateKey: 'test', default: false},
-    {publicKey: 'testKey2', privateKey: 'test', default: false},
-  ]
+  addresses: []
 }
 
 export default walletState
