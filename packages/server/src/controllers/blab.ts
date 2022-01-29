@@ -3,11 +3,11 @@ import { v1 as uuidv1 } from 'uuid';
 import { Collection, Consensus, Crypto, Digester, Gossip, Storage } from '../services/_';
 import { Computer, Event, Transaction } from '../types/_';
 
-export class Blab extends Gossip<Event<Transaction>> {
+export class Blab extends Gossip<Event<Transaction[]>> {
     /**
      * Performs the consensus algorithm.
      */
-    private consensus: Consensus<Transaction>;
+    private consensus: Consensus<Transaction[]>;
 
     /**
      * Used for cryptographic operations.
@@ -42,7 +42,7 @@ export class Blab extends Gossip<Event<Transaction>> {
 
         this.consensus = new Consensus();
         this.crypto = new Crypto();
-        this.digester = new Digester();
+        this.digester = new Digester(storage);
 
         // Add the initial event to start gossip.
         this.helpers.addEvent();
@@ -83,7 +83,7 @@ export class Blab extends Gossip<Event<Transaction>> {
      * @param items The newly received items.
      * @param last The last item the other computer has created.
      */
-    public onItems(items: Event<Transaction>[], last: Event<Transaction>): void {
+    public onItems(items: Event<Transaction[]>[], last: Event<Transaction[]>): void {
         //
         items.forEach((item) => {
             // We only accept items with a valid signature.
@@ -128,30 +128,20 @@ export class Blab extends Gossip<Event<Transaction>> {
          * 
          * @param item The current item.
          */
-        isValid: (item: Event<Transaction>): boolean => {
+        isValid: (item: Event<Transaction[]>): boolean => {
             //
             item = { ...item };
             const signature = item.signature;
             item.signature = '';
 
-            if (!this.crypto.verifySignature(item, signature, item.publicKey)) {
-                // The message has possibly been modified.
-                return false;
-            }
-
-            if (item.data && item.publicKey !== item.data.from) {
-                // The used who signed the transaction didn't send the money.
-                return false;
-            }
-
-            return true;
+            return this.crypto.verifySignature(item, signature, item.publicKey);
         },
         /**
          * Returns true when we already know this item.
          * 
          * @param item The current item.
          */
-        isUnknown: (item: Event<Transaction>): boolean => {
+        isUnknown: (item: Event<Transaction[]>): boolean => {
             //
             return this.items.all().every((i) => i.id !== item.id);
         },
@@ -161,7 +151,7 @@ export class Blab extends Gossip<Event<Transaction>> {
          * 
          * @param item The current item.
          */
-        hasParents: (item: Event<Transaction>): boolean => {
+        hasParents: (item: Event<Transaction[]>): boolean => {
             //
             if (item.selfParent && item.otherParent) {
                 //
@@ -192,7 +182,7 @@ export class Blab extends Gossip<Event<Transaction>> {
             const addresses = await this.storage.addresses.index();
             if (addresses.length === 0) return;
 
-            const event: Event<Transaction> = {
+            const event: Event<Transaction[]> = {
                 id: uuidv1(),
                 createdAt: Date.now(),
                 publicKey: addresses[0].publicKey,
@@ -206,8 +196,11 @@ export class Blab extends Gossip<Event<Transaction>> {
             }
 
             // Add a transaction when available.
-            const transaction = this.pending.shift();
-            if (transaction) event.data = transaction;
+            const transactions = this.pending.all();
+            if (transactions.length > 0) {
+                event.data = transactions;
+                this.pending.remove(...transactions);
+            }
 
             // Sign the message to ensure validity.
             event.signature = this.crypto.createSignature(event, addresses[0].privateKey);
