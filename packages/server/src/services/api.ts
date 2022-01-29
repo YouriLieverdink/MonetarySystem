@@ -42,6 +42,7 @@ export class Api {
                 const res = await this.core[command](request);
                 response.send(JSON.stringify(res));
             }
+            else response.status(400).send("wrong command");
         }
         catch (e) {
             response.status(400).send(e.message);
@@ -51,37 +52,52 @@ export class Api {
     private readonly core = {
         import: async (args: Request): Promise<string> => {
             if (args.method === 'POST') {
-                if (args.query){
-                    throw Error("Can't use params");
+                let privateKey: string;
+                const info = args.body;
+                for(let i in info){
+                    if (i === 'privateKey') {
+                        privateKey = info[i];
+                    } else {
+                        throw Error("wrong key")
+                    }
                 }
-                const value = Object.values(args.body).toString();
-
-                return await this.commandController.addresses.import(value);
+                if(typeof privateKey !== "string"){
+                    throw Error("wrong value");
+                }
+                return await this.commandController.addresses.import(privateKey);
             }
             throw Error("ERROR import");
         },
         remove: async (args: Request): Promise<string> => {
             if (args.method === 'POST') {
-                if (args.query){
-                    throw Error("Can't use params");
-                }
                 if(args.body.constructor === Object && Object.keys(args.body).length === 0) {
                     throw Error("Empty body");
                 }
-                const value = Object.values(args.body).toString();
+                let publicKey: string;
+                const info = args.body;
+                for(let i in info){
+                    if (i === 'publicKey') {
+                        publicKey = info[i];
+                    } else {
+                        throw Error("wrong key")
+                    }
+                }
+                if(typeof publicKey !== "string"){
+                    throw Error("wrong value");
+                }
 
-                const success = await this.commandController.addresses.remove(value);
+                const success = await this.commandController.addresses.remove(publicKey);
 
                 if (success){
                     return "success";
                 }
-                throw Error("Couldnt remove key")
+                throw Error("Couldnt remove key");
             }
             throw Error("ERROR addresses");
         },
         transactions: async (args: Request): Promise<Transaction|Transaction[]|Error> => {
             if (!args.query.address){
-                throw Error("no params");
+                throw Error("no correct params");
             }
 
             const method = args.method;
@@ -129,18 +145,12 @@ export class Api {
         },
         address: async (args: Request): Promise<Address[]> => {
             if (args.method === 'GET') {
-                if (args.query){
-                    throw Error("Can't use params");
-                }
                 return await this.commandController.addresses.getAll();
             }
             throw Error("ERROR addresses");
         },
         generate: async (args: Request): Promise<Address|string> => {
             if (args.method === 'POST') {
-                if (args.query){
-                    throw Error("Can't use params");
-                }
                 return await this.commandController.addresses.create()
                     .then(createdAddresses => createdAddresses)
                     .catch(() => "could not create address");
@@ -149,14 +159,12 @@ export class Api {
         },
         balance: async (args: Request): Promise<State[]> => {
             if (args.method === 'GET') {
-                if (!args.query.address){
-                    throw Error("no params");
-                }
-
                 const address = args.query.address;
-                const sender = address.toString();
-
-                return(sender !== 'api' || sender.length !== 0)
+                let sender: string;
+                if (address !== undefined) {
+                    sender = address.toString();
+                }
+                return(sender !== undefined)
                     ? await this.commandController.states.get(sender)
                     : await this.commandController.states.getAllImported();
             }
@@ -164,9 +172,6 @@ export class Api {
         },
         mirror: async (args: Request): Promise<boolean> => {
             if (args.method === 'POST') {
-                if (args.query){
-                    throw Error("Can't use params");
-                }
                 let keys = Object.keys(args.body);
                 if (keys.length === null || keys.length === 0) {
                     throw Error("no body");
