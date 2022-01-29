@@ -1,5 +1,6 @@
 import { Consensus, cEvent } from './consensus';
 import { Crypto } from './crypto';
+import { v1 as uuidv1 } from 'uuid';
 
 describe('Consensus', () => {
     //
@@ -33,14 +34,14 @@ describe('Consensus', () => {
 
     beforeAll(() => {
         events = [];
-        const now = new Date('January 10, 2022 10:00:00');
+        const now = new Date('January 10, 2022 10:00:00').getTime();
 
         // Construct a new hashgraph for every test.
         for (let i = 0; i < 35; i++) {
             // Create a predictable set of times for testing.
-            const date = new Date(now.getTime() + (i * 60000));
+            const date = now + (i * 60000)
 
-            events.push({ id: `${i}`, createdAt: date, publicKey: '', signature: '' });
+            events.push({ id: `${i}`, createdAt: date, publicKey: '', signature: uuidv1() });
         }
 
         // Set the signature for each event.
@@ -99,7 +100,6 @@ describe('Consensus', () => {
                 const cEvents = consensus.doConsensus([...events], n);
 
                 const event = cEvents.find((cEvent) => cEvent.id === '1');
-
                 expect(event.round).toBe(0);
             });
 
@@ -147,7 +147,7 @@ describe('Consensus', () => {
             });
         });
 
-        describe('sets the famous', () => {
+        describe('sets the fame', () => {
 
             it.each(['0', '1', '2', '3', '12', '13', '14'])(
                 'of x=%i to `true` when it is famous',
@@ -224,6 +224,25 @@ describe('Consensus', () => {
                 const median = cEvents.find((cEvent) => cEvent.id === '12');
 
                 expect(event.timestamp).toStrictEqual(median.createdAt);
+            });
+        });
+
+        describe('sets the index', () => {
+
+            it('of an event to 0 when it has the lowest median timestamp', () => {
+                const cEvents = consensus.doConsensus([...events], n);
+
+                const event = cEvents.find((cEvent) => cEvent.id === '1');
+
+                expect(event.index).toBe(0);
+            });
+
+            it('of an event to 1 by comparing whithened signatures when timestamps are equal', () => {
+                const cEvents = consensus.doConsensus([...events], n);
+
+                const event = cEvents.find((cEvent) => cEvent.id === '4');
+
+                expect(event.index).toBe(1);
             });
         });
     });
@@ -385,6 +404,26 @@ describe('Consensus', () => {
                 const result = consensus.helpers.otherParent([...events], x);
                 expect(result).toEqual(y);
             });
+        });
+
+        describe('numberOfNodes', () => {
+
+            it('returns the number of nodes of a specific round', () => {
+                consensus.doConsensus(events, n);
+
+                const result = consensus.helpers.numberOfNodes(events, 1)
+
+                expect(result).toEqual(4);
+            });
+
+            it('returns the number of nodes that participated in a round', () => {
+                consensus.doConsensus(events, n);
+
+                const result = consensus.helpers.numberOfNodes(events, 3)
+
+                expect(result).toEqual(3);
+            });
+
         });
     });
 });

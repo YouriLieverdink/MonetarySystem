@@ -8,7 +8,7 @@ yargs(hideBin(process.argv))
     .command('connect [port]', 'Connect to a running node.', (yargs) => {
         return yargs
             .positional('port', {
-                describe: 'port to connect to',
+                describe: 'The host port of the running node.',
                 default: 3001,
             })
     }, async (argv) => {

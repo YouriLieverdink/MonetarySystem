@@ -41,8 +41,10 @@ export class Api {
             if (Object.keys(this.core).includes(command)) {
                 const res = await this.core[command](request);
                 response.send(JSON.stringify(res));
+            } //
+            else {
+                response.sendStatus(400);
             }
-            else response.status(400).send("wrong command");
         }
         catch (e) {
             response.status(400).send(e.message);

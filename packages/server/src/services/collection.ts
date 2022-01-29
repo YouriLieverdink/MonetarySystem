@@ -14,9 +14,9 @@ export class Collection<T> {
     }
 
     /**
-     * Gets the internal items.
+     * Returns all items. 
      */
-    public get items(): T[] {
+    public all(): T[] {
         return [...this._items];
     }
 
@@ -47,10 +47,12 @@ export class Collection<T> {
 
     /**
      * Returns a random item from the collection.
+     * 
+     * @param exclude The item to exclude from the random select.
      */
-    public random(): T | null {
+    public random(exclude: T): T | null {
         if (this._items.length === 0) return null;
-        return _.sample(this._items);
+        return _.sample(this._items.filter((i) => !_.isEqual(exclude, i)));
     }
 
     /**
