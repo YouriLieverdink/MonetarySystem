@@ -62,18 +62,16 @@ export class Blab extends Gossip<Event<Transaction[]>> {
      */
     public onTick(): void {
         //
-        const items = this.consensus.doConsensus(
+        const items = this.consensus.do(
             this.items.all(),
-            // TODO: Think of a way to calculate `n` consistantly.
+            // TODO: Find a way to calculate n.
             4,
         );
 
-        const cEvents = items.filter((item) => item.consensus);
+        const events = items.filter((item) => item.consensus);
 
-        // We process the items. 
-        this.digester.digest(cEvents);
-
-        // TODO: Remove the items after consensus has been reached.
+        // Process the events on which consensus has been reached.
+        this.digester.digest(events);
     };
 
     /**
