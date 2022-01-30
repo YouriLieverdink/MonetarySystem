@@ -1,12 +1,12 @@
 import { createHash } from 'crypto';
-import _ from 'lodash';
 import { performance } from 'perf_hooks';
-import { cEvent, Consensus } from './services/consensus';
 import { Event } from './types/_';
 
 export type _Event<T> = Event<T> & {
     round?: number;
     witness?: boolean;
+    vote?: boolean;
+    famous?: boolean;
 }
 
 export type Index<T> = {
@@ -975,6 +975,92 @@ export const divideRounds = <T>(index: Index<T>, n: number): Index<T> => {
     return index;
 };
 
+/**
+ * Decides the fame for all the witnesses. This is done based on a virtual
+ * voting algorithm.
+ * 
+ * @param index The current index of events.
+ * @param n The number of computers.
+ */
+export const decideFame = <T>(index: Index<T>, n: number): Index<T> => {
+    //
+    index = { ...index };
+
+    const events = Object.entries(index);
+
+    // We sort the event by round so we flow with time.
+    events.sort((a, b) => a[1].round - b[1].round);
+
+    for (let i = 0; i < events.length; i++) {
+        //
+        const [hx, ex] = events[i];
+
+        yLoop:
+        for (let j = 0; j < events.length; j++) {
+            //
+            const [hy, ey] = events[j];
+
+            // We only decide fame for the witnesses.
+            if (ex.witness && ey.witness && ey.round > ex.round) {
+                //
+                const d = ey.round - ex.round;
+
+                const s = events.filter(([hz, ez]) => {
+                    return ez.round === (ey.round - 1) && ez.witness && canStronglySee(index, hy, hz, n);
+                });
+
+                // We calculate the votes from the events in s. +1 for true and -1 for false.
+                let yes = 0;
+                let no = 0;
+
+                for (let k = 0; k < s.length; k++) {
+                    //
+                    const [hs, _] = s[k];
+                    index[hs].vote ? yes++ : no++;
+                }
+
+                const v = yes === no ? true : yes > no;
+                const t = v ? yes : no;
+
+                if (d === 1) {
+                    // We vote `true` when y can see x.
+                    index[hy] = { ...ey, vote: canSee(index, hy, hx) };
+                } //
+                else {
+                    //
+                    if (d % 10 > 0) {
+                        // This is a normal round.
+                        if (t > (2 * n) / 3) {
+                            // We decide because it is the supermajority.
+                            index[hx].famous = v;
+                            index[hy].vote = v;
+
+                            break yLoop;
+                        } //
+                        else {
+                            // We can't decide yet so we just vote.
+                            index[hy].vote = v;
+                        }
+                    } //
+                    else {
+                        // This is a coin round.
+                        if (t > (2 * n) / 3) {
+                            // We decide because it is the supermajority.
+                            index[hy].vote = v;
+                        } //
+                        else {
+                            // We don't have a supermajority so we flip a coin.
+                            index[hy].vote = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return index;
+};
+
 const main = () => {
     //
     const durations: number[] = [];
@@ -985,6 +1071,7 @@ const main = () => {
 
         let index = createIndex(events);
         index = divideRounds(index, 4);
+        index = decideFame(index, 4);
 
         const t1 = performance.now();
 
@@ -995,4 +1082,4 @@ const main = () => {
     console.log(`Average: ${sum / durations.length}ms`);
 };
 
-main();
+// main();

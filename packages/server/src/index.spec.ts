@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { canSee, canStronglySee, createIndex, divideRounds, Index, _Event } from './index';
+import { canSee, canStronglySee, createIndex, decideFame, divideRounds, Index, _Event } from './index';
 
 describe('Consensus', () => {
     //
@@ -165,27 +165,99 @@ describe('Consensus', () => {
 
     describe('divideRounds', () => {
 
-        it('of an event to r when it a genesis event', () => {
-            const cIndex = divideRounds(index, 4);
+        describe('sets the round', () => {
 
-            const event = Object.values(cIndex).find((cEvent) => cEvent.id === '1');
-            expect(event.round).toBe(0);
+            it('of an event to r when it a genesis event', () => {
+                const cIndex = divideRounds(index, 4);
+
+                const event = Object.values(cIndex).find((cEvent) => cEvent.id === '1');
+                expect(event.round).toBe(0);
+            });
+
+            it('of an event to r+1 when it can see the supermajority of witnesses in r', () => {
+                const cIndex = divideRounds(index, 4);
+
+                const event = Object.values(cIndex).find((cEvent) => cEvent.id === '14');
+
+                expect(event.round).toBe(1);
+            });
+
+            it('of an event to r when it can\'t see the supermajority of witnesses in r', () => {
+                const cIndex = divideRounds(index, 4);
+
+                const event = Object.values(cIndex).find((cEvent) => cEvent.id === '11');
+
+                expect(event.round).toBe(0);
+            });
         });
 
-        it('of an event to r+1 when it can see the supermajority of witnesses in r', () => {
-            const cIndex = divideRounds(index, 4);
+        describe('sets the witness', () => {
 
-            const event = Object.values(cIndex).find((cEvent) => cEvent.id === '14');
+            it('of an event to `true` when it is a genesis event', () => {
+                const cIndex = divideRounds(index, 4);
 
-            expect(event.round).toBe(1);
+                const event = Object.values(cIndex).find((cEvent) => cEvent.id === '1');
+
+                expect(event.witness).toBe(true);
+            });
+
+            it('of an event to `true` when it is the creator\'s first event in a round', () => {
+                const cIndex = divideRounds(index, 4);
+
+                const event = Object.values(cIndex).find((cEvent) => cEvent.id === '14');
+
+                expect(event.witness).toBe(true);
+            });
+
+            it('of an event to `false` when it is not the creator\'s first event in a round', () => {
+                const cIndex = divideRounds(index, 4);
+
+                const event = Object.values(cIndex).find((cEvent) => cEvent.id === '16');
+
+                expect(event.witness).toBe(false);
+            });
         });
+    });
 
-        it('of an event to r when it can\'t see the supermajority of witnesses in r', () => {
-            const cIndex = divideRounds(index, 4);
+    describe('decideFame', () => {
 
-            const event = Object.values(cIndex).find((cEvent) => cEvent.id === '11');
+        describe('sets the famous', () => {
 
-            expect(event.round).toBe(0);
+            it.each(['0', '1', '2', '3', '12', '13', '14'])(
+                'of x=%i to `true` when it is famous',
+                (id) => {
+                    let cIndex = divideRounds(index, 4);
+                    cIndex = decideFame(cIndex, 4);
+
+                    const event = Object.values(cIndex).find((cEvent) => cEvent.id === id);
+
+                    expect(event.famous).toBe(true);
+                }
+            );
+
+            it.each(['17'])(
+                'of x=%i to `false` when it is not famous but voted on',
+                (id) => {
+                    let cIndex = divideRounds(index, 4);
+                    cIndex = decideFame(cIndex, 4);
+
+                    const event = Object.values(cIndex).find((cEvent) => cEvent.id === id);
+
+                    expect(event.famous).toBe(false);
+                }
+            );
+
+            it.each(['7', '21'])(
+                'of an event to undefined when it has not yet been voted on',
+                (id) => {
+                    let cIndex = divideRounds(index, 4);
+                    cIndex = decideFame(cIndex, 4);
+
+                    const event = Object.values(cIndex).find((cEvent) => cEvent.id === id);
+
+                    expect(event.famous).toBe(undefined);
+                }
+            );
         });
     });
 });
