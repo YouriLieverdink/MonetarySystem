@@ -1,227 +1,269 @@
-import { Crypto } from './_';
+import { createHash } from 'crypto';
 import { Event } from '../types/_';
 
-export type cEvent<T> = Event<T> & {
-    consensus?: boolean;
+export type _Event<T> = Event<T> & {
     round?: number;
     witness?: boolean;
-    roundReceived?: number;
+    vote?: boolean;
     famous?: boolean;
+    roundReceived?: number;
     timestamp?: number;
+    consensus?: boolean;
     index?: number;
 }
 
+export type Index<T> = {
+    [hash: string]: _Event<T>;
+};
+
 export class Consensus<T> {
     /**
-     * Used for cryptography.
+     * The index of events on which consensus has not been reached (yet).
      */
-    private crypto: Crypto;
+    private index: Index<T>;
 
     /**
      * Class constructor.
-     * 
-     * @param crypto The crypto service.
      */
-    constructor(
-        crypto?: Crypto,
-    ) {
+    constructor() {
         //
-        this.crypto = crypto || new Crypto();
-    }
+        this.index = {};
+    };
 
     /**
      * Performs the consensus algorithm.
-     *
-     * @param events The current events.
-     * @param n The number of peers in the network.
-     * @returns Events on which consensus has been reached.
+     * 
+     * @param events The available events.
+     * @param n The number of computers.
      */
-    public doConsensus(events: cEvent<T>[], n: number): cEvent<T>[] {
+    public do(events: _Event<T>[], n: number): _Event<T>[] {
         //
-        events = this.divideRounds(events, n);
-        events = this.decideFame(events, n);
-        events = this.findOrder(events);
-        events = this.setOrder(events);
+        let index: Index<T> = {};
 
-        return events;
+        index = this.createIndex(this.index, events);
+        index = this.divideRounds(index, n);
+        index = this.decideFame(index, n);
+        index = this.findOrder(index);
+        index = this.setOrder(index);
+
+        // We update the internal state for the next `do` call.
+        this.index = index;
+
+        return Object.values(index);
     }
 
     /**
-     * Performs the first step of the consensus algorithm, division into rounds.
-     * This method is responsible for assigning a round number to every event
-     * and determining whether it is a witness or not.
-     *
-     * @param events The current events.
-     * @param n
-     * @returns Events divided into rounds.
+     * Creates an index for all the events that have been provided. This index 
+     * can be used for a faster look-up times via hash.
+     * 
+     * @param index The current index of events.
+     * @param events The available events.
      */
-    public divideRounds(events: cEvent<T>[], n: number): cEvent<T>[] {
-        events.forEach((event) => {
-            if (!event.round) {
-                let round = this.helpers.getHighestParentRound(events, event);
+    public createIndex<T>(index: Index<T>, events: _Event<T>[]): Index<T> {
+        //
+        index = { ...index };
 
-                if (round === -1) {
-                    event.round = 0;
-                } else {
-                    let count = this.helpers.countStrongestSeenWitnesses(events, event, round, n);
-                    if (this.helpers.superMajority(n, count)) {
-                        round++;
+        for (let i = 0; i < events.length; i++) {
+            //
+            const hashable = JSON.stringify(events[i]);
+            const hash = createHash('sha256').update(hashable).digest('hex');
+
+            // We set the event if we don't know it already.
+            if (!(hash in index)) {
+                index[hash] = events[i];
+            }
+        }
+
+        return index;
+    };
+
+    /**
+     * Divides the events into different rounds based on the hashgraph 
+     * algorithm. This function also sets the `witness` flag in the events.
+     * 
+     * @param index The current index of events.
+     * @param n The number of computers.
+     */
+    private divideRounds<T>(index: Index<T>, n: number): Index<T> {
+        //
+        index = { ...index };
+
+        const events = Object.entries(index);
+
+        for (let i = 0; i < events.length; i++) {
+            //
+            const [hx, ex] = events[i];
+
+            // We skip because we have already calculated it.
+            if (ex.round !== undefined) continue;
+
+            // Round 0 is automatically assigned when it is a genesis event.
+            let round = 0;
+            let witness = false;
+
+            // When there are parents, we take the max round of both.
+            if (ex.selfParent && ex.otherParent) {
+                //
+                const self = index[ex.selfParent].round;
+                const other = index[ex.otherParent].round;
+
+                round = Math.max(self, other);
+            }
+
+            const witnesses = Object.entries(index).filter(([hy, ey]) => {
+                //
+                return ey.round === round && ey.witness && this.helpers.canStronglySee(index, hx, hy, n);
+            });
+
+            // This event can see more than 2/3 of the witnesses in the previous round.
+            if (witnesses.length >= Math.ceil((2 * n) / 3)) {
+                round++;
+            }
+
+            // Witness is automatically set to true when it is a gensis event.
+            if (!ex.selfParent) {
+                witness = true;
+            } //
+            else {
+                witness = round > index[ex.selfParent].round;
+            }
+
+            index[hx] = { ...ex, round, witness };
+        }
+
+        return index;
+    };
+
+    /**
+     * Decides the fame for all the witnesses. This is done based on a virtual
+     * voting algorithm.
+     * 
+     * @param index The current index of events.
+     * @param n The number of computers.
+     */
+    private decideFame<T>(index: Index<T>, n: number): Index<T> {
+        //
+        index = { ...index };
+
+        const events = Object.entries(index);
+
+        // We sort the event by round so we flow with time.
+        events.sort((a, b) => a[1].round - b[1].round);
+
+        for (let i = 0; i < events.length; i++) {
+            //
+            const [hx, ex] = events[i];
+
+            if (ex.famous !== undefined) continue;
+
+            yLoop:
+            for (let j = 0; j < events.length; j++) {
+                //
+                const [hy, ey] = events[j];
+
+                // We only decide fame for the witnesses.
+                if (ex.witness && ey.witness && ey.round > ex.round) {
+                    //
+                    const d = ey.round - ex.round;
+
+                    const s = events.filter(([hz, ez]) => {
+                        return ez.round === (ey.round - 1) && ez.witness && this.helpers.canStronglySee(index, hy, hz, n);
+                    });
+
+                    // We calculate the votes from the events in s. +1 for true and -1 for false.
+                    let yes = 0;
+                    let no = 0;
+
+                    for (let k = 0; k < s.length; k++) {
+                        //
+                        const [hs, _] = s[k];
+                        index[hs].vote ? yes++ : no++;
                     }
-                    event.round = round
-                }
-            }
 
-            event.witness = this.witness(events, event);
-        });
+                    const v = yes === no ? true : yes > no;
+                    const t = v ? yes : no;
 
-        return events;
-    }
+                    if (d === 1) {
+                        // We vote `true` when y can see x.
+                        index[hy] = { ...ey, vote: this.helpers.canSee(index, hy, hx) };
+                    } //
+                    else {
+                        //
+                        if (d % 10 > 0) {
+                            // This is a normal round.
+                            if (t > (2 * n) / 3) {
+                                // We decide because it is the supermajority.
+                                index[hx].famous = v;
+                                index[hy].vote = v;
 
-    /**
-     * Determines if the event is a witness
-     *
-     * @returns boolean true if the event is a witness
-     * @param events
-     * @param event
-     */
-    public witness(events: cEvent<T>[], event: cEvent<T>): boolean {
-        const round = event.round;
-        let spRound = -1;
-        if (this.helpers.selfParent(events, event) !== undefined) {
-        spRound = this.helpers.selfParent(events, event).round;
-        }
-
-        return round > spRound;
-    }
-
-    /**
-     * Performs the second step of the consensus algorithm, determining whether
-     * a witness event is famous or not.
-     *
-     * @param events The current events.
-     * @param n
-     * @returns Events which have received fame when necessary.
-     */
-    private decideFame(events: cEvent<T>[], n: number): cEvent<T>[] {
-        const votes = {}; //votes[x][y] = vote;
-
-        function vote(xID: string, yID: string, vote: boolean) {
-            if (votes[xID] === undefined) {
-                votes[xID] = {};
-            }
-            votes[xID][yID] = vote;
-        }
-
-        const pendingRounds = this.helpers.pendingRounds(events);
-
-        //for every undecided round r
-        for (let r = 0; r < pendingRounds.length; r++) {
-            const pendingRound = pendingRounds[r];
-            const roundWitnesses = this.helpers.getRoundWitnesses(events, pendingRound); //get all witnesses from that round r
-
-            //for every witness - x
-            for (let x = 0; x < roundWitnesses.length; x++) {
-                const witness = roundWitnesses[x];
-
-                if (witness.famous !== undefined) {
-                    continue; //if it is decided continue
-                }
-
-                //The vote loop. Should check for the oldest known round may need to be changed later.
-                // This is done to check all the rounds before the round that is being checked
-                voteLoop:
-                    for (let j = pendingRound + 1; j <= Math.max(...pendingRounds); j++) {
-                        const comparingWitnesses = this.helpers.getRoundWitnesses(events, j); //get all witnesses from that round j
-                        for (let y = 0; y < comparingWitnesses.length; y++) {
-                            const comparingWitness = comparingWitnesses[y];
-                            const diff = j - pendingRound;
-
-                            if (diff === 1) {
-                                vote(comparingWitness.id, witness.id, this.helpers.canSee(events, comparingWitness, witness));
-                            } else {
-                                const jPrevRoundWitnesses = this.helpers.getRoundWitnesses(events, j - 1);
-                                const jPrevRoundEvents = this.helpers.getRoundEvents(events, j - 1);
-
-                                // collection of witnesses from round j-1 that are
-                                // strongly seen by y, based on round j-1 PeerSet.
-                                const ssWitnesses = [];
-                                for (let w = 0; w < jPrevRoundWitnesses.length; w++) {
-                                    const jPrevRoundWitness = jPrevRoundWitnesses[w];
-                                    //this should be with the amount of nodes in this spicific round. Maybe fix later.
-                                    if (this.helpers.canStronglySee(events, comparingWitness, jPrevRoundWitness, n)) {
-                                        ssWitnesses.push(jPrevRoundWitness);
-                                    }
-                                }
-
-                                //collect votes from the ssWitnesses.
-                                let yes = 0;
-                                let no = 0;
-                                for (let w = 0; w < ssWitnesses.length; w++) {
-                                    const ssWitness = ssWitnesses[w];
-                                    if (votes[ssWitness.id][witness.id]) {
-                                        yes++;
-                                    } else {
-                                        no++;
-                                    }
-                                }
-                                let v = false;
-                                let t = no;
-
-                                if (yes >= no) {
-                                    v = true;
-                                    t = yes;
-                                }
-
-                                //here comes logic for a coin round or normal round. For now only normal round
-                                if (this.helpers.superMajority(this.helpers.numberOfNodes(jPrevRoundEvents, j - 1), t)) {
-                                    witness.famous = v;
-                                    vote(comparingWitness.id, witness.id, v);
-                                    break voteLoop;
-                                } else {
-                                    vote(comparingWitness.id, witness.id, v);
-                                }
+                                break yLoop;
+                            } //
+                            else {
+                                // We can't decide yet so we just vote.
+                                index[hy].vote = v;
+                            }
+                        } //
+                        else {
+                            // This is a coin round.
+                            if (t > (2 * n) / 3) {
+                                // We decide because it is the supermajority.
+                                index[hy].vote = v;
+                            } //
+                            else {
+                                // We don't have a supermajority so we flip a coin.
+                                index[hy].vote = true;
                             }
                         }
                     }
+                }
             }
         }
-        return events;
-    }
+
+        return index;
+    };
 
     /**
-     * Performs the third an last step of the consensus algorithm, finding order
-     * using the famous witnesses in the hashgraph.
+     * Finds the order of events using the rounds, witnesses, and fame decided
+     * in the functions above.
      * 
-     * @param events The current events.
-     * @returns Events which have been ordered.
+     * @param index The current index of events.
      */
-    public findOrder(events: cEvent<T>[]): cEvent<T>[] {
+    private findOrder<T>(index: Index<T>): Index<T> {
         //
-        events.forEach((x) => {
+        index = { ...index };
+
+        const events = Object.entries(index);
+
+        for (let i = 0; i < events.length; i++) {
+            //
+            const [hx, ex] = events[i];
+
+            if (ex.roundReceived !== undefined) continue;
+
             // Set the initial round to r+1 because the witnesses in r never can see x.
-            let r = x.round + 1;
-            let famousWitnesses: cEvent<T>[];
+            let r = ex.round + 1;
+            let famousWitnesses: [string, _Event<T>][];
 
             for (; ;) {
                 // We can continue with at least one witness in r.
-                const witnesses = events.filter((y) => y.round === r && y.witness);
+                const witnesses = events.filter(([_, ey]) => ey.round === r && ey.witness);
                 if (witnesses.length === 0) break;
 
                 // Fame has to be decided on the witnesses before we can continue.
-                const isFameDecided = witnesses.every((y) => y.famous !== undefined);
+                const isFameDecided = witnesses.every(([_, ey]) => ey.famous !== undefined);
                 if (!isFameDecided) break;
 
                 // We only need to famous witnesses to determine the round received.
-                famousWitnesses = witnesses.filter((y) => y.famous);
+                famousWitnesses = witnesses.filter(([_, ey]) => ey.famous);
 
                 // The round received is the first r where all famous witnesses can see x.
-                const isSeenByFamous = famousWitnesses.every((y) => {
-                    return this.helpers.canSee(events, y, x);
+                const isSeenByFamous = famousWitnesses.every(([hy, ey]) => {
+                    return this.helpers.canSee(index, hy, hx);
                 });
 
                 if (isSeenByFamous) {
                     // Event x is seen by all famous witnesses in r.
-                    x.roundReceived = r;
+                    index[hx] = { ...ex, roundReceived: r };
                     break;
                 }
 
@@ -230,94 +272,165 @@ export class Consensus<T> {
             }
 
             // We need the round received to determine the median timestamp.
-            if (!x.roundReceived) return;
+            if (!index[hx].roundReceived) {
+                continue;
+            };
 
             // We need to find the first events who saw x and are self-ancestors of a famous witness.
-            const sEvents = famousWitnesses.map((y) => {
+            const s = famousWitnesses.map(([hy, ey]) => {
                 //
-                const move = (c: cEvent<T>): cEvent<T> => {
-                    const selfParent = this.helpers.selfParent(events, c);
-
-                    if (!selfParent || !this.helpers.canSee(events, selfParent, x)) {
-                        // The current event is the last which was able to see x.
-                        return c;
+                const move = (hc: string, ec: _Event<T>): _Event<T> => {
+                    //
+                    if (!ec.selfParent || !this.helpers.canSee(index, ec.selfParent, hx)) {
+                        return ec;
                     }
 
-                    // The current event can still see x, we continue one down.
-                    return move(selfParent);
+                    return move(ec.selfParent, index[ec.selfParent]);
                 };
 
-                return move(y);
+                return move(hy, ey);
             });
 
             // Calculate and set the median timestamp.
-            const dates = sEvents.map((y) => y.createdAt);
-            x.timestamp = this.core.median(dates);
-            x.consensus = true;
-        });
+            const dates = s.map((y) => y.createdAt);
+            index[hx] = { ...index[hx], timestamp: this.helpers.median(dates), consensus: true };
+        }
 
-        return events;
-    }
+        return index;
+    };
 
     /**
-     * Sets the order of the provided events by creating an index on which the
-     * events can easily be sorted later.
+     * This methods received the index on which consensus has been reached and
+     * assigns an index to every event in the correct order.
      * 
-     * @param events The available events.
+     * @param index The current index of events.
      */
-    private setOrder(events: cEvent<T>[]): cEvent<T>[] {
-        // We only sort the events on which consensus has been reached.
-        const tEvents = events.filter((e) => e.consensus);
+    private setOrder<T>(index: Index<T>): Index<T> {
+        //
+        index = { ...index };
 
-        tEvents.sort((x, y) => {
+        // We only set the order on events on which consensus has been reached.
+        const events = Object.entries(index).filter(([_, hx]) => hx.consensus);
+
+        events.sort(([hx, ex], [hy, ey]) => {
             // 1. We sort by the round received.
-            if (x.roundReceived > y.roundReceived) return 1;
-            if (x.roundReceived < y.roundReceived) return -1;
+            if (ex.roundReceived > ey.roundReceived) return 1;
+            if (ex.roundReceived < ey.roundReceived) return -1;
 
             // 2. When that ties, we sort by the median timestamp.
-            if (x.timestamp > y.timestamp) return 1;
-            if (x.timestamp < y.timestamp) return -1;
+            if (ex.timestamp > ey.timestamp) return 1;
+            if (ex.timestamp < ey.timestamp) return -1;
 
             // 3. When that ties, we sort by a whithened signature.
             const random = Math.random();
-            if ((parseInt(x.signature) ^ random) > (parseInt(y.signature) ^ random)) return 1;
+            if ((parseInt(ex.signature) ^ random) > (parseInt(ey.signature) ^ random)) return 1;
 
             return -1;
         });
 
-        tEvents.forEach((x, order) => {
-            // We retrieve the index of the original array so we can modify the item.
-            const index = events.findIndex((e) => e.id === x.id);
+        for (let i = 0; i < events.length; i++) {
+            //
+            const [hx, ex] = events[i];
+            index[hx] = { ...ex, index: i };
+        }
 
-            events[index].index = order;
-        });
-
-        return events;
+        return index;
     }
 
     /**
-     * The core methods.
+     * The helper methods.
      */
-    public readonly core = {
+    public readonly helpers = {
         /**
-         * Creates a memoizes function of the provided function.
+         * Returns `true` when x can see y.
          * 
-         * @param fn The function to memoize.
+         * @param index The current index of events.
+         * @param x The current event.
+         * @param y The event we are trying to see.
          */
-        memoize: <R, T extends (...args) => R>(fn: T): T => {
-            const cache: { [key: string]: R } = {};
+        canSee: <T>(index: Index<T>, x: string, y: string): boolean => {
+            /**
+             * We use the breadth first search algorithm to determine whether y is an
+             * ancestor of x.
+             * 
+             * @param x The current event.
+             */
+            const bfs = (visited: string[], queue: string[]): boolean => {
+                //
+                if (queue.length === 0) return false;
 
-            const callable = (...args) => {
-                const key = JSON.stringify(args);
+                const s = queue.pop();
+                const event = index[s];
 
-                if (!cache[key]) {
-                    cache[key] = fn(...args);
-                }
+                if (!event) return false;
+                if (s === y) return true;
 
-                return cache[key];
+                ['selfParent', 'otherParent'].forEach((kind) => {
+                    //
+                    const hash = event[kind];
+
+                    if (hash && !visited.includes(hash)) {
+                        visited.push(hash);
+                        queue.push(hash);
+                    }
+                });
+
+                return bfs(visited, queue);
             };
 
-            return callable as T;
+            return bfs([], [x]);
+        },
+        /**
+         * Returns `true` when x can strongly see y. This means that x can see y
+         * through 2/3 of the total computers in the network.
+         * 
+         * @param index The current index of events.
+         * @param x The current event.
+         * @param y The event we are trying to strongly see.
+         * @param n The number of computers.
+         */
+        canStronglySee: <T>(index: Index<T>, x: string, y: string, n: number): boolean => {
+            /**
+             * We use the breadth first search algorithm to find the last created event
+             * for every computer in the network.
+             */
+            const bfs = (visited: string[], queue: string[]): string[] => {
+                //
+                if (queue.length === 0) return [];
+
+                // We retrieve all the unique keys to see if we have one from every computer.
+                const keys = new Set(visited.map((v) => index[v].publicKey));
+                if (keys.size === n) return visited;
+
+                const s = queue.pop();
+                const event = index[s];
+
+                ['selfParent', 'otherParent'].forEach((kind) => {
+                    //
+                    const hash = event[kind];
+
+                    if (hash && !visited.includes(hash)) {
+                        visited.push(hash);
+                        queue.push(hash);
+                    }
+                });
+
+                return bfs(visited, queue);
+            };
+
+            const events = bfs([], [x]);
+            if (events.length === 0) return false;
+
+            let canStronglySee = 0;
+
+            for (let i = 0; i < events.length; i++) {
+                //
+                if (this.helpers.canSee(index, events[i], y)) {
+                    canStronglySee += 1;
+                }
+            }
+
+            return canStronglySee >= Math.ceil((2 * n) / 3);
         },
         /**
          * Returns the median of the provided items and `null` when the array
@@ -337,299 +450,6 @@ export class Consensus<T> {
             return isEven
                 ? (sorted[middle - 1.5] + sorted[middle - 0.5]) / 2
                 : sorted[middle - 1];
-        }
-    };
-
-    /**
-     * The helper methods.
-     */
-    public readonly helpers = {
-        /**
-         * Returns true when y is a self ancestor of x.
-         * 
-         * @param events The available events.
-         * @param x The current event.
-         * @param y The event we are checking.
-         */
-        selfAncestor: this.core.memoize((
-            events: cEvent<T>[],
-            x: cEvent<T>,
-            y: cEvent<T>,
-        ): boolean => {
-            //
-            if (x === y) return true;
-
-            if (!x.otherParent && !x.selfParent) {
-                // Genesis events don't have parents, sad :(
-                return false;
-            }
-
-            const selfParent = this.helpers.selfParent(events, x);
-            if (selfParent === y) return true;
-
-            return this.helpers.selfAncestor(events, selfParent, y);
-        }),
-
-        /**
-         * Returns true when x can see y. This means that y is an ancestor of x.
-         * 
-         * @param events The available events.
-         * @param x The current event.
-         * @param y The event we are trying to see.
-         */
-        canSee: this.core.memoize((
-            events: cEvent<T>[],
-            x: cEvent<T>,
-            y: cEvent<T>,
-        ): boolean => {
-            //
-            if (x === y) return true;
-
-            if (!x.otherParent && !x.selfParent) {
-                // Genesis events don't have parents, sad :(
-                return false;
-            }
-
-            const selfParent = this.helpers.selfParent(events, x);
-            if (selfParent === y) return true;
-
-            const otherParent = this.helpers.otherParent(events, x);
-            if (otherParent === y) return true;
-
-            // Recursive calls to see whether it is the parent of the parent.
-            return (
-                this.helpers.canSee(events, selfParent, y) ||
-                this.helpers.canSee(events, otherParent, y)
-            );
-        }),
-        /**
-         * Returns true when x can strongly see y which means that at least 2/3
-         * of the computer's events must have been crossed.
-         * 
-         * @param events The available events.
-         * @param x The current event.
-         * @param y The event we are trying to see.
-         * @param n The number of participating computers.
-         * @returns Whether x can strongly see y.
-         */
-        canStronglySee: this.core.memoize((
-            events: cEvent<T>[],
-            x: cEvent<T>,
-            y: cEvent<T>,
-            n: number
-        ): boolean => {
-            //
-            const computers = new Set<string>();
-
-            const dfs = (path: cEvent<T>[]): cEvent<T>[][] => {
-                const x = path[path.length - 1];
-                let paths: cEvent<T>[][] = [];
-
-                if (x === y) return [path];
-
-                // Retrieve the parents for the current event.
-                const parents: cEvent<T>[] = this.helpers.parents(events, x);
-
-                parents.forEach((parent) => {
-                    // Stop when we have reached a genesis event.
-                    if (!parent) return;
-
-                    dfs([...path, parent]).forEach((p) => {
-                        paths = [...paths, p];
-                    });
-                });
-
-                return paths;
-            };
-
-            const paths = dfs([x]);
-
-            paths.forEach((path) => path.forEach((event) => {
-                computers.add(event.publicKey);
-            }));
-
-            return this.helpers.superMajority(n, computers.size);
-        }),
-        /**
-         * Returns the parent event of the provided event.
-         * 
-         * @param events The available events.
-         * @param x The event to return the parent for.
-         * @param kind The kind of parent to return.
-         * @returns The self or other parent.
-         */
-        parent: this.core.memoize((
-            events: cEvent<T>[],
-            x: cEvent<T>,
-            kind: 'selfParent' | 'otherParent',
-        ): cEvent<T> => {
-            //
-            const match = (event: cEvent<T>) => {
-                return x[kind] === this.crypto.createHash(event, [
-                    'consensus',
-                    'round',
-                    'witness',
-                    'roundReceived',
-                    'famous',
-                    'timestamp',
-                    'index'
-                ]);
-            };
-
-            return events.find(match);
-        }),
-        /**
-         * Returns both the self and other parent of x.
-         * 
-         * @param events The available events.
-         * @param x The current event.
-         * @returns The parents of the current event.
-         */
-        parents: this.core.memoize((
-            events: cEvent<T>[],
-            x: cEvent<T>,
-        ): cEvent<T>[] => {
-            //
-            const parents: cEvent<T>[] = [];
-
-            ['selfParent', 'otherParent'].forEach((kind) => {
-                const parent = this.helpers[kind](events, x);
-
-                if (parent) parents.push(parent);
-            });
-
-            return parents;
-        }),
-        /**
-         * Returns the self parent for the provided event.
-         * 
-         * @param events The available events.
-         * @param x The event to return the parent for.
-         * @returns The self parent.
-         */
-        selfParent: this.core.memoize((events: cEvent<T>[], x: cEvent<T>): cEvent<T> => {
-            //
-            return this.helpers.parent(events, x, 'selfParent');
-        }),
-        /**
-         * Returns the other parent for the provided event.
-         * 
-         * @param events The available events.
-         * @param x The event to return the parent for.
-         * @returns The other parent.
-         */
-        otherParent: this.core.memoize((events: cEvent<T>[], x: cEvent<T>): cEvent<T> => {
-            //
-            return this.helpers.parent(events, x, 'otherParent');
-        }),
-        /**
-         * Determines if the number is a super majority (+2/3)
-         *
-         * @returns boolean if the compare number is a supermajority this depends on the number of nodes/computers
-         * @param computers
-         * @param compare
-         */
-        superMajority: this.core.memoize((computers: number, compare: number): boolean => {
-            return compare >= Math.floor(2 * computers / 3 + 1);
-        }),
-        /**
-         * Returns the events of a specific round
-         *
-         * @returns boolean true if x sees y
-         * @param events
-         * @param round
-         */
-        getRoundEvents: this.core.memoize((events: cEvent<T>[], round: number): cEvent<T>[] => {
-            return events.filter(element => element.round === round);
-        }),
-        /**
-         * Returns the witnesses of a specific round
-         *
-         * @returns Event<T>[] list of witnesses from specific round
-         * @param events
-         * @param round
-         */
-        getRoundWitnesses: this.core.memoize((events: cEvent<T>[], round: number): cEvent<T>[] => {
-            const roundEvents = this.helpers.getRoundEvents(events, round);
-            return roundEvents.filter(element => element.witness === true);
-        }),
-
-        /**
-         * returns the number of different nodes in a round.
-         * @param events
-         * @param round
-         * @returns returns the amount of nodes
-         */
-        numberOfNodes: (events: cEvent<T>[], round: number): number => {
-            const nodes = [];
-
-            for (let i = 0; i < events.length; i++) {
-                if (events[i].publicKey !== undefined && !nodes.includes(events[i].publicKey) && events[i].round === round) {
-                    nodes.push(events[i].publicKey);
-                }
-            }
-
-            return nodes.length;
-        },
-
-        /**
-         * Return round of parent with the highest round
-         * @param events All events in the queue that
-         * @param event
-         * @returns returns round number
-         */
-        getHighestParentRound: this.core.memoize((events: cEvent<T>[], event: cEvent<T>): number => {
-            let round = -1;
-
-            if (this.helpers.selfParent(events, event)) {
-                round = this.helpers.selfParent(events, event).round;
-            }
-
-            if (this.helpers.otherParent(events, event)) {
-                const opRound = this.helpers.otherParent(events, event).round;
-                if (opRound > round) {
-                    round = opRound;
-                }
-            }
-            return round;
-        }),
-        /**
-         * Counts strongly seen witnesses in a round
-         * @param events
-         * @param event
-         * @param round
-         * @param n The number of participating computers.
-         * @returns The number strongly seen witnesses
-         */
-        countStrongestSeenWitnesses: this.core.memoize((events: cEvent<T>[], event: cEvent<T>, round: number, n: number): number => {
-            const parentRoundEvents = this.helpers.getRoundEvents(events, round);
-            const parentRoundWitnesses = this.helpers.getRoundWitnesses(events, round);
-
-            let count = 0;
-            for (let i = 0, len = parentRoundWitnesses.length; i < len; i++) {
-                const ss = this.helpers.canStronglySee(parentRoundEvents, event, parentRoundWitnesses[i], this.helpers.numberOfNodes(parentRoundEvents, round));
-                if (ss) {
-                    count++;
-                }
-            }
-            return count;
-        }),
-
-        /**
-         * returns list of different round numbers in events.
-         * @param events
-         * @returns returns list of round numbers
-         */
-        pendingRounds: (events: cEvent<T>[]): number[] => {
-            const numbers = [];
-
-            for (let i = 0; i < events.length; i++) {
-                if (events[i].round !== undefined && !numbers.includes(events[i].round)) {
-                    numbers.push(events[i].round);
-                }
-            }
-
-            return numbers;
         },
     };
 }

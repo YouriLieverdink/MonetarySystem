@@ -1,47 +1,35 @@
-import { Consensus, cEvent } from './consensus';
-import { Crypto } from './crypto';
-import { v1 as uuidv1 } from 'uuid';
+import { createHash } from 'crypto';
+import { Consensus, _Event } from './consensus';
 
 describe('Consensus', () => {
     //
-    const crypto = new Crypto();
-    const consensus = new Consensus<never>();
-    const n = 4;
+    let consensus: Consensus<never>;
+    let events: _Event<never>[];
 
-    let events: cEvent<never>[];
+    const h = <T>(x: _Event<T>): string => {
+        const hashable = JSON.stringify(x);
+        return createHash('sha256').update(hashable).digest('hex');
+    };
 
-    /**
-     * Creates and returns the hash of the provided event.
-     * 
-     * @param event The event to hash.
-     */
-    const createHash = <T>(event: cEvent<T>): string => {
-        return crypto.createHash(event, ['consensus', 'round', 'witness', 'roundReceived', 'famous', 'timestamp']);
+    const c = <T>(events: _Event<T>[], x: number, self: number, other: number): void => {
+        events[x].selfParent = h(events[self]);
+        events[x].otherParent = h(events[other]);
     };
 
     /**
-     * Creates the parents of a given event.
-     * 
-     * @param events The available events.
-     * @param event The index of the event to create the parents for.
-     * @param selfParent The index of the event to use as self parent.
-     * @param otherParent The index of the event to use as other parent.
+     * We construct a `test`-hashgraph based on an image from a explanation
+     * video so we can see if the implementation is valid.
      */
-    const createParents = (events: cEvent<never>[], event: number, selfParent: number, otherParent: number) => {
-        events[event].selfParent = createHash(events[selfParent]);
-        events[event].otherParent = createHash(events[otherParent]);
-    };
-
     beforeAll(() => {
+        consensus = new Consensus();
         events = [];
-        const now = new Date('January 10, 2022 10:00:00').getTime();
+        const now = Date.now();
 
-        // Construct a new hashgraph for every test.
         for (let i = 0; i < 35; i++) {
             // Create a predictable set of times for testing.
             const date = now + (i * 60000)
 
-            events.push({ id: `${i}`, createdAt: date, publicKey: '', signature: uuidv1() });
+            events.push({ id: `${i}`, createdAt: date, publicKey: '', signature: '' });
         }
 
         // Set the signature for each event.
@@ -51,60 +39,53 @@ describe('Consensus', () => {
         [3, 4, 6, 9, 12, 16, 19, 23, 25, 32, 33].forEach((i) => events[i].publicKey = 'Dave');
 
         // Set the parents for each event.
-        createParents(events, 4, 3, 1);
-        createParents(events, 5, 1, 4);
-        createParents(events, 6, 4, 5);
-        createParents(events, 7, 5, 2);
-        createParents(events, 8, 0, 5);
-        createParents(events, 9, 6, 7);
-        createParents(events, 10, 2, 7);
-        createParents(events, 11, 7, 9);
-        createParents(events, 12, 9, 8);
-        createParents(events, 13, 8, 12);
-        createParents(events, 14, 11, 12);
-        createParents(events, 15, 13, 10);
-        createParents(events, 16, 12, 14);
-        createParents(events, 17, 10, 15);
-        createParents(events, 18, 15, 14);
-        createParents(events, 19, 16, 18);
-        createParents(events, 20, 14, 18);
-        createParents(events, 21, 20, 19);
-        createParents(events, 22, 18, 21);
-        createParents(events, 23, 19, 21);
-        createParents(events, 24, 21, 22);
-        createParents(events, 25, 23, 17);
-        createParents(events, 26, 17, 25);
-        createParents(events, 27, 24, 22);
-        createParents(events, 28, 22, 27);
-        createParents(events, 29, 27, 26);
-        createParents(events, 30, 28, 29);
-        createParents(events, 31, 29, 30);
-        createParents(events, 32, 25, 29);
-        createParents(events, 33, 32, 26);
-        createParents(events, 34, 31, 33);
+        c(events, 4, 3, 1);
+        c(events, 5, 1, 4);
+        c(events, 6, 4, 5);
+        c(events, 7, 5, 2);
+        c(events, 8, 0, 5);
+        c(events, 9, 6, 7);
+        c(events, 10, 2, 7);
+        c(events, 11, 7, 9);
+        c(events, 12, 9, 8);
+        c(events, 13, 8, 12);
+        c(events, 14, 11, 12);
+        c(events, 15, 13, 10);
+        c(events, 16, 12, 14);
+        c(events, 17, 10, 15);
+        c(events, 18, 15, 14);
+        c(events, 19, 16, 18);
+        c(events, 20, 14, 18);
+        c(events, 21, 20, 19);
+        c(events, 22, 18, 21);
+        c(events, 23, 19, 21);
+        c(events, 24, 21, 22);
+        c(events, 25, 23, 17);
+        c(events, 26, 17, 25);
+        c(events, 27, 24, 22);
+        c(events, 28, 22, 27);
+        c(events, 29, 27, 26);
+        c(events, 30, 28, 29);
+        c(events, 31, 29, 30);
+        c(events, 32, 25, 29);
+        c(events, 33, 32, 26);
+        c(events, 34, 31, 33);
     });
 
-    it('creates Crypto internally when not injected', () => {
-        expect(() => new Consensus<never>()).not.toThrow();
-    });
-
-    describe('doConsensus', () => {
-
-        it('is run in', () => {
-            consensus.doConsensus([...events], n);
-        });
+    describe('do', () => {
 
         describe('sets the round', () => {
 
             it('of an event to r when it a genesis event', () => {
-                const cEvents = consensus.doConsensus([...events], n);
+                const cEvents = consensus.do(events, 4);
 
                 const event = cEvents.find((cEvent) => cEvent.id === '1');
+
                 expect(event.round).toBe(0);
             });
 
             it('of an event to r+1 when it can see the supermajority of witnesses in r', () => {
-                const cEvents = consensus.doConsensus([...events], n);
+                const cEvents = consensus.do(events, 4);
 
                 const event = cEvents.find((cEvent) => cEvent.id === '14');
 
@@ -112,7 +93,7 @@ describe('Consensus', () => {
             });
 
             it('of an event to r when it can\'t see the supermajority of witnesses in r', () => {
-                const cEvents = consensus.doConsensus([...events], n);
+                const cEvents = consensus.do(events, 4);
 
                 const event = cEvents.find((cEvent) => cEvent.id === '11');
 
@@ -123,7 +104,7 @@ describe('Consensus', () => {
         describe('sets the witness', () => {
 
             it('of an event to `true` when it is a genesis event', () => {
-                const cEvents = consensus.doConsensus([...events], n);
+                const cEvents = consensus.do(events, 4);
 
                 const event = cEvents.find((cEvent) => cEvent.id === '1');
 
@@ -131,7 +112,7 @@ describe('Consensus', () => {
             });
 
             it('of an event to `true` when it is the creator\'s first event in a round', () => {
-                const cEvents = consensus.doConsensus([...events], n);
+                const cEvents = consensus.do(events, 4);
 
                 const event = cEvents.find((cEvent) => cEvent.id === '14');
 
@@ -139,7 +120,7 @@ describe('Consensus', () => {
             });
 
             it('of an event to `false` when it is not the creator\'s first event in a round', () => {
-                const cEvents = consensus.doConsensus([...events], n);
+                const cEvents = consensus.do(events, 4);
 
                 const event = cEvents.find((cEvent) => cEvent.id === '16');
 
@@ -147,12 +128,13 @@ describe('Consensus', () => {
             });
         });
 
-        describe('sets the fame', () => {
+
+        describe('sets the famous', () => {
 
             it.each(['0', '1', '2', '3', '12', '13', '14'])(
                 'of x=%i to `true` when it is famous',
                 (id) => {
-                    const cEvents = consensus.doConsensus([...events], n);
+                    const cEvents = consensus.do(events, 4);
 
                     const event = cEvents.find((cEvent) => cEvent.id === id);
 
@@ -163,7 +145,7 @@ describe('Consensus', () => {
             it.each(['17'])(
                 'of x=%i to `false` when it is not famous but voted on',
                 (id) => {
-                    const cEvents = consensus.doConsensus([...events], n);
+                    const cEvents = consensus.do(events, 4);
 
                     const event = cEvents.find((cEvent) => cEvent.id === id);
 
@@ -174,7 +156,7 @@ describe('Consensus', () => {
             it.each(['7', '21'])(
                 'of an event to undefined when it has not yet been voted on',
                 (id) => {
-                    const cEvents = consensus.doConsensus([...events], n);
+                    const cEvents = consensus.do(events, 4);
 
                     const event = cEvents.find((cEvent) => cEvent.id === id);
 
@@ -183,247 +165,157 @@ describe('Consensus', () => {
             );
         });
 
+
         describe('sets the received round', () => {
 
             it('of an event to r when all the famous witnesses in round r can see it', () => {
-                const cEvents = consensus.doConsensus([...events], n);
+                const cEvents = consensus.do(events, 4);
 
-                const event = cEvents.find((cEvent) => cEvent.id === '0');
+                const event = cEvents.find((event) => event.id === '0');
 
                 expect(event.roundReceived).toBe(1);
-            });
-
-            it('of an event to r+1 when all the famous witnesses in round r can\'t see it but they can in round r+1', () => {
-                let cEvents = [...events];
-
-                // With the current number of events it is impossible to decide fame for these events.
-                [21, 22, 23, 26].forEach((id) => {
-                    const index = cEvents.findIndex(
-                        (cEvent) => cEvent.id === `${id}`,
-                    );
-
-                    cEvents[index].famous = true;
-                });
-
-                cEvents = consensus.doConsensus(cEvents, n);
-
-                const event = cEvents.find((cEvent) => cEvent.id === '11');
-
-                expect(event.roundReceived).toBe(2);
             });
         });
 
         describe('sets the timestamp', () => {
 
             it('of an event to the median timestamp of the creators\' event who saw it first', () => {
-                const cEvents = consensus.doConsensus([...events], n);
+                const cEvents = consensus.do(events, 4);
 
-                const event = cEvents.find((cEvent) => cEvent.id === '8');
+                const event = cEvents.find((event) => event.id === '8');
 
-                // We can do this because the environment is predicatble.
-                const median = cEvents.find((cEvent) => cEvent.id === '12');
+                const median = cEvents.find((event) => event.id === '12');
 
-                expect(event.timestamp).toStrictEqual(median.createdAt);
+                expect(event.timestamp).toEqual(median.createdAt);
             });
         });
 
         describe('sets the index', () => {
 
             it('of an event to 0 when it has the lowest median timestamp', () => {
-                const cEvents = consensus.doConsensus([...events], n);
+                const cEvents = consensus.do(events, 4);
 
-                const event = cEvents.find((cEvent) => cEvent.id === '1');
+                const event = cEvents.find((event) => event.id === '1');
 
-                expect(event.index).toBe(0);
+                expect(event.index).toBe(0)
             });
 
             it('of an event to 1 by comparing whithened signatures when timestamps are equal', () => {
-                const cEvents = consensus.doConsensus([...events], n);
+                const cEvents = consensus.do(events, 4);
 
-                const event = cEvents.find((cEvent) => cEvent.id === '4');
+                const event = cEvents.find((event) => event.id === '4');
 
                 expect(event.index).toBe(1);
             });
         });
+
     });
 
     describe('helpers', () => {
 
-        describe('selfAncestor', () => {
-
-            it('returns true when x and y are the same', () => {
-                const x = events.find((event) => event.id === '0');
-                const y = events.find((event) => event.id === '0');
-
-                const result = consensus.helpers.selfAncestor([...events], x, y);
-                expect(result).toBe(true);
-            });
-
-            it('returns false when x is a gensis event', () => {
-                const x = events.find((event) => event.id === '0');
-                const y = events.find((event) => event.id === '1');
-
-                const result = consensus.helpers.selfAncestor([...events], x, y);
-                expect(result).toBe(false);
-            });
-
-            it('returns true when y is the self parent of x', () => {
-                const x = events.find((event) => event.id === '8');
-                const y = events.find((event) => event.id === '0');
-
-                const result = consensus.helpers.selfAncestor([...events], x, y);
-                expect(result).toBe(true);
-            });
-
-            it('returns true when y is the self parent of the self parent of x', () => {
-                const x = events.find((event) => event.id === '13');
-                const y = events.find((event) => event.id === '0');
-
-                const result = consensus.helpers.selfAncestor([...events], x, y);
-                expect(result).toBe(true);
-            });
-        });
-
         describe('canSee', () => {
 
             it('returns true when x and y are the same', () => {
-                const x = events.find((event) => event.id === '0');
-                const y = events.find((event) => event.id === '0');
+                const x = h(events.find((event) => event.id === '0'));
+                const y = h(events.find((event) => event.id === '0'));
 
-                const result = consensus.helpers.canSee([...events], x, y);
-                expect(result).toBeTruthy();
+                const index = consensus.createIndex({}, events);
+
+                const result = consensus.helpers.canSee(index, x, y);
+                expect(result).toBe(true);
             });
 
             it('returns false when x is a genesis event', () => {
-                const x = events.find((event) => event.id === '0');
-                const y = events.find((event) => event.id === '1');
+                const x = h(events.find((event) => event.id === '0'));
+                const y = h(events.find((event) => event.id === '1'));
 
-                const result = consensus.helpers.canSee([...events], x, y);
-                expect(result).toBeFalsy();
+                const index = consensus.createIndex({}, events);
+
+                const result = consensus.helpers.canSee(index, x, y);
+                expect(result).toBe(false);
             });
 
             it('returns true when y is a selfParent of x', () => {
-                const x = events.find((event) => event.id === '8');
-                const y = events.find((event) => event.id === '0');
+                const x = h(events.find((event) => event.id === '8'));
+                const y = h(events.find((event) => event.id === '0'));
 
-                const result = consensus.helpers.canSee([...events], x, y);
-                expect(result).toBeTruthy();
+                const index = consensus.createIndex({}, events);
+
+                const result = consensus.helpers.canSee(index, x, y);
+                expect(result).toBe(true);
             });
 
             it('returns false when y is not a selfParent of x', () => {
-                const x = events.find((event) => event.id === '8');
-                const y = events.find((event) => event.id === '13');
+                const x = h(events.find((event) => event.id === '8'));
+                const y = h(events.find((event) => event.id === '13'));
 
-                const result = consensus.helpers.canSee([...events], x, y);
-                expect(result).toBeFalsy();
+                const index = consensus.createIndex({}, events);
+
+                const result = consensus.helpers.canSee(index, x, y);
+                expect(result).toBe(false);
             });
 
-            it('returns true when y is an otherParent of x', () => {
-                const x = events.find((event) => event.id === '7');
-                const y = events.find((event) => event.id === '2');
+            it('returns true when y is a otherParent of x', () => {
+                const x = h(events.find((event) => event.id === '7'));
+                const y = h(events.find((event) => event.id === '2'));
 
-                const result = consensus.helpers.canSee([...events], x, y);
-                expect(result).toBeTruthy();
+                const index = consensus.createIndex({}, events);
+
+                const result = consensus.helpers.canSee(index, x, y);
+                expect(result).toBe(true);
             });
 
-            it('returns false when y is not an otherParent of x', () => {
-                const x = events.find((event) => event.id === '7');
-                const y = events.find((event) => event.id === '11');
+            it('returns false when y is not a otherParent of x', () => {
+                const x = h(events.find((event) => event.id === '7'));
+                const y = h(events.find((event) => event.id === '11'));
 
-                const result = consensus.helpers.canSee([...events], x, y);
-                expect(result).toBeFalsy();
+                const index = consensus.createIndex({}, events);
+
+                const result = consensus.helpers.canSee(index, x, y);
+                expect(result).toBe(false);
             });
 
             it('returns true when y is a parent of a parent of x', () => {
-                const x = events.find((event) => event.id === '11');
-                const y = events.find((event) => event.id === '6');
+                const x = h(events.find((event) => event.id === '11'));
+                const y = h(events.find((event) => event.id === '6'));
 
-                const result = consensus.helpers.canSee([...events], x, y);
-                expect(result).toBeTruthy();
+                const index = consensus.createIndex({}, events);
+
+                const result = consensus.helpers.canSee(index, x, y);
+                expect(result).toBe(true);
             });
 
             it('returns true when y is a parent of a parent of a parent of x', () => {
-                const x = events.find((event) => event.id === '11');
-                const y = events.find((event) => event.id === '4');
+                const x = h(events.find((event) => event.id === '11'));
+                const y = h(events.find((event) => event.id === '4'));
 
-                const result = consensus.helpers.canSee([...events], x, y);
-                expect(result).toBeTruthy();
+                const index = consensus.createIndex({}, events);
+
+                const result = consensus.helpers.canSee(index, x, y);
+                expect(result).toBe(true);
             });
         });
 
         describe('canStronglySee', () => {
 
             it.each([
-                { x: '12', y: '0', expected: false },
-                { x: '12', y: '1', expected: true },
-                { x: '12', y: '2', expected: true },
-                { x: '12', y: '3', expected: true }
+                { xId: '12', yId: '0', expected: false },
+                { xId: '12', yId: '1', expected: true },
+                { xId: '12', yId: '2', expected: true },
+                { xId: '12', yId: '3', expected: true }
             ])(
-                'returns $expected when x=$x and y=$y',
-                ({ x, y, expected }) => {
-                    const eventX = events.find((event) => event.id === x);
-                    const eventY = events.find((event) => event.id === y);
+                'returns $expected when x=$xId and y=$yId',
+                ({ xId, yId, expected }) => {
+                    const x = h(events.find((event) => event.id === xId));
+                    const y = h(events.find((event) => event.id === yId));
 
-                    const result = consensus.helpers.canStronglySee([...events], eventX, eventY, n);
+                    const index = consensus.createIndex({}, events);
+
+                    const result = consensus.helpers.canStronglySee(index, x, y, 4);
                     expect(result).toBe(expected);
                 },
             );
         });
-
-        describe('selfParent', () => {
-
-            it('returns undefined when the event is a genesis event', () => {
-                const x = events.find((event) => event.id === '0');
-
-                const result = consensus.helpers.selfParent([...events], x);
-                expect(result).toBeUndefined();
-            });
-
-            it('returns selfParent when the selfParent is found', () => {
-                const x = events.find((event) => event.id === '11');
-                const y = events.find((event) => event.id === '7');
-
-                const result = consensus.helpers.selfParent([...events], x);
-                expect(result).toEqual(y);
-            });
-        });
-
-        describe('otherParent', () => {
-
-            it('returns undefined when the event is a genesis event', () => {
-                const x = events.find((event) => event.id === '0');
-
-                const result = consensus.helpers.otherParent([...events], x);
-                expect(result).toBeUndefined();
-            });
-
-            it('returns otherParent when the otherParent is found', () => {
-                const x = events.find((event) => event.id === '11');
-                const y = events.find((event) => event.id === '9');
-
-                const result = consensus.helpers.otherParent([...events], x);
-                expect(result).toEqual(y);
-            });
-        });
-
-        describe('numberOfNodes', () => {
-
-            it('returns the number of nodes of a specific round', () => {
-                consensus.doConsensus(events, n);
-
-                const result = consensus.helpers.numberOfNodes(events, 1)
-
-                expect(result).toEqual(4);
-            });
-
-            it('returns the number of nodes that participated in a round', () => {
-                consensus.doConsensus(events, n);
-
-                const result = consensus.helpers.numberOfNodes(events, 3)
-
-                expect(result).toEqual(3);
-            });
-
-        });
     });
+
 });
