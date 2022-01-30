@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { canSee, canStronglySee, createIndex, decideFame, divideRounds, findOrder, Index, _Event } from './index';
+import { canSee, canStronglySee, createIndex, decideFame, divideRounds, findOrder, Index, setOrder, _Event } from './index';
 
 describe('Consensus', () => {
     //
@@ -309,6 +309,31 @@ describe('Consensus', () => {
 
                 expect(event.timestamp).toEqual(median.createdAt);
             });
+        });
+    });
+
+    describe('sets the index', () => {
+
+        it('of an event to 0 when it has the lowest median timestamp', () => {
+            let cIndex = divideRounds(index, 4);
+            cIndex = decideFame(cIndex, 4);
+            cIndex = findOrder(cIndex);
+            cIndex = setOrder(cIndex);
+
+            const event = Object.values(cIndex).find((event) => event.id === '1');
+
+            expect(event.index).toBe(0)
+        });
+
+        it('of an event to 1 by comparing whithened signatures when timestamps are equal', () => {
+            let cIndex = divideRounds(index, 4);
+            cIndex = decideFame(cIndex, 4);
+            cIndex = findOrder(cIndex);
+            cIndex = setOrder(cIndex);
+
+            const event = Object.values(cIndex).find((event) => event.id === '4');
+
+            expect(event.index).toBe(1);
         });
     });
 });

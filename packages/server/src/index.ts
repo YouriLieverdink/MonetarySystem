@@ -1,6 +1,5 @@
 import { createHash } from 'crypto';
 import { performance } from 'perf_hooks';
-import { Consensus } from './services/_';
 import { Event } from './types/_';
 
 export type _Event<T> = Event<T> & {
@@ -11,6 +10,7 @@ export type _Event<T> = Event<T> & {
     roundReceived?: number;
     timestamp?: number;
     consensus?: boolean;
+    index?: number;
 }
 
 export type Index<T> = {
@@ -1160,22 +1160,57 @@ export const findOrder = <T>(index: Index<T>): Index<T> => {
     return index;
 };
 
+/**
+ * This methods received the index on which consensus has been reached and
+ * assigns an index to every event in the correct order.
+ * 
+ * @param index The current index of events.
+ */
+export const setOrder = <T>(index: Index<T>): Index<T> => {
+    //
+    index = { ...index };
+
+    // We only set the order on events on which consensus has been reached.
+    const events = Object.entries(index).filter(([_, hx]) => hx.consensus);
+
+    events.sort(([hx, ex], [hy, ey]) => {
+        // 1. We sort by the round received.
+        if (ex.roundReceived > ey.roundReceived) return 1;
+        if (ex.roundReceived < ey.roundReceived) return -1;
+
+        // 2. When that ties, we sort by the median timestamp.
+        if (ex.timestamp > ey.timestamp) return 1;
+        if (ex.timestamp < ey.timestamp) return -1;
+
+        // 3. When that ties, we sort by a whithened signature.
+        const random = Math.random();
+        if ((parseInt(ex.signature) ^ random) > (parseInt(ey.signature) ^ random)) return 1;
+
+        return -1;
+    });
+
+    for (let i = 0; i < events.length; i++) {
+        //
+        const [hx, ex] = events[i];
+        index[hx] = { ...ex, index: i };
+    }
+
+    return index;
+}
+
 const main = () => {
     //
     const durations: number[] = [];
-    const s = new Consensus<never>();
 
     for (let i = 0; i < 100; i++) {
         //
-        console.clear();
-        console.log(`% ${i + 1}`);
-
         const t0 = performance.now();
 
         let index = createIndex(events);
         index = divideRounds(index, 4);
         index = decideFame(index, 4);
         index = findOrder(index);
+        index = setOrder(index);
 
         const t1 = performance.now();
 
@@ -1186,4 +1221,4 @@ const main = () => {
     console.log(`Average: ${sum / durations.length}ms`);
 };
 
-main();
+// main();
