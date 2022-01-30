@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import { performance } from 'perf_hooks';
+import { Consensus } from './services/_';
 import { Event } from './types/_';
 
 export type _Event<T> = Event<T> & {
@@ -7,6 +8,9 @@ export type _Event<T> = Event<T> & {
     witness?: boolean;
     vote?: boolean;
     famous?: boolean;
+    roundReceived?: number;
+    timestamp?: number;
+    consensus?: boolean;
 }
 
 export type Index<T> = {
@@ -901,6 +905,26 @@ export const canStronglySee = <T>(index: Index<T>, x: string, y: string, n: numb
 };
 
 /**
+ * Returns the median of the provided items and `null` when the array
+ * is empty.
+ * 
+ * @param items The items to calculate the median for.
+ */
+export const median = (items: number[]): number | null => {
+    //
+    if (items.length === 0) return null;
+
+    const middle = (items.length + 1) / 2;
+
+    const sorted = [...items].sort((a, b) => a - b);
+    const isEven = sorted.length % 2 === 0;
+
+    return isEven
+        ? (sorted[middle - 1.5] + sorted[middle - 0.5]) / 2
+        : sorted[middle - 1];
+}
+
+/**
  * Creates an index for all the events that have been provided. This index can
  * be used for a faster look-up times via hash.
  * 
@@ -1061,17 +1085,97 @@ export const decideFame = <T>(index: Index<T>, n: number): Index<T> => {
     return index;
 };
 
+/**
+ * Finds the order of events using the rounds, witnesses, and fame decided in
+ * the functions above.
+ * 
+ * @param index The current index of events.
+ */
+export const findOrder = <T>(index: Index<T>): Index<T> => {
+    //
+    index = { ...index };
+
+    const events = Object.entries(index);
+
+    for (let i = 0; i < events.length; i++) {
+        //
+        const [hx, ex] = events[i];
+
+        // Set the initial round to r+1 because the witnesses in r never can see x.
+        let r = ex.round + 1;
+        let famousWitnesses: [string, _Event<T>][];
+
+        for (; ;) {
+            // We can continue with at least one witness in r.
+            const witnesses = events.filter(([_, ey]) => ey.round === r && ey.witness);
+            if (witnesses.length === 0) break;
+
+            // Fame has to be decided on the witnesses before we can continue.
+            const isFameDecided = witnesses.every(([_, ey]) => ey.famous !== undefined);
+            if (!isFameDecided) break;
+
+            // We only need to famous witnesses to determine the round received.
+            famousWitnesses = witnesses.filter(([_, ey]) => ey.famous);
+
+            // The round received is the first r where all famous witnesses can see x.
+            const isSeenByFamous = famousWitnesses.every(([hy, ey]) => {
+                return canSee(index, hy, hx);
+            });
+
+            if (isSeenByFamous) {
+                // Event x is seen by all famous witnesses in r.
+                index[hx] = { ...ex, roundReceived: r };
+                break;
+            }
+
+            // Check the following round.
+            r++;
+        }
+
+        // We need the round received to determine the median timestamp.
+        if (!index[hx].roundReceived) {
+            continue;
+        };
+
+        // We need to find the first events who saw x and are self-ancestors of a famous witness.
+        const s = famousWitnesses.map(([hy, ey]) => {
+            //
+            const move = (hc: string, ec: _Event<T>): _Event<T> => {
+                //
+                if (!ec.selfParent || !canSee(index, ec.selfParent, hx)) {
+                    return ec;
+                }
+
+                return move(ec.selfParent, index[ec.selfParent]);
+            };
+
+            return move(hy, ey);
+        });
+
+        // Calculate and set the median timestamp.
+        const dates = s.map((y) => y.createdAt);
+        index[hx] = { ...index[hx], timestamp: median(dates), consensus: true };
+    }
+
+    return index;
+};
+
 const main = () => {
     //
     const durations: number[] = [];
+    const s = new Consensus<never>();
 
     for (let i = 0; i < 100; i++) {
         //
+        console.clear();
+        console.log(`% ${i + 1}`);
+
         const t0 = performance.now();
 
         let index = createIndex(events);
         index = divideRounds(index, 4);
         index = decideFame(index, 4);
+        index = findOrder(index);
 
         const t1 = performance.now();
 
@@ -1082,4 +1186,4 @@ const main = () => {
     console.log(`Average: ${sum / durations.length}ms`);
 };
 
-// main();
+main();

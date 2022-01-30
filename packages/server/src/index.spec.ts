@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { canSee, canStronglySee, createIndex, decideFame, divideRounds, Index, _Event } from './index';
+import { canSee, canStronglySee, createIndex, decideFame, divideRounds, findOrder, Index, _Event } from './index';
 
 describe('Consensus', () => {
     //
@@ -258,6 +258,57 @@ describe('Consensus', () => {
                     expect(event.famous).toBe(undefined);
                 }
             );
+        });
+    });
+
+    describe('findOrder', () => {
+
+        describe('sets the received round', () => {
+
+            it('of an event to r when all the famous witnesses in round r can see it', () => {
+                let cIndex = divideRounds(index, 4);
+                cIndex = decideFame(cIndex, 4);
+                cIndex = findOrder(cIndex);
+
+                const event = Object.values(cIndex).find((event) => event.id === '0');
+
+                expect(event.roundReceived).toBe(1);
+            });
+
+            it('of an event to r+1 when all the famous witnesses in round r can\'t see it but they can in round r+1', () => {
+                let cIndex = divideRounds(index, 4);
+                cIndex = decideFame(cIndex, 4);
+
+                // With the current number of events it is impossible to decide fame for these events.
+                [21, 22, 23, 26].forEach((id) => {
+                    //
+                    const event = events.find((e) => e.id === `${id}`);
+                    const hx = h(event);
+
+                    cIndex[hx] = { ...cIndex[hx], famous: true };
+                });
+
+                cIndex = findOrder(cIndex);
+
+                const event = Object.values(cIndex).find((event) => event.id === '11');
+
+                expect(event.roundReceived).toBe(2);
+            });
+        });
+
+        describe('sets the timestamp', () => {
+
+            it('of an event to the median timestamp of the creators\' event who saw it first', () => {
+                let cIndex = divideRounds(index, 4);
+                cIndex = decideFame(cIndex, 4);
+                cIndex = findOrder(cIndex);
+
+                const event = Object.values(cIndex).find((event) => event.id === '8');
+
+                const median = Object.values(cIndex).find((event) => event.id === '12');
+
+                expect(event.timestamp).toEqual(median.createdAt);
+            });
         });
     });
 });
