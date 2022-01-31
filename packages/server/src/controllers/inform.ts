@@ -51,7 +51,9 @@ export class Inform extends Gossip<State> {
      */
     public async onItems(items: State[], last: State): Promise<void> {
         //
-        for (const item of items) {
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i]
+
             // We only accept items we don't already know.
             if (!this.helpers.isUnknown(item)) continue;
 
