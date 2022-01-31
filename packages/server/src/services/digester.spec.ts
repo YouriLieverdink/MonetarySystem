@@ -1,14 +1,14 @@
-import {Digester} from './digester';
-import {cEvent} from "./consensus";
-import {Storage} from "./storage";
-import {Database} from 'sqlite3';
-import {Transaction} from "../types/transaction";
+import { Digester } from './digester';
+import { _Event } from "./consensus";
+import { Storage } from "./storage";
+import { Database } from 'sqlite3';
+import { Transaction } from "../types/transaction";
 
 describe('Digester', () => {
     let storage: Storage;
     let database: Database;
     let digester: Digester<never>;
-    let events: cEvent<Transaction[]>[];
+    let events: _Event<Transaction[]>[];
 
     beforeAll(async () => {
         // Initialise a new in-memory database for every test.
@@ -20,25 +20,25 @@ describe('Digester', () => {
         events = [];
         const publicKeys = ['piet', 'henk', 'klaas', 'jan', 'geert', 'hacker'];
         const transactions = [
-            {from: 'piet', to: 'henk', amount: 101},
-            {from: 'henk', to: 'klaas', amount: 34},
-            {from: 'klaas', to: 'jan', amount: 59},
-            {from: 'jan', to: 'geert', amount: 32},
-            {from: 'geert', to: 'piet', amount: 18},
-            {from: 'piet', to: 'hacker', amount: 18}
+            { from: 'piet', to: 'henk', amount: 101 },
+            { from: 'henk', to: 'klaas', amount: 34 },
+            { from: 'klaas', to: 'jan', amount: 59 },
+            { from: 'jan', to: 'geert', amount: 32 },
+            { from: 'geert', to: 'piet', amount: 18 },
+            { from: 'piet', to: 'hacker', amount: 18 }
         ]
 
         for (let i = 0; i < 6; i++) {
             events.push({
                 id: `${i}`,
-                createdAt: new Date(),
+                createdAt: Date.now(),
                 publicKey: publicKeys[i],
                 signature: '',
                 data: [transactions[i]]
             });
-            await storage.states.create({publicKey: publicKeys[i], balance: 100, date: new Date()})
+            await storage.states.create({ publicKey: publicKeys[i], balance: 100, date: new Date() })
         }
-        events[2].data[1] = {from: 'klaas', to: 'jan', amount: 21}
+        events[2].data[1] = { from: 'klaas', to: 'jan', amount: 21 }
 
     });
 
@@ -47,7 +47,7 @@ describe('Digester', () => {
         beforeEach(async () => {
             const publicKeys = ['piet', 'henk', 'klaas', 'jan', 'geert'];
             for (let i = 0; i < publicKeys.length; i++) {
-                await storage.states.update({publicKey: publicKeys[i], balance: 100, date: new Date()})
+                await storage.states.update({ publicKey: publicKeys[i], balance: 100, date: new Date() })
             }
         });
 
@@ -98,7 +98,7 @@ describe('Digester', () => {
             for (let i = 0; i < publicKeys.length; i++) {
                 const state = await storage.states.read(publicKeys[i])
 
-                switch(state.publicKey) {
+                switch (state.publicKey) {
                     case 'piet': {
                         expect(state.balance).toBe(118)
                         break;
@@ -126,7 +126,7 @@ describe('Digester', () => {
 
     describe('mirror', () => {
         it('checks if the mirror setting is activated', async () => {
-            const setting = {key: 'mirror', value: 'true'}
+            const setting = { key: 'mirror', value: 'true' }
             await storage.settings.update(setting)
 
             expect(digester.mirrorIsActive()).toBeTruthy();
