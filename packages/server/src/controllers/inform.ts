@@ -1,8 +1,19 @@
 import {Collection, Gossip, Storage} from '../services/_';
-import {Computer, State} from '../types/_';
-import { Express } from 'express';
+import {Computer, Event, State} from '../types/_';
+import {Express} from 'express';
+import {forEach, toNumber} from "lodash";
 
-export class Inform extends Gossip<State> {
+export type _State = State & {
+    sender?: string;
+}
+
+export class Inform extends Gossip<_State> {
+
+    /**
+     * the votes for states
+     */
+    public votes = {};
+
     /**
      * Class construtor.
      *
@@ -39,7 +50,7 @@ export class Inform extends Gossip<State> {
      * handshake with a randomly selected computer.
      */
     public onTick(): void {
-        console.log(this.items)
+        //
     }
 
     /**
@@ -57,9 +68,11 @@ export class Inform extends Gossip<State> {
             // We only accept items we don't already know.
             if (!this.helpers.isUnknown(item)) continue;
 
-            this.items.add(item);
-            await this.storage.states.create(item);
+            this.helpers.vote(items[i])
         }
+
+        const states = this.helpers.majorityStates()
+        this.helpers.handleStates(states)
     }
 
     /**
@@ -78,13 +91,16 @@ export class Inform extends Gossip<State> {
     /**
      * The helper methods.
      */
-    private readonly helpers = {
+    public readonly helpers = {
         /**
          * Fills the items list with the states that are in the database
          */
         addStates: async (): Promise<void> => {
             const states = await this.storage.states.index();
-            this.items.add(...states);
+            for (let i = 0; i < states.length; i++) {
+                this.items.add({publicKey: states[i].publicKey, balance: states[i].balance, sender: this.me.ip});
+            }
+
         },
 
         /**
@@ -92,6 +108,57 @@ export class Inform extends Gossip<State> {
          */
         isUnknown: (item: State): boolean => {
             return this.items.all().every((i) => i.publicKey !== item.publicKey);
+        },
+
+        /**
+         * adds a vote to the collection
+         */
+        vote: (state: _State): void => {
+            if (this.votes[state.publicKey] === undefined) {
+                this.votes[state.publicKey] = {}
+            }
+            if (this.votes[state.publicKey][state.balance] === undefined) {
+                this.votes[state.publicKey][state.balance] = []
+            }
+            if (!this.votes[state.publicKey][state.balance].includes(state.sender)) {
+                this.votes[state.publicKey][state.balance].push(state.sender)
+            }
+        },
+
+        /**
+         * returns all states that have a majority
+         */
+        majorityStates: (): _State[] => {
+            const votedStates = [];
+
+            for (const publicKey in this.votes) {
+                let totalLength = 0;
+                let mostVotes = 0;
+                let mostVotesBalance;
+                for (const balance in this.votes[publicKey]) {
+                    totalLength += this.votes[publicKey][balance].length
+                    if (this.votes[publicKey][balance].length > mostVotes) {
+                        mostVotes = this.votes[publicKey][balance].length;
+                        mostVotesBalance = balance;
+                    }
+                }
+                if (mostVotes >= ((totalLength / 3) * 2) && mostVotesBalance && totalLength >= 3) {
+                    votedStates.push({publicKey: publicKey, balance: toNumber(mostVotesBalance)})
+                }
+            }
+
+            return votedStates
+        },
+
+        /**
+         * the states that have been chosen will be put in the item list and in the database
+         */
+        handleStates: async (states: _State[]): Promise<void> => {
+            for (let i = 0; i < states.length; i++) {
+                this.items.add(states[i])
+                await this.storage.states.create(states[i])
+                delete this.votes[states[i].publicKey]
+            }
         }
     }
 

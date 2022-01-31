@@ -1,5 +1,5 @@
 import {Digester} from './digester';
-import {cEvent} from "./consensus";
+import {_Event} from "./consensus";
 import {Storage} from "./storage";
 import {Database} from 'sqlite3';
 import {Transaction} from "../types/transaction";
@@ -8,7 +8,7 @@ describe('Digester', () => {
     let storage: Storage;
     let database: Database;
     let digester: Digester<never>;
-    let events: cEvent<Transaction[]>[];
+    let events: _Event<Transaction[]>[];
 
     beforeAll(async () => {
         // Initialise a new in-memory database for every test.
@@ -31,7 +31,7 @@ describe('Digester', () => {
         for (let i = 0; i < 6; i++) {
             events.push({
                 id: `${i}`,
-                createdAt: new Date(),
+                createdAt: 1,
                 publicKey: publicKeys[i],
                 signature: '',
                 data: [transactions[i]]
