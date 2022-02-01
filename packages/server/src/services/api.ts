@@ -55,9 +55,6 @@ export class Api {
         },
         import: async (args: Request): Promise<string> => {
             if (args.method === 'POST') {
-                if (args.query) {
-                    throw Error("Can't use params");
-                }
                 const value = Object.values(args.body).toString();
 
                 return await this.commandController.addresses.import(value);
@@ -83,12 +80,11 @@ export class Api {
         },
         transactions: async (args: Request): Promise<Transaction | Transaction[] | Error> => {
             const method = args.method;
-            const address = args.query.address;
-            const sender = address.toString();
+            const address = `${args.query.address}`;
 
             if (method === 'GET') {
                 return (address.length !== 0)
-                    ? await this.commandController.transactions.get(sender)
+                    ? await this.commandController.transactions.get(address)
                     : await this.commandController.transactions.getAllImported();
             }
             if (method === 'POST') {
@@ -105,7 +101,7 @@ export class Api {
                         case 'amount':
                             amount = info[i];
                             break;
-                        case 'receiver':
+                        case 'to':
                             receiver = info[i];
                             break;
                         default:
@@ -121,24 +117,18 @@ export class Api {
                 if (address === 'api') {
                     throw Error("wrong endpoint used");
                 }
-                return await this.commandController.transactions.create(sender, receiver, amount);
+                return await this.commandController.transactions.create(address, receiver, amount);
             }
             throw Error();
         },
         address: async (args: Request): Promise<Address[]> => {
             if (args.method === 'GET') {
-                if (args.query) {
-                    throw Error("Can't use params");
-                }
                 return await this.commandController.addresses.getAll();
             }
             throw Error("ERROR addresses");
         },
         generate: async (args: Request): Promise<Address | string> => {
             if (args.method === 'POST') {
-                if (args.query) {
-                    throw Error("Can't use params");
-                }
                 return await this.commandController.addresses.create()
                     .then(createdAddresses => createdAddresses)
                     .catch(() => "could not create address");
@@ -147,24 +137,16 @@ export class Api {
         },
         balance: async (args: Request): Promise<State[]> => {
             if (args.method === 'GET') {
-                if (!args.query.address) {
-                    throw Error("no params");
-                }
+                const address = `${args.query.address}`;
 
-                const address = args.query.address;
-                const sender = address.toString();
-
-                return (sender !== 'api' || sender.length !== 0)
-                    ? await this.commandController.states.get(sender)
+                return (address.length !== 0)
+                    ? await this.commandController.states.get(address)
                     : await this.commandController.states.getAllImported();
             }
             throw Error("wrong method");
         },
         mirror: async (args: Request): Promise<boolean> => {
             if (args.method === 'POST') {
-                if (args.query) {
-                    throw Error("Can't use params");
-                }
                 let keys = Object.keys(args.body);
                 if (keys.length === null || keys.length === 0) {
                     throw Error("no body");
