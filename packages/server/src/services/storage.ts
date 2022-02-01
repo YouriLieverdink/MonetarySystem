@@ -63,9 +63,9 @@ export class Storage {
             `);
         });
 
-        //input default settings
-        const setting = {key: 'mirror', value: 'false'}
-        this.settings.create(setting)
+        // Initialise the default settings.
+        this.settings.create({ key: 'mirror', value: 'false' }).catch(() => { });
+        this.settings.create({ key: 'default', value: '' }).catch(() => { });
     }
 
     /**

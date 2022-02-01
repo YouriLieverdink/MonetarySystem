@@ -42,12 +42,40 @@ export class Digester<T> {
      */
     public async handleTransactions(transactions: Transaction[], creator: string): Promise<void> {
 
-        for (let i = 0; i < transactions.length; i++) {
-            const from = await this.storage.states.read(transactions[i].from)
-            const to = await this.storage.states.read(transactions[i].to)
+        if (!transactions) return;
 
-            if (await this.validate(from, to, transactions[i], creator)) {
-                await this.executeTransaction(from, to, transactions[i]);
+        for (let i = 0; i < transactions.length; i++) {
+            //
+            const transaction = transactions[i];
+
+            let from = await this.storage.states.read(transaction.from);
+            if (!from) await this.storage.states.create({
+                publicKey: transaction.from,
+                balance: 0,
+            });
+            from = await this.storage.states.read(transaction.from);
+
+            let to = await this.storage.states.read(transaction.to);
+            if (!to) await this.storage.states.create({
+                publicKey: transaction.to,
+                balance: 0,
+            });
+            to = await this.storage.states.read(transaction.to);
+
+            // Special case for bringing new coins into the network.
+            if (transaction.from === '~') {
+                //
+                // TOOD: Check if the user can receive funds again.
+                await this.storage.states.update({
+                    publicKey: to.publicKey,
+                    balance: to.balance + transaction.amount,
+                });
+
+                continue;
+            }
+
+            if (await this.validate(from, to, transaction, creator)) {
+                await this.executeTransaction(from, to, transaction);
             }
         }
 

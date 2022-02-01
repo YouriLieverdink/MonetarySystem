@@ -94,22 +94,17 @@ export class Shell {
                 Shell.response.error('Invalid command');
                 Shell.response.log('Enter \'help\' to display command line options.');
             } //
-            else if (e.name === 'AxiosError') {
-                const error: AxiosError = e;
 
-                if (error.response) {
-                    // The node returned an error.
-                    Shell.response.error(error.response.data);
-                } //
-                else if (error.request) {
-                    // The node could not be reached.
-                    Shell.response.error('Connection refused.');
-                    process.exit(1);
-                }
+            const error: AxiosError = e;
+
+            if (error.response) {
+                // The node returned an error.
+                Shell.response.error(error.response.data);
             } //
-            else {
-                // An unknown error occured.
-                Shell.response.error(e.message);
+            else if (error.request) {
+                // The node could not be reached.
+                Shell.response.error('Connection refused.');
+                process.exit(1);
             }
         }
     };
@@ -199,6 +194,17 @@ export class Shell {
         clear: async (): Promise<void> => {
             Shell.response.clear();
         },
+        default: async (args: string[]): Promise<void> => {
+            if (args.length === 0 || args.length > 1) {
+                return Shell.response.bad();
+            }
+
+            const publicKey = args[0];
+
+            await this.http.post('default', { publicKey });
+
+            Shell.response.log('Default successfully updated');
+        },
         exit: async (): Promise<void> => {
             process.exit(0);
         },
@@ -219,6 +225,7 @@ export class Shell {
                 '\n' +
                 '\n  Configuration:' +
                 '\n    mirror on|off              Enables or disables mirroring of transactions.' +
+                '\n    default <a>                Updates the default address with public key <a>' +
                 '\n' +
                 '\n  System:' +
                 '\n    help                       Displays this help.' +

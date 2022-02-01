@@ -47,11 +47,17 @@ export class Command {
         create: async (): Promise<Address> => {
             const address = this.crypto.createAddress();
 
-            await this.storage.addresses.create(
-                address.publicKey,
-                address.privateKey,
-                0,
-            );
+            // We check to see if it is the first so we can set it as default.
+            const addresses = await this.storage.addresses.index();
+            if (addresses.length === 0) {
+                //
+                await this.storage.settings.update({
+                    key: 'default',
+                    value: address.publicKey,
+                });
+            }
+
+            await this.storage.addresses.create(address.publicKey, address.privateKey, 0);
 
             return address;
         },
@@ -70,8 +76,18 @@ export class Command {
          * 
          * @param publicKey The public key of the address.
          */
-        remove: (publicKey: string): Promise<boolean> => {
-            return this.storage.addresses.destroy(publicKey);
+        remove: async (publicKey: string): Promise<boolean> => {
+            //
+            await this.storage.addresses.destroy(publicKey);
+
+            // If this was the last address the user had, remove the default.
+            const addresses = await this.storage.addresses.index();
+            if (addresses.length === 0) {
+                //
+                await this.storage.settings.update({ key: 'default', 'value': '' });
+            }
+
+            return true;
         }
     };
 
@@ -117,7 +133,7 @@ export class Command {
          */
         create: async (from: string, to: string, amount: number): Promise<Transaction> => {
             await this.pending.add({ from, to, amount });
-            return {from, to, amount};
+            return { from, to, amount };
         }
     };
 

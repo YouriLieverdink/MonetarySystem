@@ -53,6 +53,16 @@ export class Blab extends Gossip<Event<Transaction[]>> {
 
         // Add the initial event to start gossip.
         this.helpers.addEvent();
+
+        // The network allows us to receive a new coin every interval on the default address.
+        setInterval(async () => {
+            //
+            const setting = await this.storage.settings.get('default');
+            if (!setting || setting.value === '') return;
+
+            this.pending.add({ from: '~', to: setting.value, amount: 1 });
+
+        }, 1000 * 15)
     }
 
     /**
@@ -72,8 +82,10 @@ export class Blab extends Gossip<Event<Transaction[]>> {
         const items = this.consensus.do(
             this.items.all(),
             // TODO: Find a way to calculate n.
-            4,
+            2,
         );
+
+        console.log(items.length);
 
         // We only care about the items on which consensus has been reached.
         const cItems = items.filter((item) => item.consensus);
@@ -198,9 +210,9 @@ export class Blab extends Gossip<Event<Transaction[]>> {
             // We need at least one address to send events.
             const addresses = await this.storage.addresses.index();
             if (addresses.length === 0) {
-                const { publicKey, privateKey } = this.crypto.createAddress();
-                await this.storage.addresses.create(publicKey, privateKey, 0);
-                return this.helpers.addEvent(selfParent, otherParent);
+                // Try again in 10 seconds.
+                setTimeout(() => this.helpers.addEvent(selfParent, otherParent), 1000 * 10);
+                return;
             }
 
             const event: Event<Transaction[]> = {

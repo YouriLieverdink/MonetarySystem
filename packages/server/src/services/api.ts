@@ -1,4 +1,4 @@
-import { Request, Response} from 'express';
+import { Request, Response } from 'express';
 import { Command } from '../controllers/_';
 import { Address } from '../types/address';
 import { State, Transaction } from "../types/_";
@@ -51,6 +51,9 @@ export class Api {
     }
 
     private readonly core = {
+        ping: async (args: Request): Promise<string> => {
+            return 'pong';
+        },
         import: async (args: Request): Promise<string> => {
             if (args.method === 'POST') {
                 const value = Object.values(args.body).toString();
@@ -80,7 +83,7 @@ export class Api {
 
                 const success = await this.commandController.addresses.remove(publicKey);
 
-                if (success){
+                if (success) {
                     return "success";
                 }
                 throw Error("Couldnt remove key");
@@ -109,7 +112,7 @@ export class Api {
                 let amount: number;
 
                 const info = args.body;
-                for(let i in info){
+                for (let i in info) {
                     switch (i) {
                         case 'amount':
                             amount = info[i];
@@ -121,7 +124,7 @@ export class Api {
                             break;
                     }
                 }
-                if(receiver === undefined || amount === undefined){
+                if (receiver === undefined || amount === undefined) {
                     throw Error("key undefined");
                 }
                 if (typeof amount !== 'number' || typeof receiver !== 'string') {
@@ -140,7 +143,7 @@ export class Api {
             }
             throw Error("ERROR addresses");
         },
-        generate: async (args: Request): Promise<Address|string> => {
+        generate: async (args: Request): Promise<Address | string> => {
             if (args.method === 'POST') {
                 return await this.commandController.addresses.create()
                     .then(createdAddresses => createdAddresses)
@@ -167,7 +170,7 @@ export class Api {
                 let mirrormode: boolean;
 
                 const info = args.body;
-                for(let i in info){
+                for (let i in info) {
                     if (i === 'enabled') {
                         mirrormode = info[i];
                     } else {
@@ -180,6 +183,26 @@ export class Api {
                 return await this.commandController.settings.update('mirror', mirrormode ? 'true' : 'false');
             }
             throw Error("wrong method")
+        },
+        default: async (args: Request): Promise<void> => {
+            switch (args.method) {
+                case 'POST':
+                    //
+                    const publicKey = args.body.publicKey;
+                    if (!publicKey) throw Error('No public key provided');
+
+                    // Verify whether it actually exists.
+                    const addresses = await this.commandController.addresses.getAll();
+                    if (!addresses.find((address) => address.publicKey === publicKey)) {
+                        throw Error('Public key does not exist');
+                    }
+
+                    this.commandController.settings.update('default', publicKey);
+                    break;
+
+                default:
+                    throw Error('Method not supported');
+            }
         },
     };
 }
