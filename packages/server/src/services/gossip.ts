@@ -28,7 +28,7 @@ export abstract class Gossip<T> {
         protected computers: Collection<Computer>,
         private endpoint: string,
         interval: number,
-        private me: Computer,
+        protected me: Computer,
         server: Express,
     ) {
         //

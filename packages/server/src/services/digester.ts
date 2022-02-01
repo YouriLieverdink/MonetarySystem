@@ -1,7 +1,7 @@
-import {cEvent} from "./consensus";
-import {Storage} from "./storage";
-import {Transaction} from "../types/transaction";
-import {State} from "../types/state";
+import { _Event } from "./consensus";
+import { Storage } from "./storage";
+import { Transaction } from "../types/transaction";
+import { State } from "../types/state";
 
 export class Digester<T> {
 
@@ -20,7 +20,7 @@ export class Digester<T> {
      * @param events All events that are not yet processed and have reached consensus
      *
      */
-    public async digest(events: cEvent<Transaction[]>[]): Promise<void> {
+    public async digest(events: _Event<Transaction[]>[]): Promise<void> {
         for (let i = 0; i < events.length; i++) {
             const event = events[i];
 
@@ -65,15 +65,15 @@ export class Digester<T> {
      */
     private async validate(from: State, to: State, transaction: Transaction, creator: String): Promise<boolean> {
 
-        if (!from && !to){
+        if (!from && !to) {
             return false
         }
 
-        if (from.balance < transaction.amount){
+        if (from.balance < transaction.amount) {
             return false
         }
 
-        if (from.publicKey != creator){
+        if (from.publicKey != creator) {
             return false
         }
 
@@ -113,7 +113,7 @@ export class Digester<T> {
      * @param event
      *
      */
-    public mirror(event: cEvent<Transaction[]>): void {
+    public mirror(event: _Event<Transaction[]>): void {
         //put event in database
     }
 
