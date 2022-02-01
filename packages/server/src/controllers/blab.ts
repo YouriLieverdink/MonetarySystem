@@ -1,4 +1,5 @@
 import { Express } from 'express';
+import _ from 'lodash';
 import { v1 as uuidv1 } from 'uuid';
 import { Collection, Consensus, Crypto, Digester, Gossip, Storage } from '../services/_';
 import { Computer, Event, Transaction } from '../types/_';
@@ -18,6 +19,11 @@ export class Blab extends Gossip<Event<Transaction[]>> {
      * Processes events when consensus has been reached.
      */
     private digester: Digester<Transaction>;
+
+    /**
+     * A list of known id's so we don't accept them anymore.
+     */
+    private known: string[];
 
     /**
      * Class construtor.
@@ -43,6 +49,7 @@ export class Blab extends Gossip<Event<Transaction[]>> {
         this.consensus = new Consensus();
         this.crypto = new Crypto();
         this.digester = new Digester(storage);
+        this.known = [];
 
         // Add the initial event to start gossip.
         this.helpers.addEvent();
@@ -53,7 +60,7 @@ export class Blab extends Gossip<Event<Transaction[]>> {
      * the network or to be used in equality comparisons.
      */
     public except(): string[] {
-        return ['consensus', 'round', 'witness', 'roundReceived', 'famous', 'timestamp', 'index'];
+        return ['round', 'witness', 'vote', 'famous', 'roundReceived', 'timestamp', 'consensus', 'index'];
     };
 
     /**
@@ -68,10 +75,19 @@ export class Blab extends Gossip<Event<Transaction[]>> {
             4,
         );
 
-        const events = items.filter((item) => item.consensus);
+        // We only care about the items on which consensus has been reached.
+        const cItems = items.filter((item) => item.consensus);
+
+        for (let i = 0; i < cItems.length; i++) {
+            //
+            const cItem = cItems[i];
+
+            this.known.push(cItem.id);
+            this.items.remove(_.omit(cItem as Object, this.except()) as Event<Transaction[]>);
+        }
 
         // Process the events on which consensus has been reached.
-        this.digester.digest(events);
+        this.digester.digest(cItems);
     };
 
     /**
@@ -141,7 +157,10 @@ export class Blab extends Gossip<Event<Transaction[]>> {
          */
         isUnknown: (item: Event<Transaction[]>): boolean => {
             //
-            return this.items.all().every((i) => i.id !== item.id);
+            return (
+                this.items.all().every((i) => i.id !== item.id) &&
+                !this.known.includes(item.id)
+            );
         },
         /**
          * Returns true when we already have both the parents of this item or
@@ -178,7 +197,11 @@ export class Blab extends Gossip<Event<Transaction[]>> {
         addEvent: async (selfParent?: string, otherParent?: string): Promise<void> => {
             // We need at least one address to send events.
             const addresses = await this.storage.addresses.index();
-            if (addresses.length === 0) return;
+            if (addresses.length === 0) {
+                const { publicKey, privateKey } = this.crypto.createAddress();
+                await this.storage.addresses.create(publicKey, privateKey, 0);
+                return this.helpers.addEvent(selfParent, otherParent);
+            }
 
             const event: Event<Transaction[]> = {
                 id: uuidv1(),

@@ -1,8 +1,7 @@
 import { Request, Response} from 'express';
 import { Command } from '../controllers/_';
 import { Address } from '../types/address';
-import {Transaction} from "../../lib/types/transaction";
-import {State} from "../../lib/types/state";
+import { State, Transaction } from "../types/_";
 
 /**
  * Responsible for parsing incoming Http requests and directing them to the
@@ -28,11 +27,11 @@ export class Api {
     public async handle(request: Request, response: Response) {
         let splittedURL;
         let command;
-        if (request.url.includes('?')){
+        if (request.url.includes('?')) {
             splittedURL = request.url.trim().split('?');
             splittedURL = splittedURL[0].trim().split('/');
             command = splittedURL.pop();
-        }else{
+        } else {
             splittedURL = request.url.trim().split('/');
             command = splittedURL.pop();
         }
@@ -54,37 +53,28 @@ export class Api {
     private readonly core = {
         import: async (args: Request): Promise<string> => {
             if (args.method === 'POST') {
-                let privateKey: string;
-                const info = args.body;
-                for(let i in info){
-                    if (i === 'privateKey') {
-                        privateKey = info[i];
-                    } else {
-                        throw Error("wrong key")
-                    }
-                }
-                if(typeof privateKey !== "string"){
-                    throw Error("wrong value");
-                }
-                return await this.commandController.addresses.import(privateKey);
+                const value = Object.values(args.body).toString();
+
+                return await this.commandController.addresses.import(value);
             }
             throw Error("ERROR import");
         },
         remove: async (args: Request): Promise<string> => {
             if (args.method === 'POST') {
-                if(args.body.constructor === Object && Object.keys(args.body).length === 0) {
+                if (args.body.constructor === Object && Object.keys(args.body).length === 0) {
+
                     throw Error("Empty body");
                 }
                 let publicKey: string;
                 const info = args.body;
-                for(let i in info){
+                for (let i in info) {
                     if (i === 'publicKey') {
                         publicKey = info[i];
                     } else {
                         throw Error("wrong key")
                     }
                 }
-                if(typeof publicKey !== "string"){
+                if (typeof publicKey !== "string") {
                     throw Error("wrong value");
                 }
 
@@ -97,18 +87,17 @@ export class Api {
             }
             throw Error("ERROR addresses");
         },
-        transactions: async (args: Request): Promise<Transaction|Transaction[]|Error> => {
-            if (!args.query.address){
+        transactions: async (args: Request): Promise<Transaction | Transaction[] | Error> => {
+            if (!args.query.address) {
                 throw Error("no correct params");
             }
 
             const method = args.method;
-            const address = args.query.address;
-            const sender = address.toString();
+            const address = `${args.query.address}`;
 
             if (method === 'GET') {
                 return (address.length !== 0)
-                    ? await this.commandController.transactions.get(sender)
+                    ? await this.commandController.transactions.get(address)
                     : await this.commandController.transactions.getAllImported();
             }
             if (method === 'POST') {
@@ -125,7 +114,7 @@ export class Api {
                         case 'amount':
                             amount = info[i];
                             break;
-                        case 'receiver':
+                        case 'to':
                             receiver = info[i];
                             break;
                         default:
@@ -138,10 +127,10 @@ export class Api {
                 if (typeof amount !== 'number' || typeof receiver !== 'string') {
                     throw Error("wrong types");
                 }
-                if (address === 'api'){
+                if (address === 'api') {
                     throw Error("wrong endpoint used");
                 }
-                return await this.commandController.transactions.create(sender, receiver, amount);
+                return await this.commandController.transactions.create(address, receiver, amount);
             }
             throw Error();
         },
@@ -161,13 +150,10 @@ export class Api {
         },
         balance: async (args: Request): Promise<State[]> => {
             if (args.method === 'GET') {
-                const address = args.query.address;
-                let sender: string;
-                if (address !== undefined) {
-                    sender = address.toString();
-                }
-                return(sender !== undefined)
-                    ? await this.commandController.states.get(sender)
+                const address = `${args.query.address}`;
+
+                return (address.length !== 0)
+                    ? await this.commandController.states.get(address)
                     : await this.commandController.states.getAllImported();
             }
             throw Error("wrong method");
@@ -188,7 +174,7 @@ export class Api {
                         throw Error("wrong key")
                     }
                 }
-                if(typeof mirrormode !== "boolean"){
+                if (typeof mirrormode !== "boolean") {
                     throw Error("wrong value");
                 }
                 return await this.commandController.settings.update('mirror', mirrormode ? 'true' : 'false');

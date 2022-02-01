@@ -29,7 +29,7 @@ const main = async (): Promise<void> => {
 
     new Signal(computers, 100, me, server);
 
-    await new Promise((resolve) => setTimeout(resolve, 10000));
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
     new Inform(computers, 5000, me, server, storage);
 

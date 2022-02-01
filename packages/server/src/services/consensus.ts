@@ -1,4 +1,5 @@
 import { createHash } from 'crypto';
+import _ from 'lodash';
 import { Event } from '../types/_';
 
 export type _Event<T> = Event<T> & {
@@ -47,7 +48,7 @@ export class Consensus<T> {
         index = this.setOrder(index);
 
         // We update the internal state for the next `do` call.
-        this.index = index;
+        this.index = _.omitBy(index, (item) => item.consensus);
 
         return Object.values(index);
     }
@@ -349,6 +350,9 @@ export class Consensus<T> {
          * @param y The event we are trying to see.
          */
         canSee: <T>(index: Index<T>, x: string, y: string): boolean => {
+            //
+            const hashes = Object.keys(index);
+
             /**
              * We use the breadth first search algorithm to determine whether y is an
              * ancestor of x.
@@ -369,7 +373,7 @@ export class Consensus<T> {
                     //
                     const hash = event[kind];
 
-                    if (hash && !visited.includes(hash)) {
+                    if (hash && !visited.includes(hash) && hashes.includes(hash)) {
                         visited.push(hash);
                         queue.push(hash);
                     }
@@ -390,6 +394,9 @@ export class Consensus<T> {
          * @param n The number of computers.
          */
         canStronglySee: <T>(index: Index<T>, x: string, y: string, n: number): boolean => {
+            //
+            const hashes = Object.keys(index);
+
             /**
              * We use the breadth first search algorithm to find the last created event
              * for every computer in the network.
@@ -409,7 +416,7 @@ export class Consensus<T> {
                     //
                     const hash = event[kind];
 
-                    if (hash && !visited.includes(hash)) {
+                    if (hash && !visited.includes(hash) && hashes.includes(hash)) {
                         visited.push(hash);
                         queue.push(hash);
                     }
