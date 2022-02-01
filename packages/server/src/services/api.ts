@@ -1,8 +1,7 @@
-import { Request, Response} from 'express';
+import { Request, Response } from 'express';
 import { Command } from '../controllers/_';
 import { Address } from '../types/address';
-import {Transaction} from "../../lib/types/transaction";
-import {State} from "../../lib/types/state";
+import { State, Transaction } from "../types/_";
 
 /**
  * Responsible for parsing incoming Http requests and directing them to the
@@ -63,33 +62,33 @@ export class Api {
         },
         remove: async (args: Request): Promise<string> => {
             if (args.method === 'POST') {
-                if(args.body.constructor === Object && Object.keys(args.body).length === 0) {
+                if (args.body.constructor === Object && Object.keys(args.body).length === 0) {
                     throw Error("Empty body");
                 }
                 let publicKey: string;
                 const info = args.body;
-                for(let i in info){
+                for (let i in info) {
                     if (i === 'publicKey') {
                         publicKey = info[i];
                     } else {
                         throw Error("wrong key")
                     }
                 }
-                if(typeof publicKey !== "string"){
+                if (typeof publicKey !== "string") {
                     throw Error("wrong value");
                 }
 
                 const success = await this.commandController.addresses.remove(publicKey);
 
-                if (success){
+                if (success) {
                     return "success";
                 }
                 throw Error("Couldnt remove key");
             }
             throw Error("ERROR addresses");
         },
-        transactions: async (args: Request): Promise<Transaction|Transaction[]|Error> => {
-            if (!args.query.address){
+        transactions: async (args: Request): Promise<Transaction | Transaction[] | Error> => {
+            if (!args.query.address) {
                 throw Error("no correct params");
             }
 
@@ -110,7 +109,7 @@ export class Api {
                 let amount: number;
 
                 const info = args.body;
-                for(let i in info){
+                for (let i in info) {
                     switch (i) {
                         case 'amount':
                             amount = info[i];
@@ -122,7 +121,7 @@ export class Api {
                             break;
                     }
                 }
-                if(receiver === undefined || amount === undefined){
+                if (receiver === undefined || amount === undefined) {
                     throw Error("key undefined");
                 }
                 if (typeof amount !== 'number' || typeof receiver !== 'string') {
@@ -141,7 +140,7 @@ export class Api {
             }
             throw Error("ERROR addresses");
         },
-        generate: async (args: Request): Promise<Address|string> => {
+        generate: async (args: Request): Promise<Address | string> => {
             if (args.method === 'POST') {
                 return await this.commandController.addresses.create()
                     .then(createdAddresses => createdAddresses)
@@ -168,7 +167,7 @@ export class Api {
                 let mirrormode: boolean;
 
                 const info = args.body;
-                for(let i in info){
+                for (let i in info) {
                     if (i === 'enabled') {
                         mirrormode = info[i];
                     } else {
