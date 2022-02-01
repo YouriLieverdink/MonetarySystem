@@ -31,7 +31,7 @@ describe('Digester', () => {
         for (let i = 0; i < 6; i++) {
             events.push({
                 id: `${i}`,
-                createdAt: Date.now(),
+                createdAt: 1,
                 publicKey: publicKeys[i],
                 signature: '',
                 data: [transactions[i]]
