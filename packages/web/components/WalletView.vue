@@ -34,7 +34,7 @@
       </el-tab-pane>
       <el-tab-pane name="addresses">
         <span slot="label">Addresses <i class="el-icon-notebook-1"></i></span>
-        <el-table :data="addresses" max-height="468px">
+        <el-table :data="addresses" max-height="468px" :row-style="{'border-right': '1px solid #ff0000'}">
           <el-table-column
             prop="publicKey"
             label="Public key" />
@@ -54,7 +54,20 @@
       </el-tab-pane>
       <el-tab-pane name="transactions">
         <span slot="label">Transactions <i class="el-icon-coin"></i></span>
-        <el-skeleton :rows="3" animated />
+        <el-table :data="transactions" max-height="468px">
+          <el-table-column
+            prop="publicKey"
+            label="Public key" />
+          <el-table-column
+            align="right">
+            <template #header>
+              Total: {{transactions.length}}
+            </template>
+            <template slot-scope="{ row }">
+              jhdaskjdhk
+            </template>
+          </el-table-column>
+        </el-table>
       </el-tab-pane>
       <el-tab-pane name="settings">
         <span slot="label">Settings <i class="el-icon-setting"></i></span>
@@ -83,11 +96,17 @@ export default {
   },
   computed: {
     ...mapState("wallet", {
-      addresses: state => state.addresses
-    })
+      addresses: state => state.addresses,
+      transactions: state => state.transactions,
+    }),
+    transactions() {
+      // todo get from state
+      return []
+    }
   },
   mounted() {
-     this.refreshAddresses()
+    this.refreshAddresses()
+    this.refreshTransactions()
   },
   methods: {
     ...mapActions("wallet", [
@@ -108,6 +127,14 @@ export default {
         this.setAddresses(res.data)
       } catch (e) {
         this.$message('Error updating your addresses')
+      }
+    },
+    async refreshTransactions() {
+      try {
+        const res = await apiRequest.transactions.get()
+        // this.setTransactions(res.data)
+      } catch (e) {
+        this.$message('Error updating your transactions')
       }
     }
   }

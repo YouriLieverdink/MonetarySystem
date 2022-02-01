@@ -73,7 +73,6 @@
 </template>
 
 <script>
-import logo from '@/static/icon.png'
 import { mapActions } from 'vuex'
 import { apiRequest } from '@/core/service/apiService';
 
@@ -88,7 +87,6 @@ export default {
   },
   data() {
     return {
-      logo,
       privateKeyInput: "",
       privateKeyOutput: "",
       showPrivateKeyOutput: false,
@@ -126,10 +124,11 @@ export default {
       this.importLoading = true
 
       try {
-        const res = await apiRequest.addresses.import(this.privateKeyInput)
+        if (this.privateKeyInput.length < 40)
+          throw new Error("Please enter a valid private key")
+        const res = await apiRequest.addresses.import([this.privateKeyInput])
         this.importAddress(res.data)
-        this.privateKeyOutput = res.data.privateKey
-        this.showPrivateKeyOutput = true
+        this.privateKeyInput = ""
         this.$message({
           message: 'Import successful',
           type: 'success'

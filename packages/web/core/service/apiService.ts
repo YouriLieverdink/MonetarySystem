@@ -9,14 +9,22 @@ export const apiRequest = {
     generate() {
       return api.post("generate")
     },
-    import(privateKey: string) {
-      return api.post("import", privateKey)
+    import(privateKeys: string[]) {
+      return api.post("import", privateKeys)
     },
     remove(pubKey: string) {
       return api.post("address/remove", { public_key: pubKey })
     },
     get() {
       return api.get("address")
+    }
+  },
+  transactions: {
+    get() {
+      return api.get("transactions")
+    },
+    getForAddress(pubKey: string) {
+      return api.get("transactions?address=" + pubKey)
     }
   }
 }

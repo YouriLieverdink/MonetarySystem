@@ -2,17 +2,10 @@
   <el-button
     size="mini"
     circle
+    id="button"
     class="el-icon-close"
     :disabled="disabled"
-    :style="{
-      height: '16px',
-      width: '16px',
-      margin: 0,
-      padding: 0,
-      background: '#ff605c',
-      lineHeight:'16px',
-      color: hover ? 'black' : 'transparent'
-    }"
+    :style="{ color: hover ? 'black' : 'transparent' }"
     @click="$emit('click')"
     @mouseover.native="hover = true"
     @mouseleave.native="hover = false"
@@ -37,5 +30,14 @@ export default {
 </script>
 
 <style scoped>
-
+#button {
+  height: 16px;
+  width: 16px;
+  line-height: 12px;
+  font-size: 12px;
+  font-weight: 100;
+  margin: 0;
+  padding: 2px 0 0 1px;
+  background: #ff605c;
+}
 </style>

@@ -9555,6 +9555,7 @@
   font-size: 14px;
   color: #dedede;
   border: 1px solid #555;
+  border-radius: 4px;
 }
 
 .el-table__empty-block {
@@ -9630,7 +9631,6 @@
 }
 
 .el-table--fit {
-  border-right: 0;
   border-bottom: 0
 }
 
