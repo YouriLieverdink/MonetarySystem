@@ -1,13 +1,14 @@
 import { Express } from 'express';
+import _ from 'lodash';
 import { v1 as uuidv1 } from 'uuid';
 import { Collection, Consensus, Crypto, Digester, Gossip, Storage } from '../services/_';
 import { Computer, Event, Transaction } from '../types/_';
 
-export class Blab extends Gossip<Event<Transaction>> {
+export class Blab extends Gossip<Event<Transaction[]>> {
     /**
      * Performs the consensus algorithm.
      */
-    private consensus: Consensus<Transaction>;
+    private consensus: Consensus<Transaction[]>;
 
     /**
      * Used for cryptographic operations.
@@ -18,6 +19,11 @@ export class Blab extends Gossip<Event<Transaction>> {
      * Processes events when consensus has been reached.
      */
     private digester: Digester<Transaction>;
+
+    /**
+     * A list of known id's so we don't accept them anymore.
+     */
+    private known: string[];
 
     /**
      * Class construtor.
@@ -42,7 +48,8 @@ export class Blab extends Gossip<Event<Transaction>> {
 
         this.consensus = new Consensus();
         this.crypto = new Crypto();
-        this.digester = new Digester();
+        this.digester = new Digester(storage);
+        this.known = [];
 
         // Add the initial event to start gossip.
         this.helpers.addEvent();
@@ -53,7 +60,7 @@ export class Blab extends Gossip<Event<Transaction>> {
      * the network or to be used in equality comparisons.
      */
     public except(): string[] {
-        return ['consensus', 'round', 'witness', 'roundReceived', 'famous', 'timestamp', 'index'];
+        return ['round', 'witness', 'vote', 'famous', 'roundReceived', 'timestamp', 'consensus', 'index'];
     };
 
     /**
@@ -62,18 +69,25 @@ export class Blab extends Gossip<Event<Transaction>> {
      */
     public onTick(): void {
         //
-        const items = this.consensus.doConsensus(
+        const items = this.consensus.do(
             this.items.all(),
-            // TODO: Think of a way to calculate `n` consistantly.
+            // TODO: Find a way to calculate n.
             4,
         );
 
-        const cEvents = items.filter((item) => item.consensus);
+        // We only care about the items on which consensus has been reached.
+        const cItems = items.filter((item) => item.consensus);
 
-        // We process the items. 
-        this.digester.digest(cEvents);
+        for (let i = 0; i < cItems.length; i++) {
+            //
+            const cItem = cItems[i];
 
-        // TODO: Remove the items after consensus has been reached.
+            this.known.push(cItem.id);
+            this.items.remove(_.omit(cItem as Object, this.except()) as Event<Transaction[]>);
+        }
+
+        // Process the events on which consensus has been reached.
+        this.digester.digest(cItems);
     };
 
     /**
@@ -83,7 +97,7 @@ export class Blab extends Gossip<Event<Transaction>> {
      * @param items The newly received items.
      * @param last The last item the other computer has created.
      */
-    public onItems(items: Event<Transaction>[], last: Event<Transaction>): void {
+    public onItems(items: Event<Transaction[]>[], last: Event<Transaction[]>): void {
         //
         items.forEach((item) => {
             // We only accept items with a valid signature.
@@ -128,32 +142,25 @@ export class Blab extends Gossip<Event<Transaction>> {
          * 
          * @param item The current item.
          */
-        isValid: (item: Event<Transaction>): boolean => {
+        isValid: (item: Event<Transaction[]>): boolean => {
             //
             item = { ...item };
             const signature = item.signature;
             item.signature = '';
 
-            if (!this.crypto.verifySignature(item, signature, item.publicKey)) {
-                // The message has possibly been modified.
-                return false;
-            }
-
-            if (item.data && item.publicKey !== item.data.from) {
-                // The used who signed the transaction didn't send the money.
-                return false;
-            }
-
-            return true;
+            return this.crypto.verifySignature(item, signature, item.publicKey);
         },
         /**
          * Returns true when we already know this item.
          * 
          * @param item The current item.
          */
-        isUnknown: (item: Event<Transaction>): boolean => {
+        isUnknown: (item: Event<Transaction[]>): boolean => {
             //
-            return this.items.all().every((i) => i.id !== item.id);
+            return (
+                this.items.all().every((i) => i.id !== item.id) &&
+                !this.known.includes(item.id)
+            );
         },
         /**
          * Returns true when we already have both the parents of this item or
@@ -161,7 +168,7 @@ export class Blab extends Gossip<Event<Transaction>> {
          * 
          * @param item The current item.
          */
-        hasParents: (item: Event<Transaction>): boolean => {
+        hasParents: (item: Event<Transaction[]>): boolean => {
             //
             if (item.selfParent && item.otherParent) {
                 //
@@ -190,9 +197,13 @@ export class Blab extends Gossip<Event<Transaction>> {
         addEvent: async (selfParent?: string, otherParent?: string): Promise<void> => {
             // We need at least one address to send events.
             const addresses = await this.storage.addresses.index();
-            if (addresses.length === 0) return;
+            if (addresses.length === 0) {
+                const { publicKey, privateKey } = this.crypto.createAddress();
+                await this.storage.addresses.create(publicKey, privateKey, 0);
+                return this.helpers.addEvent(selfParent, otherParent);
+            }
 
-            const event: Event<Transaction> = {
+            const event: Event<Transaction[]> = {
                 id: uuidv1(),
                 createdAt: Date.now(),
                 publicKey: addresses[0].publicKey,
@@ -206,8 +217,11 @@ export class Blab extends Gossip<Event<Transaction>> {
             }
 
             // Add a transaction when available.
-            const transaction = this.pending.shift();
-            if (transaction) event.data = transaction;
+            const transactions = this.pending.all();
+            if (transactions.length > 0) {
+                event.data = transactions;
+                this.pending.remove(...transactions);
+            }
 
             // Sign the message to ensure validity.
             event.signature = this.crypto.createSignature(event, addresses[0].privateKey);

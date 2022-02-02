@@ -18,7 +18,7 @@ export class Shell {
      * 
      * @param port The port on which the node is.
      */
-    public static async instance(port: number): Promise<void> {
+    public static async instance(port: number): Promise<Shell> {
         try {
             const http = axios.create({
                 baseURL: `http://0.0.0.0:${port}/api`,
@@ -27,7 +27,7 @@ export class Shell {
             // Ping the node to see if it is available.
             await http.get('/ping');
 
-            new Shell(http);
+            return new Shell(http);
         } //
         catch (e) {
             //
@@ -79,7 +79,7 @@ export class Shell {
      * 
      * @param request The incoming line.
      */
-    private async handle(request: string): Promise<void> {
+    public async handle(request: string): Promise<void> {
         const args = request.trim().split(' ');
         const command = args.shift();
 
@@ -99,7 +99,7 @@ export class Shell {
 
                 if (error.response) {
                     // The node returned an error.
-                    Shell.response.error(error.message);
+                    Shell.response.error(error.response.data);
                 } //
                 else if (error.request) {
                     // The node could not be reached.
@@ -167,9 +167,13 @@ export class Shell {
                 return Shell.response.bad();
             }
 
-            const response = await this.http.get(
-                `${args.length === 0 ? '' : `/${args[0]}`}/balance`,
-            );
+            const params = {};
+
+            if (args.length > 0) {
+                params['address'] = args[0];
+            }
+
+            const response = await this.http.get('/balance', { params });
 
             const states: State[] = response.data;
 
@@ -298,9 +302,12 @@ export class Shell {
                 return Shell.response.bad();
             }
 
-            const response = await this.http.get(
-                `${args.length === 0 ? '' : `/${args[0]}`}/transactions`,
-            );
+            const params = {};
+            if (args.length > 0) {
+                params['address'] = args[0];
+            }
+
+            const response = await this.http.get('/transactions', { params });
 
             const transactions: Transaction[] = response.data;
 
@@ -319,11 +326,10 @@ export class Shell {
                 return Shell.response.bad();
             }
 
-            await this.http.post('transfer', {
-                from: args[0],
-                to: args[1],
-                amount: parseFloat(args[2]),
-            });
+            await this.http.post('transactions',
+                { to: args[1], amount: parseFloat(args[2]) },
+                { params: { address: args[0] } },
+            );
 
             Shell.response.log('Transaction created successfully.');
         },
