@@ -1,5 +1,5 @@
 <template>
-  <el-card class="view" :body-style="{padding: 0}">
+  <el-card class="view" :body-style="{padding: 0}" shadow="always">
     <div class="wallet_header">
       <div class="dialog_controls">
         <close-button disabled />
@@ -12,7 +12,7 @@
             plain
             circle
             size="medium"
-            @click="() => {}"
+            @click="showDialog.createTx = true"
             class="el-icon-money"
           />
         </el-tooltip>
@@ -59,15 +59,23 @@
         <span slot="label">Transactions <i class="el-icon-coin"></i></span>
         <el-table :data="transactions" max-height="468px">
           <el-table-column
+            width="220"
             label="Sender">
             <template v-slot="{row}">
-              {{ shortenKeyString(row.sender, 15) }}
+              {{
+                shortenKeyString(row.sender, 15)
+                  .concat(addresses.filter(address =>
+                    address.publicKey === row.sender).length > 0 ? ' (You)' : '')
+              }}
             </template>
           </el-table-column>
           <el-table-column
             label="Receiver">
             <template v-slot="{row}">
-              {{ shortenKeyString(row.receiver, 15) }}
+              {{
+                shortenKeyString(row.receiver, 15)
+                  .concat(addresses.filter(address =>
+                    address.publicKey === row.receiver).length > 0 ? ' (You)' : '')}}
             </template>
           </el-table-column>
           <el-table-column
@@ -97,6 +105,10 @@
       :show="showDialog.walletSetup"
       @close="showDialog.walletSetup = false"
     />
+    <create-transaction-dialog
+      :show="showDialog.createTx"
+      @close="showDialog.createTx = false"
+    />
   </el-card>
 </template>
 
@@ -111,7 +123,8 @@ export default {
   data() {
     return {
       showDialog: {
-        walletSetup: false
+        walletSetup: false,
+        createTx: false
       }
     }
   },

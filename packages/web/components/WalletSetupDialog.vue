@@ -6,10 +6,13 @@
     :fullscreen="fullscreen"
     append-to-body>
     <template #title>
-      <div>
-        <close-button @click="$emit('close')"/>
-        <minimize-button disabled/>
-        <resize-button @click="fullscreen = !fullscreen"/>
+      <div class="window_header">
+        <div>
+          <close-button @click="$emit('close')"/>
+          <minimize-button disabled />
+          <resize-button @click="fullscreen = !fullscreen"/>
+        </div>
+        <span class="window_title">Add address</span>
       </div>
     </template>
     <div class="content">
@@ -108,7 +111,7 @@ export default {
         this.privateKeyOutput = res.data.privateKey
         this.showPrivateKeyOutput = true
         this.$message({
-          message: 'Import successful',
+          message: 'Added generated key to wallet',
           type: 'success'
         })
       } catch(error) {
@@ -126,17 +129,23 @@ export default {
       try {
         if (this.privateKeyInput.length < 40)
           throw new Error("Please enter a valid private key")
-        const res = await apiRequest.addresses.import([this.privateKeyInput])
-        this.importAddress(res.data)
+        const privKey = this.privateKeyInput
+        const res = await apiRequest.addresses.import([privKey])
+        this.importAddress({
+          publicKey: res.data,
+          privateKey: privKey,
+          isDefault: false
+        })
         this.privateKeyInput = ""
         this.$message({
           message: 'Import successful',
           type: 'success'
         })
       } catch(error) {
+        const already_exists = error.response.data.includes('UNIQUE')
         this.$message({
-          message: error,
-          type: 'error'
+          message: already_exists ? 'Key already imported' : error,
+          type: already_exists ? 'warning' : 'error'
         })
       } finally {
         this.importLoading = false

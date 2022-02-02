@@ -26,4 +26,14 @@ html, body {
   -ms-transform: translate(-50%, -50%);
   transform: translate(-50%, -50%);
 }
+.window_header {
+  display:flex;
+  flex-direction: row
+}
+.window_title {
+  left: 50%;
+  transform: translateX(-50%);
+  color: #ccc;
+  position: absolute;
+}
 </style>

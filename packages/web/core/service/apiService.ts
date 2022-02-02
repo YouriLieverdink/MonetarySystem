@@ -25,6 +25,11 @@ export const apiRequest = {
     },
     getForAddress(pubKey: string) {
       return api.get("transactions?address=" + pubKey)
+    },
+    create(sender: string, receiver: string, amount: number) {
+      return api.post('transactions/' + sender, {
+        receiver, amount
+      })
     }
   }
 }
