@@ -27,7 +27,7 @@
         </el-tooltip>
       </div>
     </div>
-    <el-tabs type="border-card" tab-position="left" class="tabs" stretch value="addresses">
+    <el-tabs type="border-card" tab-position="left" class="tabs" stretch value="transactions">
       <el-tab-pane name="overview">
         <span slot="label">Wallet Overview <i class="el-icon-wallet"></i></span>
         <el-skeleton :rows="6" animated />
@@ -36,8 +36,11 @@
         <span slot="label">Addresses <i class="el-icon-notebook-1"></i></span>
         <el-table :data="addresses" max-height="468px" :row-style="{'border-right': '1px solid #ff0000'}">
           <el-table-column
-            prop="publicKey"
-            label="Public key" />
+            label="Public key">
+            <template v-slot="{row}">
+              {{ shortenKeyString(row.publicKey, 40) }}
+            </template>
+          </el-table-column>
           <el-table-column
             align="right">
             <template #header>
@@ -56,15 +59,31 @@
         <span slot="label">Transactions <i class="el-icon-coin"></i></span>
         <el-table :data="transactions" max-height="468px">
           <el-table-column
-            prop="publicKey"
-            label="Public key" />
+            label="Sender">
+            <template v-slot="{row}">
+              {{ shortenKeyString(row.sender, 15) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Receiver">
+            <template v-slot="{row}">
+              {{ shortenKeyString(row.receiver, 15) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Amount">
+            <template v-slot="{row}">
+              {{ row.amount }}
+            </template>
+          </el-table-column>
           <el-table-column
             align="right">
             <template #header>
               Total: {{transactions.length}}
             </template>
-            <template slot-scope="{ row }">
-              jhdaskjdhk
+            <template v-slot="{row}">
+              <el-tag v-if="row.confirmed === true" type="success">Confirmed</el-tag>
+              <el-tag v-else type="info">Unconfirmed</el-tag>
             </template>
           </el-table-column>
         </el-table>
@@ -84,9 +103,11 @@
 <script>
 import { mapActions, mapState } from 'vuex';
 import { apiRequest } from '@/core/service/apiService';
+import stringMixin from '@/components/mixin/stringMixin';
 
 export default {
   name: 'WalletView',
+  mixins: [stringMixin],
   data() {
     return {
       showDialog: {
@@ -99,10 +120,6 @@ export default {
       addresses: state => state.addresses,
       transactions: state => state.transactions,
     }),
-    transactions() {
-      // todo get from state
-      return []
-    }
   },
   mounted() {
     this.refreshAddresses()
@@ -111,7 +128,8 @@ export default {
   methods: {
     ...mapActions("wallet", [
       "removeAddress",
-      "setAddresses"
+      "setAddresses",
+      "setTransactions"
     ]),
     async handleRemoveAddress(pubKey) {
       try {
@@ -132,7 +150,7 @@ export default {
     async refreshTransactions() {
       try {
         const res = await apiRequest.transactions.get()
-        // this.setTransactions(res.data)
+        this.setTransactions(res.data)
       } catch (e) {
         this.$message('Error updating your transactions')
       }

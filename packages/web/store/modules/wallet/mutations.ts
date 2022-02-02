@@ -1,7 +1,13 @@
 import { MutationTree } from "vuex";
 import { WalletState } from './state';
 
-import { REMOVE_ADDRESS, IMPORT_ADDRESS, SET_ADDRESSES } from '~/store/modules/wallet/types';
+import {
+  REMOVE_ADDRESS,
+  IMPORT_ADDRESS,
+  SET_ADDRESSES,
+  SET_TRANSACTIONS,
+  CREATE_TRANSACTION,
+} from '~/store/modules/wallet/types';
 
 export const walletMutations: MutationTree<WalletState> = {
   [IMPORT_ADDRESS](state, { address }) {
@@ -12,5 +18,11 @@ export const walletMutations: MutationTree<WalletState> = {
   },
   [SET_ADDRESSES](state, { addresses }) {
     state.addresses = addresses
+  },
+  [SET_TRANSACTIONS](state, { transactions }) {
+    state.transactions = transactions
+  },
+  [CREATE_TRANSACTION](state, { transaction }) {
+    state.transactions = [...state.transactions, transaction]
   }
 };

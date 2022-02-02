@@ -2,7 +2,13 @@ import { RootState } from '~/store/modules/types';
 import { ActionTree } from "vuex";
 import { WalletState } from '~/store/modules/wallet/state';
 
-import { REMOVE_ADDRESS, IMPORT_ADDRESS, SET_ADDRESSES } from '~/store/modules/wallet/types';
+import {
+  REMOVE_ADDRESS,
+  IMPORT_ADDRESS,
+  SET_ADDRESSES,
+  SET_TRANSACTIONS,
+  CREATE_TRANSACTION,
+} from '~/store/modules/wallet/types';
 
 export const walletActions: ActionTree<WalletState, RootState> = {
   importAddress({ commit }, address) {
@@ -21,6 +27,18 @@ export const walletActions: ActionTree<WalletState, RootState> = {
     commit({
       type: SET_ADDRESSES,
       addresses
+    })
+  },
+  setTransactions({ commit }, transactions) {
+    commit({
+      type: SET_TRANSACTIONS,
+      transactions
+    })
+  },
+  createTransactions({ commit }, transaction) {
+    commit({
+      type: CREATE_TRANSACTION,
+      transaction
     })
   },
 }
