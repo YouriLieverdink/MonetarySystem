@@ -4,6 +4,7 @@
     :before-close="handleClose"
     :show-close="false"
     :fullscreen="fullscreen"
+    width="600px"
     append-to-body>
     <template #title>
       <div class="window_header">
