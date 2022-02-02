@@ -104,19 +104,25 @@ export default {
     async handleCreateTransaction() {
       this.sendLoading = true
 
+      const senderInput = this.senderInput
+      const receiverInput = this.receiverInput
+      const amountInput = this.amountInput
+
       try {
-        if (this.senderInput.length < 40)
+        if (senderInput.length < 40)
           throw Error('Please select a valid source address')
-        if (this.receiverInput.length < 40)
+        if (receiverInput.length < 40)
           throw Error('Please enter a valid destination address')
-        if (this.amountInput <= 0)
+        if (amountInput <= 0)
           throw Error('Please enter a valid amount')
 
-        const res = await apiRequest.transactions.create(this.senderInput, this.receiverInput, this.amountInput)
+
+
+        await apiRequest.transactions.create(senderInput, receiverInput, amountInput)
         this.createTransaction({
-          sender: res.data.from,
-          receiver: res.data.to,
-          amount: res.data.amount
+          sender: senderInput,
+          receiver: receiverInput,
+          amount: amountInput
         })
 
         this.amountInput = 0;
