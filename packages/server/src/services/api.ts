@@ -88,18 +88,15 @@ export class Api {
             throw Error("ERROR addresses");
         },
         transactions: async (args: Request): Promise<Transaction | Transaction[] | Error> => {
-            if (!args.query.address) {
-                throw Error("no correct params");
-            }
+            if (!args.query.address)
+                return await this.commandController.transactions.getAllImported()
 
             const method = args.method;
             const address = `${args.query.address}`;
 
-            if (method === 'GET') {
-                return (address.length !== 0)
-                    ? await this.commandController.transactions.get(address)
-                    : await this.commandController.transactions.getAllImported();
-            }
+            if (method === 'GET' && address.length === 1)
+                return await this.commandController.transactions.get(address);
+
             if (method === 'POST') {
                 let keys = Object.keys(args.body);
                 if (keys.length === null || keys.length === 0) {
