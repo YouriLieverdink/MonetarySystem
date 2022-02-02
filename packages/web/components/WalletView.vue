@@ -27,7 +27,7 @@
         </el-tooltip>
       </div>
     </div>
-    <el-tabs type="border-card" tab-position="left" class="tabs" stretch value="transactions">
+    <el-tabs type="border-card" tab-position="left" class="tabs" stretch value="addresses">
       <el-tab-pane name="overview">
         <span slot="label">Wallet Overview <i class="el-icon-wallet"></i></span>
         <el-skeleton :rows="6" animated />
@@ -163,7 +163,12 @@ export default {
     async refreshTransactions() {
       try {
         const res = await apiRequest.transactions.get()
-        this.setTransactions(res.data)
+        const txs = res.data.map(tx => ({
+          sender: tx.from,
+          receiver: tx.to,
+          amount: tx.amount
+        }))
+        this.setTransactions(txs)
       } catch (e) {
         this.$message('Error updating your transactions')
       }

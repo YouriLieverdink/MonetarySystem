@@ -13,7 +13,7 @@ export const apiRequest = {
       return api.post("import", privateKeys)
     },
     remove(pubKey: string) {
-      return api.post("address/remove", { public_key: pubKey })
+      return api.post("address/remove", { publicKey: pubKey })
     },
     get() {
       return api.get("address")
@@ -27,8 +27,8 @@ export const apiRequest = {
       return api.get("transactions?address=" + pubKey)
     },
     create(sender: string, receiver: string, amount: number) {
-      return api.post('transactions/' + sender, {
-        receiver, amount
+      return api.post('transactions?address=' + sender, {
+        to: receiver, amount
       })
     }
   }

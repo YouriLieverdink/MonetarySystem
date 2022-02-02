@@ -98,7 +98,7 @@ export default {
   },
   methods: {
     ...mapActions("wallet", [
-      'createTransactions'
+      'createTransaction'
     ]),
     async handleCreateTransaction() {
       this.sendLoading = true
@@ -110,8 +110,13 @@ export default {
           throw Error('Please enter a valid destination address')
         if (this.amountInput <= 0)
           throw Error('Please enter a valid amount')
+
         const res = await apiRequest.transactions.create(this.senderInput, this.receiverInput, this.amountInput)
-        this.createTransactions(res.data)
+        this.createTransaction({
+          sender: res.data.from,
+          receiver: res.data.to,
+          amount: res.data.amount
+        })
 
         this.amountInput = 0;
         this.receiverInput = this.senderInput = ""

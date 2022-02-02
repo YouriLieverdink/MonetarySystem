@@ -35,7 +35,7 @@ export const walletActions: ActionTree<WalletState, RootState> = {
       transactions
     })
   },
-  createTransactions({ commit }, transaction) {
+  createTransaction({ commit }, transaction) {
     commit({
       type: CREATE_TRANSACTION,
       transaction
