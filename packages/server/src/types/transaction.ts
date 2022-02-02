@@ -1,5 +1,8 @@
 export type Transaction = {
-	from: string;
-	to: string;
+	id: string;
+	sender: string;
+	received: string;
 	amount: number;
+	index?: number;
+	timestamp?: number;
 };
