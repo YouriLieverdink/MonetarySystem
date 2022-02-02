@@ -2,7 +2,7 @@ import { Express } from 'express';
 import _ from 'lodash';
 import { v1 as uuidv1 } from 'uuid';
 import { Collection, Consensus, Crypto, Digester, Gossip, Storage } from '../services/_';
-import { Computer, Event, Transaction } from '../types/_';
+import { Address, Computer, Event, Transaction } from '../types/_';
 
 export class Blab extends Gossip<Event<Transaction[]>> {
     /**
@@ -19,6 +19,11 @@ export class Blab extends Gossip<Event<Transaction[]>> {
      * Processes events when consensus has been reached.
      */
     private digester: Digester<Transaction>;
+
+    /**
+     * The keys used to sign events.
+     */
+    private keys: Address;
 
     /**
      * A list of known id's so we don't accept them anymore.
@@ -49,20 +54,11 @@ export class Blab extends Gossip<Event<Transaction[]>> {
         this.consensus = new Consensus();
         this.crypto = new Crypto();
         this.digester = new Digester(storage);
+        this.keys = this.crypto.createKeys();
         this.known = [];
 
         // Add the initial event to start gossip.
         this.helpers.addEvent();
-
-        // The network allows us to receive a new coin every interval on the default address.
-        setInterval(async () => {
-            //
-            const setting = await this.storage.settings.get('default');
-            if (!setting || setting.value === '') return;
-
-            this.pending.add({ from: '~', to: setting.value, amount: 1 });
-
-        }, 1000 * 15)
     }
 
     /**
@@ -84,8 +80,6 @@ export class Blab extends Gossip<Event<Transaction[]>> {
             // TODO: Find a way to calculate n.
             2,
         );
-
-        console.log(items.length);
 
         // We only care about the items on which consensus has been reached.
         const cItems = items.filter((item) => item.consensus);
@@ -207,18 +201,11 @@ export class Blab extends Gossip<Event<Transaction[]>> {
          * @param otherParent Hash of the other computer's last created event.
          */
         addEvent: async (selfParent?: string, otherParent?: string): Promise<void> => {
-            // We need at least one address to send events.
-            const addresses = await this.storage.addresses.index();
-            if (addresses.length === 0) {
-                // Try again in 10 seconds.
-                setTimeout(() => this.helpers.addEvent(selfParent, otherParent), 1000 * 10);
-                return;
-            }
-
+            //
             const event: Event<Transaction[]> = {
                 id: uuidv1(),
                 createdAt: Date.now(),
-                publicKey: addresses[0].publicKey,
+                publicKey: this.keys.publicKey,
                 signature: '',
             };
 
@@ -236,7 +223,7 @@ export class Blab extends Gossip<Event<Transaction[]>> {
             }
 
             // Sign the message to ensure validity.
-            event.signature = this.crypto.createSignature(event, addresses[0].privateKey);
+            event.signature = this.crypto.createSignature(event, this.keys.privateKey);
 
             this.items.add(event);
             this.last = event;

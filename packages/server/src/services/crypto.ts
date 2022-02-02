@@ -8,7 +8,7 @@ export class Crypto {
      * 
      * @returns The created key pair.
      */
-    public createAddress(): Address {
+    public createKeys(): Address {
         //
         const { publicKey, privateKey } = generateKeyPairSync('ed25519', {
             publicKeyEncoding: {
@@ -24,7 +24,6 @@ export class Crypto {
         return {
             publicKey: this.removePadding(publicKey),
             privateKey: this.removePadding(privateKey),
-            isDefault: 0
         };
     }
 

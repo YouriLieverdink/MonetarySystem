@@ -54,11 +54,11 @@ export class Api {
         ping: async (args: Request): Promise<string> => {
             return 'pong';
         },
-        import: async (args: Request): Promise<string> => {
+        import: async (args: Request): Promise<Address> => {
             if (args.method === 'POST') {
                 const value = Object.values(args.body).toString();
 
-                return await this.commandController.addresses.import(value);
+                return this.commandController.addresses.import(value);
             }
             throw Error("ERROR import");
         },
@@ -91,17 +91,19 @@ export class Api {
             throw Error("ERROR addresses");
         },
         transactions: async (args: Request): Promise<Transaction | Transaction[] | Error> => {
-            if (!args.query.address) {
+            if (!args.query.publicKey) {
                 throw Error("no correct params");
             }
 
             const method = args.method;
-            const address = `${args.query.address}`;
+            const address = `${args.query.publicKey}`;
 
             if (method === 'GET') {
-                return (address.length !== 0)
-                    ? await this.commandController.transactions.get(address)
-                    : await this.commandController.transactions.getAllImported();
+                //
+                const limit = +`${args.query.limit}` || undefined;
+                const offset = +`${args.query.offset}` || undefined;
+
+                return this.commandController.transactions.getAll(address, limit, offset);
             }
             if (method === 'POST') {
                 let keys = Object.keys(args.body);
@@ -151,17 +153,15 @@ export class Api {
             }
             throw Error("Wrong method")
         },
-        balance: async (args: Request): Promise<State[]> => {
+        balance: async (args: Request): Promise<number> => {
             if (args.method === 'GET') {
-                const address = `${args.query.address}`;
+                const publicKey = `${args.query.publicKey}`;
 
-                return (address.length !== 0)
-                    ? await this.commandController.states.get(address)
-                    : await this.commandController.states.getAllImported();
+                return this.commandController.balance.get(publicKey);
             }
             throw Error("wrong method");
         },
-        mirror: async (args: Request): Promise<boolean> => {
+        mirror: async (args: Request): Promise<void> => {
             if (args.method === 'POST') {
                 let keys = Object.keys(args.body);
                 if (keys.length === null || keys.length === 0) {
@@ -180,7 +180,7 @@ export class Api {
                 if (typeof mirrormode !== "boolean") {
                     throw Error("wrong value");
                 }
-                return await this.commandController.settings.update('mirror', mirrormode ? 'true' : 'false');
+                return this.commandController.settings.update('mirror', mirrormode ? 'true' : 'false');
             }
             throw Error("wrong method")
         },

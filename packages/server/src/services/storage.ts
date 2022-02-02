@@ -27,12 +27,13 @@ export class Storage {
 
             this.database.run(`
                 CREATE TABLE IF NOT EXISTS transactions (
-                    id VARCHAR(64),
+                    id VARCHAR(64) PRIMARY KEY,
                     timestamp INT,
-                    index INT,
+                    \`index\` INT,
+                    \`order\` INT,
                     receiver VARCHAR(64),
                     sender VARCHAR(64),
-                    amount FLOAT
+                    amount INT
                 )
             `);
 
@@ -137,7 +138,7 @@ export class Storage {
          * @throws {Error} When an exception occurs.
          */
         create: (address: Address): Promise<void> => {
-            return this.query.run('INSERT INTO transactions VALUES (?, ?)', address.publicKey, address.privateKey);
+            return this.query.run('INSERT INTO addresses VALUES (?, ?)', address.publicKey, address.privateKey);
         },
         /**
          * Update the specified resource in storage.
@@ -169,10 +170,31 @@ export class Storage {
         /**
           * Display a listing of the resource.
           *
+          * @param publicKey The receiver and or sender to filter for.
+          * @param limit The maximum number of transactions to return.
+          * @param offset Starts at `offset` + 1.
+          * 
           * @throws {Error} When an exception occurs.
           */
-        index: (): Promise<Transaction[]> => {
-            return this.query.all<Transaction>('SELECT * FROM transactions');
+        index: (publicKey?: string, limit?: number, offset?: number): Promise<Transaction[]> => {
+            //
+            let params: (string | number)[] = [];
+            let query = 'SELECT * FROM transactions';
+
+            if (publicKey) {
+                // We only return transactions where this public key is involed.
+                query += ' WHERE sender=? OR receiver=?';
+                params.push(...[publicKey, publicKey]);
+            }
+
+            // Ensures the most recent transactions are shown first.
+            query += ' ORDER BY `index` DESC, `order` DESC';
+
+            if (limit) query += ` LIMIT ${limit}`;
+
+            if (offset) query += ` OFFSET ${offset}`;
+
+            return this.query.all<Transaction>(query, params);
         },
         /**
          * Store a newly created resource in storage.
@@ -182,7 +204,7 @@ export class Storage {
          * @throws {Error} When an exception occurs.
          */
         create: (transaction: Transaction): Promise<void> => {
-            return this.query.run('INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?)', transaction.id, transaction.timestamp, transaction.index, transaction.received, transaction.sender, transaction.amount);
+            return this.query.run('INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?)', transaction.id, transaction.timestamp, transaction.index, transaction.order, transaction.receiver, transaction.sender, transaction.amount);
         },
         /**
          * Update the specified resource in storage.

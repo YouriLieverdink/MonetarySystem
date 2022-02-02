@@ -89,6 +89,7 @@ export class Shell {
         }
         catch (e) {
             //
+            console.log(e);
             if (e.name === 'TypeError') {
                 // The command was not found.
                 Shell.response.error('Invalid command');
@@ -158,38 +159,26 @@ export class Shell {
      */
     private readonly commands = {
         balance: async (args: string[]): Promise<void> => {
-            if (args.length > 1) {
+            if (args.length !== 1) {
                 return Shell.response.bad();
             }
 
-            const params = {};
-
-            if (args.length > 0) {
-                params['address'] = args[0];
-            }
+            const publicKey = args[0];
+            const params = { publicKey };
 
             const response = await this.http.get('/balance', { params });
+            const balances: number[] = [response.data];
 
-            const states: State[] = response.data;
-
-            if (states.length === 0 || states[0] === null) {
-                return Shell.response.error('No balance found.');
-            }
-
-            states.forEach((state, index) => {
+            balances.forEach((balance, index) => {
                 const i = '00000'.substring(0, 5 - `${index + 1}`.length) + `${index + 1}`;
 
-                Shell.response.log(`${i}. ⓣ ${state.balance} on address: ${state.publicKey}`);
+                Shell.response.log(`${i}. ⓣ ${balance} on address: ${publicKey}`);
             });
 
-            if (args.length === 0) {
-                // We caculate the sum so we can show a total line at the bottom.
-                const sum = states
-                    .map((state) => state.balance)
-                    .reduce((prev, curr) => prev + curr);
+            // We caculate the sum so we can show a total line at the bottom.
+            const sum = balances.reduce((prev, curr) => prev + curr, 0);
 
-                Shell.response.log(`\n  Total: ⓣ ${sum}`);
-            }
+            Shell.response.log(`\n  Total: ⓣ ${sum}`);
         },
         clear: async (): Promise<void> => {
             Shell.response.clear();
@@ -305,17 +294,14 @@ export class Shell {
             Shell.response.log(`Pong (${Math.round(t2 - t1)}ms)`);
         },
         transactions: async (args: string[]): Promise<void> => {
-            if (args.length > 1) {
+            if (args.length > 3) {
                 return Shell.response.bad();
             }
 
-            const params = {};
-            if (args.length > 0) {
-                params['address'] = args[0];
-            }
+            const [publicKey, limit, offset] = args;
+            const params = { publicKey, limit, offset };
 
             const response = await this.http.get('/transactions', { params });
-
             const transactions: Transaction[] = response.data;
 
             if (transactions.length === 0) {

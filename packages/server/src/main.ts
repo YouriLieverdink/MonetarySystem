@@ -2,7 +2,7 @@ import express from 'express';
 import ip from 'ip';
 import { Database } from 'sqlite3';
 import { config } from './config';
-import {Blab, Command, Inform, Signal} from './controllers/_';
+import { Blab, Command, Signal } from './controllers/_';
 import { Collection, Storage } from './services/_';
 import { Computer, Transaction } from './types/_';
 
@@ -30,8 +30,6 @@ const main = async (): Promise<void> => {
     new Signal(computers, 100, me, server);
 
     await new Promise((resolve) => setTimeout(resolve, 5000));
-
-    new Inform(computers, 5000, me, server, storage);
 
     new Blab(computers, 1000, me, pending, server, storage);
 };
