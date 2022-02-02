@@ -178,23 +178,28 @@ export class Storage {
           */
         index: (publicKey?: string, limit?: number, offset?: number): Promise<Transaction[]> => {
             //
-            let params: (string | number)[] = [];
             let query = 'SELECT * FROM transactions';
+            let params: string[] = [];
 
             if (publicKey) {
-                // We only return transactions where this public key is involed.
                 query += ' WHERE sender=? OR receiver=?';
                 params.push(...[publicKey, publicKey]);
             }
 
-            // Ensures the most recent transactions are shown first.
+            // Ensure the latest transactions are shown as first.
             query += ' ORDER BY `index` DESC, `order` DESC';
 
-            if (limit) query += ` LIMIT ${limit}`;
+            if (limit) {
+                query += ' LIMIT ?';
+                params.push(`${limit}`);
+            }
 
-            if (offset) query += ` OFFSET ${offset}`;
+            if (limit && offset) {
+                query += ' OFFSET ?';
+                params.push(`${offset}`);
+            }
 
-            return this.query.all<Transaction>(query, params);
+            return this.query.all(query, ...params);
         },
         /**
          * Store a newly created resource in storage.
@@ -204,7 +209,11 @@ export class Storage {
          * @throws {Error} When an exception occurs.
          */
         create: (transaction: Transaction): Promise<void> => {
-            return this.query.run('INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?)', transaction.id, transaction.timestamp, transaction.index, transaction.order, transaction.receiver, transaction.sender, transaction.amount);
+            //
+            return this.query.run(
+                'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?)',
+                transaction.id, transaction.timestamp, transaction.index, transaction.order, transaction.receiver, transaction.sender, transaction.amount,
+            );
         },
         /**
          * Update the specified resource in storage.

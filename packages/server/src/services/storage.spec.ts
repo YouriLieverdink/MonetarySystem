@@ -1,5 +1,127 @@
+import { Database } from 'sqlite3';
+import { Storage } from '../services/_';
+import { Transaction } from '../types/_';
 
-describe('Storage', () => it.todo('Write tests'));
+describe('Storage', () => {
+    //
+    let database: Database;
+    let storage: Storage;
+
+    beforeEach(() => {
+        // Initialise a new in-memory database for every test.
+        database = new Database(':memory:');
+        storage = new Storage(database);
+    });
+
+    describe('transactions', () => {
+        const id = 'mock-id';
+        const index = 0;
+        const order = 1;
+        const timestamp = Date.now();
+        const sender = 'mock-sender';
+        const receiver = 'mock-receiver';
+        const amount = 1;
+
+        const items: Transaction[] = [
+            { id: `${id}-0`, index: index + 0, order, timestamp, sender: `${sender}-0`, receiver: `${receiver}-0`, amount },
+            { id: `${id}-1`, index: index + 1, order, timestamp, sender: `${sender}-1`, receiver: `${receiver}-1`, amount },
+            { id: `${id}-2`, index: index + 2, order, timestamp, sender: `${sender}-2`, receiver: `${receiver}-2`, amount },
+        ];
+
+        describe('index', () => {
+
+            it('should call database.all', async () => {
+                const spy = jest.spyOn(database, 'all');
+
+                await storage.transactions.index();
+
+                expect(spy).toBeCalled();
+            });
+
+            it('should return a populated list when items are stored in the database', async () => {
+                database.serialize(() => {
+                    const statement = database.prepare('INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?)');
+
+                    items.forEach((transaction) => {
+                        statement.run(transaction.id, transaction.timestamp, transaction.index, transaction.order, transaction.receiver, transaction.sender, transaction.amount);
+                    });
+
+                    statement.finalize();
+                });
+
+                const result = await storage.transactions.index();
+
+                expect(result.length).toEqual(items.length);
+            });
+
+            it('should only return the transactions of the provided public key', async () => {
+                database.serialize(() => {
+                    const statement = database.prepare('INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?)');
+
+                    items.forEach((transaction) => {
+                        statement.run(transaction.id, transaction.timestamp, transaction.index, transaction.order, transaction.receiver, transaction.sender, transaction.amount);
+                    });
+
+                    statement.finalize();
+                });
+
+                const result = await storage.transactions.index('mock-sender-0');
+
+                expect(result.length).toEqual(1);
+            });
+
+            it('should order the transactions by index descending', async () => {
+                database.serialize(() => {
+                    const statement = database.prepare('INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?)');
+
+                    items.forEach((transaction) => {
+                        statement.run(transaction.id, transaction.timestamp, transaction.index, transaction.order, transaction.receiver, transaction.sender, transaction.amount);
+                    });
+
+                    statement.finalize();
+                });
+
+                const result = await storage.transactions.index();
+
+                const indexes = result.map((transaction) => transaction.index);
+
+                expect(indexes).toEqual([2, 1, 0]);
+            });
+
+            it('should limit the number of transactions when limit is provided', async () => {
+                database.serialize(() => {
+                    const statement = database.prepare('INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?)');
+
+                    items.forEach((transaction) => {
+                        statement.run(transaction.id, transaction.timestamp, transaction.index, transaction.order, transaction.receiver, transaction.sender, transaction.amount);
+                    });
+
+                    statement.finalize();
+                });
+
+                const result = await storage.transactions.index(null, 1);
+
+                expect(result.length).toBe(1);
+            });
+
+            it('should start at the transaction which is right after offset', async () => {
+                database.serialize(() => {
+                    const statement = database.prepare('INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?)');
+
+                    items.forEach((transaction) => {
+                        statement.run(transaction.id, transaction.timestamp, transaction.index, transaction.order, transaction.receiver, transaction.sender, transaction.amount);
+                    });
+
+                    statement.finalize();
+                });
+
+                const result = await storage.transactions.index(null, 3, 2);
+
+                expect(result.length).toBe(1);
+            });
+        });
+    });
+});
 
 // import { Database } from 'sqlite3';
 // import { Address, Event } from '../../types';
@@ -43,22 +165,22 @@ describe('Storage', () => it.todo('Write tests'));
 // 				expect(result.length).toEqual(0);
 // 			});
 
-// 			it('should return a populated list when items are stored in the database', async () => {
-// 				// Add via the databse directly.
-// 				database.serialize(() => {
-// 					const statement = database.prepare('INSERT INTO addresses VALUES (?, ?, ?)');
+			// it('should return a populated list when items are stored in the database', async () => {
+			// 	// Add via the databse directly.
+			// 	database.serialize(() => {
+			// 		const statement = database.prepare('INSERT INTO addresses VALUES (?, ?, ?)');
 
-// 					items.forEach((address) => {
-// 						statement.run(address.publicKey, address.privateKey, address.isDefault);
-// 					});
+			// 		items.forEach((address) => {
+			// 			statement.run(address.publicKey, address.privateKey, address.isDefault);
+			// 		});
 
-// 					statement.finalize();
-// 				});
+			// 		statement.finalize();
+			// 	});
 
-// 				const result = await storage.addresses.index();
+			// 	const result = await storage.addresses.index();
 
-// 				expect(result.length).toEqual(items.length);
-// 			});
+			// 	expect(result.length).toEqual(items.length);
+			// });
 // 		});
 
 // 		describe('read', () => {

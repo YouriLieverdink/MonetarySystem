@@ -89,7 +89,6 @@ export class Shell {
         }
         catch (e) {
             //
-            console.log(e);
             if (e.name === 'TypeError') {
                 // The command was not found.
                 Shell.response.error('Invalid command');
@@ -294,7 +293,7 @@ export class Shell {
             Shell.response.log(`Pong (${Math.round(t2 - t1)}ms)`);
         },
         transactions: async (args: string[]): Promise<void> => {
-            if (args.length > 3) {
+            if (args.length === 0 || args.length > 3) {
                 return Shell.response.bad();
             }
 
@@ -309,9 +308,11 @@ export class Shell {
             }
 
             transactions.forEach((transaction, index) => {
-                const i = '00000'.substring(0, 5 - `${index + 1}`.length) + `${index + 1}`;
+                const i = 'ooooo'.substring(0, 5 - `${index + 1}`.length) + `${index + 1}`;
 
-                Shell.response.log(`${i}. Amount: ${transaction.amount}, From: ${transaction.from}, To: ${transaction.to}`);
+                const details = publicKey === transaction.receiver ? `from: ${transaction.sender}` : `to: ${transaction.receiver}`;
+
+                Shell.response.log(`${i}-${transaction.order}. ⓣ ${transaction.amount} ${details}`);
             });
         },
         transfer: async (args: string[]): Promise<void> => {
@@ -320,8 +321,8 @@ export class Shell {
             }
 
             await this.http.post('transactions',
-                { to: args[1], amount: parseFloat(args[2]) },
-                { params: { address: args[0] } },
+                { receiver: args[1], amount: parseFloat(args[2]) },
+                { params: { publicKey: args[0] } },
             );
 
             Shell.response.log('Transaction created successfully.');

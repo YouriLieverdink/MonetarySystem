@@ -40,7 +40,7 @@ export class Command {
 
                 this.transactions.create(`~`, value, 1);
             },
-            1000 * 60 * 10,
+            1000 * 10,
         );
     }
 
@@ -124,6 +124,11 @@ export class Command {
          */
         getAll: async (publicKey?: string, limit?: number, offset?: number): Promise<Transaction[]> => {
             //
+            if (offset && !limit) {
+                // Offset can only be used when limit is also provided.
+                throw Error('Offset needs to be used in combination with limit.');
+            }
+
             return this.storage.transactions.index(publicKey, limit, offset);
         },
         /**
@@ -187,7 +192,7 @@ export class Command {
          */
         update: (key: string, value: string): Promise<void> => {
             //
-            return this.settings.update(key, value);
+            return this.storage.settings.update({ key, value });
         }
     };
 }

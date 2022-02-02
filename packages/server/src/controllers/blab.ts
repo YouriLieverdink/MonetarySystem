@@ -18,7 +18,7 @@ export class Blab extends Gossip<Event<Transaction[]>> {
     /**
      * Processes events when consensus has been reached.
      */
-    private digester: Digester<Transaction>;
+    private digester: Digester;
 
     /**
      * The keys used to sign events.
@@ -93,7 +93,7 @@ export class Blab extends Gossip<Event<Transaction[]>> {
         }
 
         // Process the events on which consensus has been reached.
-        this.digester.digest(cItems);
+        this.digester.do(cItems);
     };
 
     /**

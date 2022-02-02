@@ -119,7 +119,7 @@ export class Api {
                         case 'amount':
                             amount = info[i];
                             break;
-                        case 'to':
+                        case 'receiver':
                             receiver = info[i];
                             break;
                         default:
