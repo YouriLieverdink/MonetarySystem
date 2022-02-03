@@ -7,13 +7,22 @@
         <resize-button disabled />
       </div>
       <div class="action_buttons">
+        <el-tooltip class="header_item" content="Generate invoice" placement="bottom">
+          <el-button
+            plain
+            circle
+            size="large"
+            @click="showDialog.genInvoice = true"
+            class="action_button mdi mdi-qrcode"
+          />
+        </el-tooltip>
         <el-tooltip class="header_item" content="Send funds" placement="bottom">
           <el-button
             plain
             circle
             size="medium"
             @click="showDialog.createTx = true"
-            class="el-icon-money"
+            class="action_button el-icon-money"
           />
         </el-tooltip>
         <el-tooltip class="header_item" content="Add address" placement="bottom">
@@ -22,7 +31,7 @@
             circle
             size="medium"
             @click="showDialog.walletSetup = true"
-            class="el-icon-plus"
+            class="action_button el-icon-plus"
           />
         </el-tooltip>
       </div>
@@ -109,6 +118,10 @@
       :show="showDialog.createTx"
       @close="showDialog.createTx = false"
     />
+    <generate-invoice-dialog
+      :show="showDialog.genInvoice"
+      @close="showDialog.genInvoice = false"
+    />
   </el-card>
 </template>
 
@@ -124,7 +137,8 @@ export default {
     return {
       showDialog: {
         walletSetup: false,
-        createTx: false
+        createTx: false,
+        genInvoice: false
       }
     }
   },
@@ -200,5 +214,9 @@ export default {
 }
 .header_item {
   margin-left: 12px;
+}
+.action_button {
+  padding:5px;
+  font-size: 18px
 }
 </style>
