@@ -9,15 +9,14 @@
     <template #title>
       <div class="window_header">
         <div>
-        <close-button @click="$emit('close')"/>
-        <minimize-button disabled />
-        <resize-button @click="fullscreen = !fullscreen"/>
+          <close-button @click="$emit('close')"/>
+          <minimize-button disabled />
+          <resize-button @click="fullscreen = !fullscreen"/>
         </div>
         <span class="window_title">Generate Invoice</span>
       </div>
     </template>
     <div class="content">
-      <el-form @submit.prevent.native="handleGenerateInvoice">
         <el-row class="bottom-margin">
           <el-col :span="8" class="input_label">Destination</el-col>
           <el-col :span="16">
@@ -47,20 +46,17 @@
             />
           </el-col>
         </el-row>
-        <el-button
-          type="primary"
-          class="btn"
-          v-text="'Generate QR'"
-          @click="handleGenerateInvoice"
-        />
-      </el-form>
+
+      <el-card v-show="generatedQR" class="qr_wrapper">
+        <canvas ref="qr" />
+      </el-card>
     </div>
   </el-dialog>
 </template>
 
 <script>
-import { mapActions, mapState } from 'vuex'
-import { apiRequest } from '@/core/service/apiService';
+import { mapState } from 'vuex'
+import QR from 'qrcode'
 
 export default {
   name: 'GenerateInvoiceDialog',
@@ -75,7 +71,8 @@ export default {
     return {
       amountInput: 0,
       receiverInput: "",
-      fullscreen: false
+      fullscreen: false,
+      generatedQR: false
     }
   },
   computed: {
@@ -83,17 +80,21 @@ export default {
       addresses: state => state.addresses
     }),
   },
+  mounted() {
+    this.receiverInput = this.addresses[0]?.publicKey ?? ""
+  },
   methods: {
     handleGenerateInvoice() {
-      try {
-        if (this.receiverInput.length < 50 && this.addresses.find(a => a.publicKey === this.receiverInput) == null)
-          throw Error('Please select a receiving address')
+        if (this.receiverInput.length > 50
+          && this.addresses.find(a => a.publicKey === this.receiverInput) != null
+          && this.amountInput > 0) {
 
-        this.$message.info('generate QR') // todo
-      } catch (e) {
-        this.$message.error(e)
-      }
-
+          this.generatedQR = true
+          QR.toCanvas(this.$refs.qr, JSON.stringify({
+            receiver: this.receiverInput,
+            amount: this.amountInput
+          }))
+        }
     },
     handleClose(done) {
       this.$emit('close')
@@ -102,11 +103,14 @@ export default {
   },
   watch: {
     show() {
-      this.sendLoading
-        = this.fullscreen
-        = false
-
       this.amountInput = 0
+      this.fullscreen = false
+    },
+    receiverInput() {
+      this.handleGenerateInvoice()
+    },
+    amountInput() {
+      this.handleGenerateInvoice()
     }
   }
 }
@@ -119,9 +123,10 @@ export default {
   text-align: center;
   word-break: break-word;
 }
-.btn {
-  display: block;
-  margin: 24px auto;
+.qr_wrapper {
+  background:white;
+  width: fit-content;
+  margin: 36px auto 0;
 }
 .fit-parent {
   width: 100%;
