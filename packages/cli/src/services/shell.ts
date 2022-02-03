@@ -60,7 +60,7 @@ export class Shell {
 
         // We ping every second to make sure the node is still connected.
         setInterval(
-            () => this.http.get('/ping'),
+            () => this.handle('ping off'),
             1000 * 1,
         );
 
@@ -298,7 +298,7 @@ export class Shell {
             Shell.response.log(`Generated a new address!\n    Public key:  ${address.publicKey}\n    Private key: ${address.privateKey}\n\n  Imporant note: Don't lose the private key. No keys no cheese!`);
         },
         ping: async (args: string[]): Promise<void> => {
-            if (args.length > 0) {
+            if (args.length > 1) {
                 return Shell.response.bad();
             }
 
@@ -306,7 +306,9 @@ export class Shell {
             await this.http.get('ping');
             const t2 = performance.now();
 
-            Shell.response.log(`Pong (${Math.round(t2 - t1)}ms)`);
+            if (!args.includes('off')) {
+                Shell.response.log(`Pong (${Math.round(t2 - t1)}ms)`);
+            }
         },
         transactions: async (args: string[]): Promise<void> => {
             //
@@ -333,10 +335,10 @@ export class Shell {
                 return Shell.response.error('No transactions found.');
             }
 
-            transactions.forEach(({ index, order, timestamp, sender, receiver, amount }, idx) => {
+            transactions.forEach(({ index, timestamp, sender, receiver, amount }, idx) => {
                 const i = '00000'.substring(0, 5 - `${index}`.length) + `${index}`;
 
-                const header = `Id: ${i}-${order} @ ${new Date(timestamp).toLocaleTimeString()}`;
+                const header = `Id: ${i} @ ${new Date(timestamp).toLocaleTimeString('nl-NL')}`;
                 const body = `Sender: ${sender}, Receiver: ${receiver}`;
                 const footer = `Amount: ⓣ ${amount}`;
 

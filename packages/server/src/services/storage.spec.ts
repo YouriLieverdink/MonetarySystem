@@ -151,9 +151,9 @@ describe('Storage', () => {
     describe('transactions', () => {
 
         const items: Transaction[] = [
-            { id: '0', timestamp: 0, index: 0, order: 0, sender: `~`, receiver: 'Monkey', amount: 1 },
-            { id: '1', timestamp: 0, index: 1, order: 0, sender: `~`, receiver: 'Dog', amount: 1 },
-            { id: '2', timestamp: 0, index: 2, order: 0, sender: `~`, receiver: 'Sheep', amount: 1 },
+            { id: '0', timestamp: 0, index: 0, sender: `~`, receiver: 'Monkey', amount: 1 },
+            { id: '1', timestamp: 0, index: 1, sender: `~`, receiver: 'Dog', amount: 1 },
+            { id: '2', timestamp: 0, index: 2, sender: `~`, receiver: 'Sheep', amount: 1 },
         ];
 
         describe('index', () => {
@@ -169,8 +169,8 @@ describe('Storage', () => {
             it('returns only transactions of `publicKey` when provided', async () => {
                 for (const item of items) {
                     await storage.query.run(
-                        'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?)',
-                        item.id, item.timestamp, item.index, item.order, item.receiver, item.sender, item.amount,
+                        'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?)',
+                        item.id, item.timestamp, item.index, item.receiver, item.sender, item.amount,
                     );
                 }
 
@@ -182,8 +182,8 @@ describe('Storage', () => {
             it('returns transactions ordered by `index`', async () => {
                 for (const item of items) {
                     await storage.query.run(
-                        'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?)',
-                        item.id, item.timestamp, item.index, item.order, item.receiver, item.sender, item.amount,
+                        'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?)',
+                        item.id, item.timestamp, item.index, item.receiver, item.sender, item.amount,
                     );
                 }
 
@@ -197,8 +197,8 @@ describe('Storage', () => {
             it('returns a limited amount when limit is provided', async () => {
                 for (const item of items) {
                     await storage.query.run(
-                        'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?)',
-                        item.id, item.timestamp, item.index, item.order, item.receiver, item.sender, item.amount,
+                        'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?)',
+                        item.id, item.timestamp, item.index, item.receiver, item.sender, item.amount,
                     );
                 }
 
@@ -210,8 +210,8 @@ describe('Storage', () => {
             it('returns the transactions after offset when offset is provided', async () => {
                 for (const item of items) {
                     await storage.query.run(
-                        'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?)',
-                        item.id, item.timestamp, item.index, item.order, item.receiver, item.sender, item.amount,
+                        'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?)',
+                        item.id, item.timestamp, item.index, item.receiver, item.sender, item.amount,
                     );
                 }
 
@@ -246,8 +246,8 @@ describe('Storage', () => {
                 const item = items[0];
 
                 await storage.query.run(
-                    'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?)',
-                    item.id, item.timestamp, item.index, item.order, item.receiver, item.sender, item.amount,
+                    'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?)',
+                    item.id, item.timestamp, item.index, item.receiver, item.sender, item.amount,
                 );
 
                 expect(() => storage.transactions.create(item)).rejects;

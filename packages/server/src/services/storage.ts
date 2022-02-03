@@ -30,7 +30,6 @@ export class Storage {
                     id VARCHAR(64) PRIMARY KEY,
                     timestamp INT,
                     \`index\` INT,
-                    \`order\` INT,
                     receiver VARCHAR(64),
                     sender VARCHAR(64),
                     amount INT
@@ -186,7 +185,7 @@ export class Storage {
             }
 
             // Ensure the latest transactions are shown as first.
-            query += ' ORDER BY `index` DESC, `order` DESC';
+            query += ' ORDER BY `index` DESC';
 
             if (limit) {
                 query += ' LIMIT ?';
@@ -210,8 +209,8 @@ export class Storage {
         create: (transaction: Transaction): Promise<void> => {
             //
             return this.query.run(
-                'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?)',
-                transaction.id, transaction.timestamp, transaction.index, transaction.order, transaction.receiver, transaction.sender, transaction.amount,
+                'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?)',
+                transaction.id, transaction.timestamp, transaction.index, transaction.receiver, transaction.sender, transaction.amount,
             );
         },
         /**

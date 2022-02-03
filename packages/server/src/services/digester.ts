@@ -16,7 +16,9 @@ export class Digester {
      * @param events All events that are not yet processed. 
      */
     public async do(events: _Event<Transaction[]>[]): Promise<void> {
-        //
+        // Ensure the events are processed in the right order.
+        events.sort((a, b) => a.index - b.index);
+
         for (let i = 0; i < events.length; i++) {
             //
             const event = events[i];
@@ -33,38 +35,26 @@ export class Digester {
         //
         if (!event.data) return;
 
-        // Calculate the current balance for the creator.
-        const transactions = await this.storage.transactions.index(event.publicKey);
+        // We need the last index to start counting from.
+        const last = await this.storage.transactions.index(null, 1);
+        let index = last[0]?.index || 0;
 
-        // We need the latest index to create transactions from that point on.
-        const index = transactions
-            .map((transaction) => transaction.index)
-            .reduce((p, c) => Math.max(p, c), 0);
+        for (const transaction of event.data) {
+            // We need to balance to verify whether a user can transfer funds.
+            const transactions = await this.storage.transactions.index(transaction.sender);
 
-        let balance = transactions
-            .map((transaction) => transaction.amount)
-            .reduce((p, c) => p + c, 0);
+            const balance = transactions
+                .map((transaction) => transaction.amount)
+                .reduce((p, c) => p + c, 0);
 
-        for (let i = 0; i < event.data.length; i++) {
-            //
-            const transaction = event.data[i];
-
-            const isValid = await this.helpers.validateTransaction(
-                balance,
-                transaction,
-                event.publicKey,
-            );
+            const isValid = await this.helpers.isValid(balance, transaction, event.publicKey);
 
             if (isValid) {
                 //
-                transaction.index = index + event.index;
-                transaction.order = i + 1;
+                transaction.index = index += 1;
                 transaction.timestamp = event.timestamp;
 
                 await this.storage.transactions.create(transaction);
-
-                // Update the temporary balance to prevent double spending.
-                balance -= transaction.amount;
             }
         }
     }
@@ -80,14 +70,14 @@ export class Digester {
          * @param transaction The transaction in question.
          * @param creator The creator of the event which held the transaction.
          */
-        validateTransaction: async (balance: number, transaction: Transaction, creator: string): Promise<boolean> => {
+        isValid: async (balance: number, transaction: Transaction, creator: string): Promise<boolean> => {
             //
             if (transaction.sender === `~`) {
                 // TODO: Validate whether user can receive a coin again.
                 return true;
             }
 
-            if (balance < transaction.amount) {
+            if (transaction.amount > balance) {
                 return false;
             }
 

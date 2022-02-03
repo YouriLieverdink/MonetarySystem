@@ -4,6 +4,5 @@ export type Transaction = {
 	receiver: string;
 	amount: number;
 	index?: number;
-	order?: number;
 	timestamp?: number;
 };

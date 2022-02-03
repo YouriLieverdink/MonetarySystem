@@ -71,33 +71,6 @@ describe('Digester', () => {
             expect(spy).not.toBeCalled();
         });
 
-        it('assigns the transactions the index of their event', async () => {
-            await storage.transactions.create({ id: '0', sender: '~', receiver: 'geert', amount: 100 });
-
-            const event = events[4];
-
-            await digester.do([event]);
-
-            const transactions = await storage.transactions.index();
-
-            expect(transactions[0].index).toBe(event.index);
-        });
-
-        it('assigns the order based on the location of the transaction in the event', async () => {
-            await storage.transactions.create({ id: '99', sender: '~', receiver: 'piet', amount: 1000 });
-            await storage.transactions.create({ id: '98', sender: '~', receiver: 'henk', amount: 1000 });
-
-            const event = events[0];
-            event.data = [...events[0].data, ...events[1].data];
-
-            await digester.do([event]);
-
-            const transactions = await storage.transactions.index();
-
-            expect(transactions[0].order).toBe(2);
-            expect(transactions[1].order).toBe(1);
-        });
-
         it('sets the transaction\'s timestamp to the event\'s timestamp', async () => {
             await storage.transactions.create({ id: '0', sender: '~', receiver: 'geert', amount: 100 });
 
