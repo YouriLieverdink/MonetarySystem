@@ -7,19 +7,7 @@ export type WalletState = {
 
 export const walletState: WalletState = {
   addresses: [],
-  transactions: [{
-    sender: "MCowBQYDK2VwAyEA2bnS+oM70NHusUitIQSdLs9ABJ3lhZP+UnqwTZDhQgw=",
-    receiver: "FAKE......iUfOswAyEA2bnS+oM70NHusUitIQSdLs9ABJ3lhZP+Unqw...ADDRESS",
-    amount: 10,
-    date: undefined,
-    confirmed: true
-  },{
-    sender: "MCowBQYDK2VwAyEA2bnS+oM70NHusUitIQSdLs9ABJ3lhZP+UnqwTZDhQgw=",
-    receiver: "FAKE......iUfOswAyEA2bnS+oM70NHusUitIQSdLs9ABJ3lhZP+Unqw...ADDRESS",
-    amount: 8,
-    date: undefined,
-    confirmed: false
-  }]
+  transactions: []
 }
 
 export default walletState
