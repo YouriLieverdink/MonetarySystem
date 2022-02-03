@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { performance } from 'perf_hooks';
 import readline from 'readline';
-import { Address, State, Transaction } from '../types/_';
+import { Address, Transaction } from '../types/_';
 
 /**
  * Responsible for providing an interactive shell for the user to interact
@@ -57,6 +57,12 @@ export class Shell {
         this.http = http;
 
         Shell.response.clear();
+
+        // We ping every second to make sure the node is still connected.
+        setInterval(
+            () => this.http.get('/ping'),
+            1000 * 1,
+        );
 
         const rl = readline.createInterface({
             input: process.stdin,
@@ -158,26 +164,46 @@ export class Shell {
      */
     private readonly commands = {
         balance: async (args: string[]): Promise<void> => {
-            if (args.length !== 1) {
-                return Shell.response.bad();
+            //
+            const [publicKey] = args;
+
+            const balances: { publicKey: string, amount: number }[] = [];
+
+            if (publicKey) {
+                // We only retrieve the balance for this public key.
+                const r = await this.http.get('/balance', { params: { publicKey } });
+                balances.push({ publicKey, amount: r.data });
+            } //
+            else {
+                // We retrieve the balance for all the user's addresses.
+                const addresses = (await this.http.get('/address')).data;
+
+                for (const { publicKey } of addresses) {
+                    const r = await this.http.get('/balance', { params: { publicKey } });
+                    balances.push({ publicKey, amount: r.data });
+                }
             }
 
-            const publicKey = args[0];
-            const params = { publicKey };
+            if (balances.length === 0) {
+                return Shell.response.error('No addresses found.');
+            }
 
-            const response = await this.http.get('/balance', { params });
-            const balances: number[] = [response.data];
-
-            balances.forEach((balance, index) => {
+            balances.forEach(({ publicKey, amount }, index) => {
+                //
                 const i = '00000'.substring(0, 5 - `${index + 1}`.length) + `${index + 1}`;
 
-                Shell.response.log(`${i}. ⓣ ${balance} on address: ${publicKey}`);
+                if (index !== 0) Shell.response.log('');
+                Shell.response.log(`${i}. ⓣ ${amount} on address: ${publicKey}`);
             });
 
-            // We caculate the sum so we can show a total line at the bottom.
-            const sum = balances.reduce((prev, curr) => prev + curr, 0);
+            if (balances.length > 1) {
+                // We calculate the sum show we can show a total at the bottom.
+                const sum = balances
+                    .map((balance) => balance.amount)
+                    .reduce((p, c) => p + c, 0);
 
-            Shell.response.log(`\n  Total: ⓣ ${sum}`);
+                Shell.response.log(`\n  Total: ⓣ ${sum}`);
+            }
         },
         clear: async (): Promise<void> => {
             Shell.response.clear();
@@ -247,19 +273,9 @@ export class Shell {
             addresses.forEach((address, index) => {
                 const i = '00000'.substring(0, 5 - `${index + 1}`.length) + `${index + 1}`;
 
+                if (index !== 0) Shell.response.log('');
                 Shell.response.log(`${i}. Public key:  ${address.publicKey}${showPrivate ? '\n         Private key: ' + address.privateKey : ''}`);
             });
-        },
-        mirror: async (args: string[]): Promise<void> => {
-            if (args.length !== 1 || !['on', 'off'].includes(args[0])) {
-                return Shell.response.bad();
-            }
-
-            const enabled = args[0] === 'on';
-
-            await this.http.post('mirror', { enabled });
-
-            Shell.response.log(`Mirror updated successfully.`);
         },
         remove: async (args: string[]): Promise<void> => {
             if (args.length !== 1) {
@@ -293,26 +309,42 @@ export class Shell {
             Shell.response.log(`Pong (${Math.round(t2 - t1)}ms)`);
         },
         transactions: async (args: string[]): Promise<void> => {
-            if (args.length === 0 || args.length > 3) {
-                return Shell.response.bad();
-            }
-
+            //
             const [publicKey, limit, offset] = args;
-            const params = { publicKey, limit, offset };
 
-            const response = await this.http.get('/transactions', { params });
-            const transactions: Transaction[] = response.data;
+            const transactions: Transaction[] = [];
+
+            if (publicKey) {
+                // We need to retrieve the transaction for this public key.
+                const r = await this.http.get('/transactions', { params: { publicKey, limit, offset } });
+                transactions.push(...r.data);
+            } //
+            else {
+                // We need to retrieve the transactions for all the user's addresses.
+                const addresses = (await this.http.get('/address')).data;
+
+                for (const { publicKey } of addresses) {
+                    const r = await this.http.get('/transactions', { params: { publicKey, limit, offset } });
+                    transactions.push(...r.data);
+                }
+            }
 
             if (transactions.length === 0) {
                 return Shell.response.error('No transactions found.');
             }
 
-            transactions.forEach((transaction, index) => {
-                const i = 'ooooo'.substring(0, 5 - `${index + 1}`.length) + `${index + 1}`;
+            transactions.forEach(({ index, order, timestamp, sender, receiver, amount }, idx) => {
+                const i = '00000'.substring(0, 5 - `${index}`.length) + `${index}`;
 
-                const details = publicKey === transaction.receiver ? `from: ${transaction.sender}` : `to: ${transaction.receiver}`;
+                const header = `Id: ${i}-${order} @ ${new Date(timestamp).toLocaleTimeString()}`;
+                const body = `Sender: ${sender}, Receiver: ${receiver}`;
+                const footer = `Amount: ⓣ ${amount}`;
 
-                Shell.response.log(`${i}-${transaction.order}. ⓣ ${transaction.amount} ${details}`);
+                if (idx !== 0) {
+                    Shell.response.log('');
+                }
+
+                Shell.response.log(`${header}\n  ${body}\n  ${footer}`);
             });
         },
         transfer: async (args: string[]): Promise<void> => {

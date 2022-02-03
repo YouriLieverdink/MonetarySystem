@@ -156,29 +156,6 @@ export class Api {
             }
             throw Error("wrong method");
         },
-        mirror: async (args: Request): Promise<void> => {
-            if (args.method === 'POST') {
-                let keys = Object.keys(args.body);
-                if (keys.length === null || keys.length === 0) {
-                    throw Error("no body");
-                }
-                let mirrormode: boolean;
-
-                const info = args.body;
-                for (let i in info) {
-                    if (i === 'enabled') {
-                        mirrormode = info[i];
-                    } else {
-                        throw Error("wrong key")
-                    }
-                }
-                if (typeof mirrormode !== "boolean") {
-                    throw Error("wrong value");
-                }
-                return this.commandController.settings.update('mirror', mirrormode ? 'true' : 'false');
-            }
-            throw Error("wrong method")
-        },
         default: async (args: Request): Promise<void> => {
             switch (args.method) {
                 case 'POST':

@@ -46,7 +46,6 @@ export class Storage {
         });
 
         // Initialise the default settings.
-        this.settings.create({ key: 'mirror', value: 'false' }).catch(() => { });
         this.settings.create({ key: 'default', value: '' }).catch(() => { });
     }
 
