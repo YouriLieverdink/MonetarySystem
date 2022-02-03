@@ -62,7 +62,7 @@ export class Api {
             }
             throw Error("ERROR import");
         },
-        remove: async (args: Request): Promise<string> => {
+        remove: async (args: Request): Promise<void> => {
             if (args.method === 'POST') {
                 if (args.body.constructor === Object && Object.keys(args.body).length === 0) {
 
@@ -81,12 +81,7 @@ export class Api {
                     throw Error("wrong value");
                 }
 
-                const success = await this.commandController.addresses.remove(publicKey);
-
-                if (success) {
-                    return "success";
-                }
-                throw Error("Couldnt remove key");
+                return this.commandController.addresses.remove(publicKey);
             }
             throw Error("ERROR addresses");
         },

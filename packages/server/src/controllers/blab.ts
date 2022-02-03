@@ -53,7 +53,7 @@ export class Blab extends Gossip<Event<Transaction[]>> {
 
         this.consensus = new Consensus();
         this.crypto = new Crypto();
-        this.digester = new Digester(storage);
+        this.digester = new Digester(this.storage);
         this.keys = this.crypto.createKeys();
         this.known = [];
 

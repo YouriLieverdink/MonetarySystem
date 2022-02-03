@@ -1,7 +1,7 @@
 import { Express } from 'express';
-import { Api, Collection, Crypto, Storage } from "../services/_";
-import { Address, Setting, State, Transaction } from '../types/_';
 import { v1 as uuidv1 } from 'uuid';
+import { Api, Collection, Crypto, Storage } from "../services/_";
+import { Address, Transaction } from '../types/_';
 
 /**
  * Responsible for handling the operations requested by the user via the api
@@ -40,7 +40,7 @@ export class Command {
 
                 this.transactions.create(`~`, value, 1);
             },
-            1000 * 10,
+            1000 * 60 * 10,
         );
     }
 
@@ -97,17 +97,15 @@ export class Command {
          * 
          * @param publicKey The public key of the address.
          */
-        remove: async (publicKey: string): Promise<boolean> => {
+        remove: async (publicKey: string): Promise<void> => {
             //
             await this.storage.addresses.destroy(publicKey);
 
             // If this was the last address the user had, remove the default.
             const count = (await this.storage.addresses.index()).length;
             if (count === 0) {
-                await this.storage.settings.update({ key: 'default', 'value': '' });
+                await this.storage.settings.update({ key: 'default', value: '' });
             }
-
-            return true;
         }
     };
 
@@ -182,7 +180,7 @@ export class Command {
             //
             const setting = await this.storage.settings.get(key);
 
-            return setting.value;
+            return setting?.value;
         },
         /**
          * Updates the setting for a given key.

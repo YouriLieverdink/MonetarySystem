@@ -1,140 +1,119 @@
-import { Digester } from './digester';
-import { _Event } from "./consensus";
-import { Storage } from "./storage";
 import { Database } from 'sqlite3';
 import { Transaction } from "../types/transaction";
+import { _Event } from "./consensus";
+import { Digester } from './digester';
+import { Storage } from "./storage";
 
 describe('Digester', () => {
-    let storage: Storage;
     let database: Database;
-    let digester: Digester<never>;
+    let storage: Storage;
+    let digester: Digester;
     let events: _Event<Transaction[]>[];
 
-    beforeAll(async () => {
-        // Initialise a new in-memory database for every test.
-        database = new Database(':memory:');
-        storage = new Storage(database);
-        digester = new Digester<never>(storage);
-
-        //create test events
+    beforeAll(() => {
+        // Create the test events.
         events = [];
-        const publicKeys = ['piet', 'henk', 'klaas', 'jan', 'geert', 'hacker'];
-        const transactions = [
-            { from: 'piet', to: 'henk', amount: 101 },
-            { from: 'henk', to: 'klaas', amount: 34 },
-            { from: 'klaas', to: 'jan', amount: 59 },
-            { from: 'jan', to: 'geert', amount: 32 },
-            { from: 'geert', to: 'piet', amount: 18 },
-            { from: 'piet', to: 'hacker', amount: 18 }
-        ]
 
-        for (let i = 0; i < 6; i++) {
+        const publicKeys: string[] = [
+            'piet', 'henk', 'klaas', 'jan', 'geert', 'hacker',
+        ];
+
+        const transactions: Transaction[] = [
+            { id: '1', sender: 'piet', receiver: 'henk', amount: 101 },
+            { id: '2', sender: 'henk', receiver: 'klaas', amount: 34 },
+            { id: '3', sender: 'klaas', receiver: 'jan', amount: 59 },
+            { id: '4', sender: 'jan', receiver: 'geert', amount: 32 },
+            { id: '5', sender: 'geert', receiver: 'piet', amount: 18 },
+            { id: '6', sender: 'piet', receiver: 'hacker', amount: 18 },
+        ];
+
+        for (let i = 0; i < transactions.length; i++) {
+            //
             events.push({
                 id: `${i}`,
-                createdAt: 1,
+                index: i,
+                createdAt: 0,
+                timestamp: 0,
                 publicKey: publicKeys[i],
                 signature: '',
-                data: [transactions[i]]
+                data: [transactions[i]],
             });
-            await storage.states.create({ publicKey: publicKeys[i], balance: 100, date: new Date() })
         }
-        events[2].data[1] = { from: 'klaas', to: 'jan', amount: 21 }
-
     });
 
-    describe('handles transactions', () => {
+    beforeEach(() => {
+        database = new Database(':memory:');
+        storage = new Storage(database);
+        digester = new Digester(storage);
+    });
 
-        beforeEach(async () => {
-            const publicKeys = ['piet', 'henk', 'klaas', 'jan', 'geert'];
-            for (let i = 0; i < publicKeys.length; i++) {
-                await storage.states.update({ publicKey: publicKeys[i], balance: 100, date: new Date() })
-            }
+    describe('do', () => {
+
+        it('executes a transaction when the sender has enough balance', async () => {
+            await storage.transactions.create({ id: '0', sender: '~', receiver: 'piet', amount: 102 });
+
+            const spy = jest.spyOn(storage.transactions, 'create');
+            const event = events[0];
+
+            await digester.do([event]);
+
+            expect(spy).toBeCalled();
         });
 
-        it('does not execute transaction if not enough coins', async () => {
-            await digester.handleTransactions(events[0].data, events[0].publicKey)
+        it('does not execute a transaciton when the sender does not have enough balance', async () => {
+            await storage.transactions.create({ id: '0', sender: '~', receiver: 'piet', amount: 100 });
 
-            const from = await storage.states.read(events[0].data[0].from)
-            const to = await storage.states.read(events[0].data[0].to)
+            const spy = jest.spyOn(storage.transactions, 'create');
+            const event = events[0];
 
-            expect(from.balance).toBe(100)
-            expect(to.balance).toBe(100)
+            await digester.do([event]);
+
+            expect(spy).not.toBeCalled();
         });
 
-        it('does not execute transaction if transaction made by not authorized person', async () => {
-            await digester.handleTransactions(events[5].data, events[5].publicKey)
+        it('assigns the transactions the index of their event', async () => {
+            await storage.transactions.create({ id: '0', sender: '~', receiver: 'geert', amount: 100 });
 
-            const from = await storage.states.read(events[5].data[0].from)
-            const to = await storage.states.read(events[5].data[0].to)
+            const event = events[4];
 
-            expect(from.balance).toBe(100)
-            expect(to.balance).toBe(100)
+            await digester.do([event]);
+
+            const transactions = await storage.transactions.index();
+
+            expect(transactions[0].index).toBe(event.index);
         });
 
-        it('does execute a transaction if validation is true', async () => {
-            await digester.handleTransactions(events[1].data, events[1].publicKey)
+        it('assigns the order based on the location of the transaction in the event', async () => {
+            await storage.transactions.create({ id: '99', sender: '~', receiver: 'piet', amount: 1000 });
+            await storage.transactions.create({ id: '98', sender: '~', receiver: 'henk', amount: 1000 });
 
-            const from = await storage.states.read(events[1].data[0].from)
-            const to = await storage.states.read(events[1].data[0].to)
+            const event = events[0];
+            event.data = [...events[0].data, ...events[1].data];
 
-            expect(from.balance).toBe(66)
-            expect(to.balance).toBe(134)
+            await digester.do([event]);
+
+            const transactions = await storage.transactions.index();
+
+            expect(transactions[0].order).toBe(2);
+            expect(transactions[1].order).toBe(1);
         });
 
-        it('handles events that have multiple transactions', async () => {
-            await digester.handleTransactions(events[2].data, events[2].publicKey)
+        it('sets the transaction\'s timestamp to the event\'s timestamp', async () => {
+            await storage.transactions.create({ id: '0', sender: '~', receiver: 'geert', amount: 100 });
 
-            const from = await storage.states.read(events[2].data[0].from)
-            const to = await storage.states.read(events[2].data[0].to)
+            const event = events[4];
 
-            expect(from.balance).toBe(20)
-            expect(to.balance).toBe(180)
+            await digester.do([event]);
+
+            const transactions = await storage.transactions.index();
+
+            expect(transactions[0].timestamp).toBe(event.timestamp);
         });
 
-        it('handles multiple events that have transactions', async () => {
-            await digester.digest(events)
+        it.todo('does exceute the transaction when it is from `~` and the user can receive again');
 
-            const publicKeys = ['piet', 'henk', 'klaas', 'jan', 'geert'];
-            for (let i = 0; i < publicKeys.length; i++) {
-                const state = await storage.states.read(publicKeys[i])
+        it.todo('does not execute the transactionw hen it is from `~` and the can\'t receive again');
 
-                switch (state.publicKey) {
-                    case 'piet': {
-                        expect(state.balance).toBe(118)
-                        break;
-                    }
-                    case 'henk': {
-                        expect(state.balance).toBe(66)
-                        break;
-                    }
-                    case 'klaas': {
-                        expect(state.balance).toBe(54)
-                        break;
-                    }
-                    case 'jan': {
-                        expect(state.balance).toBe(148)
-                        break;
-                    }
-                    case 'geert': {
-                        expect(state.balance).toBe(114)
-                        break;
-                    }
-                }
-            }
-        });
-    })
-
-    describe('mirror', () => {
-        it('checks if the mirror setting is activated', async () => {
-            const setting = { key: 'mirror', value: 'true' }
-            await storage.settings.update(setting)
-
-            expect(digester.mirrorIsActive()).toBeTruthy();
-        });
-
-        it('puts events in database if mirroring is activated', async () => {
-            //TODO
-        });
-    })
-
+        it.todo('does not execute the transaciton when the creator does not match the sender');
+    });
 });

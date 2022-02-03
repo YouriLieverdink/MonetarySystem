@@ -29,7 +29,7 @@ export class Digester {
      *
      * @param event The event to process.
      */
-    public async handleEvent(event: _Event<Transaction[]>): Promise<void> {
+    private async handleEvent(event: _Event<Transaction[]>): Promise<void> {
         //
         if (!event.data) return;
 
@@ -89,11 +89,6 @@ export class Digester {
 
             if (balance < transaction.amount) {
                 return false;
-            }
-
-            if (transaction.sender != creator) {
-                // TODO: Fix this because it should not return true always.
-                return true;
             }
 
             return true;

@@ -53,7 +53,7 @@ export class Storage {
     /**
      * The query methods.
      */
-    private readonly query = {
+    public readonly query = {
         /**
          * Insert, update, and delete queries.
          *

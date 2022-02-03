@@ -62,4 +62,11 @@ export class Collection<T> {
         if (this._items.length === 0) return null;
         return this._items.shift();
     }
+
+    /**
+     * The number of items in the collection.
+     */
+    public size(): number {
+        return this._items.length;
+    }
 }
