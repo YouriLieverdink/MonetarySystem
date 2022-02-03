@@ -1,8 +1,9 @@
 import { Express } from 'express';
 import _ from 'lodash';
 import { v1 as uuidv1 } from 'uuid';
-import { Collection, Consensus, Crypto, Digester, Gossip, Storage } from '../services/_';
+import {_Event, Collection, Consensus, Crypto, Digester, Gossip, Storage} from '../services/_';
 import { Address, Computer, Event, Transaction } from '../types/_';
+import {Startup} from "../services/startup";
 
 export class Blab extends Gossip<Event<Transaction[]>> {
     /**
@@ -21,6 +22,11 @@ export class Blab extends Gossip<Event<Transaction[]>> {
     private digester: Digester;
 
     /**
+     * Processes events when consensus has been reached.
+     */
+    private startup: Startup;
+
+    /**
      * The keys used to sign events.
      */
     private keys: Address;
@@ -29,6 +35,11 @@ export class Blab extends Gossip<Event<Transaction[]>> {
      * A list of known id's so we don't accept them anymore.
      */
     private known: string[];
+
+    /**
+     * When the node is just started it needs to go through the startup process.
+     */
+    private starting: boolean;
 
     /**
      * Class construtor.
@@ -56,6 +67,8 @@ export class Blab extends Gossip<Event<Transaction[]>> {
         this.digester = new Digester(storage);
         this.keys = this.crypto.createKeys();
         this.known = [];
+        this.starting = true;
+        this.startup = new Startup(storage, computers, me, server);
 
         // Add the initial event to start gossip.
         this.helpers.addEvent();
@@ -90,6 +103,18 @@ export class Blab extends Gossip<Event<Transaction[]>> {
 
             this.known.push(cItem.id);
             this.items.remove(_.omit(cItem as Object, this.except()) as Event<Transaction[]>);
+            cItem.data = [{id: uuidv1(), sender: '', receiver: '', amount: i, index: i}]
+        }
+
+
+        // console.log(this.helpers.minTransactionIndex(cItems))
+        // If the node just started it needs transactions from other nodes
+        if (this.starting && cItems.length > 0) {
+            const min = this.helpers.minTransactionIndex(cItems)
+            if (min) {
+                this.starting = false;
+                this.startup.start(min)
+            }
         }
 
         // Process the events on which consensus has been reached.
@@ -228,5 +253,30 @@ export class Blab extends Gossip<Event<Transaction[]>> {
             this.items.add(event);
             this.last = event;
         },
+        /**
+         * Smallest transaction index from certain events
+         *
+         * @param events
+         */
+        minTransactionIndex: (events: _Event<Transaction[]>[]): Transaction => {
+            //
+            let minIndex = 0;
+            let transaction: Transaction;
+
+            for (let i = 0; i < events.length; i++) {
+                const transactions = events[i].data
+                if (transactions) {
+                    for (let i = 0; i < transactions.length; i++) {
+                        if (transactions[i].index <= minIndex) {
+                            minIndex = transactions[i].index;
+                            transaction = transactions[i]
+                        }
+                    }
+                }
+            }
+
+            return transaction
+        },
+
     };
 }

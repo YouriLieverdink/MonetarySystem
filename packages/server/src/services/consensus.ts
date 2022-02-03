@@ -103,12 +103,14 @@ export class Consensus<T> {
             let witness = false;
 
             // When there are parents, we take the max round of both.
-            if (ex.selfParent && ex.otherParent) {
-                //
-                const self = index[ex.selfParent].round;
-                const other = index[ex.otherParent].round;
-
-                round = Math.max(self, other);
+            if (index[ex.selfParent]) {
+                round = index[ex.selfParent].round
+            }
+            if (index[ex.otherParent]) {
+                const opRound = index[ex.otherParent].round
+                if (opRound > round){
+                    round = opRound
+                }
             }
 
             const witnesses = Object.entries(index).filter(([hy, ey]) => {

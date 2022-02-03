@@ -202,6 +202,27 @@ export class Storage {
             return this.query.all(query, ...params);
         },
         /**
+         * Display the specified resource.
+         *
+         *
+         * @throws {Error} When an exception occurs.
+         * @param id
+         */
+        read: (id: string): Promise<Transaction> => {
+            return this.query.get<Transaction>('SELECT * FROM transactions WHERE id = ?', id);
+        },
+        /**
+         * Display a listing of the resource between specified indexes.
+         *
+         * @param firstIndex
+         * @param lastIndex
+         *
+         * @throws {Error} When an exception occurs.
+         */
+        betweenIndexes: (firstIndex: number, lastIndex: number): Promise<Transaction[]> => {
+            return this.query.all<Transaction>('SELECT * FROM transactions WHERE `index` BETWEEN ? and ? ORDER BY `index` ASC', firstIndex+1, lastIndex-1);
+        },
+        /**
          * Store a newly created resource in storage.
          *
          * @param transaction The transaction object.
