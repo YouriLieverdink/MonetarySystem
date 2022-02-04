@@ -11,6 +11,7 @@ export type _Event<T> = Event<T> & {
     timestamp?: number;
     consensus?: boolean;
     index?: number;
+    prune?: boolean;
 }
 
 export type Index<T> = {
@@ -48,7 +49,16 @@ export class Consensus<T> {
         index = this.setOrder(index);
 
         // We update the internal state for the next `do` call.
-        this.index = _.omitBy(index, (item) => item.consensus);
+        this.index = _.omitBy(index, (item) => item.prune);
+
+        // We set the consensus event to be pruned next round.
+        const keys = Object.keys(this.index);
+
+        for (let i = 0; i < keys.length; i++) {
+            //
+            const key = keys[i];
+            this.index[key].prune = true;
+        }
 
         return Object.values(index);
     }
@@ -105,8 +115,8 @@ export class Consensus<T> {
             // When there are parents, we take the max round of both.
             if (ex.selfParent && ex.otherParent) {
                 //
-                const self = index[ex.selfParent].round;
-                const other = index[ex.otherParent].round;
+                const self = index[ex.selfParent]?.round;
+                const other = index[ex.otherParent]?.round;
 
                 round = Math.max(self, other);
             }
@@ -126,7 +136,7 @@ export class Consensus<T> {
                 witness = true;
             } //
             else {
-                witness = round > index[ex.selfParent].round;
+                witness = round > index[ex.selfParent]?.round;
             }
 
             index[hx] = { ...ex, round, witness };
