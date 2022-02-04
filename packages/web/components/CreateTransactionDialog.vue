@@ -9,9 +9,9 @@
     <template #title>
       <div class="window_header">
         <div>
-        <close-button @click="$emit('close')"/>
-        <minimize-button disabled />
-        <resize-button @click="fullscreen = !fullscreen"/>
+          <close-button @click="$emit('close')"/>
+          <minimize-button disabled />
+          <resize-button @click="fullscreen = !fullscreen"/>
         </div>
         <span class="window_title">Send funds</span>
       </div>
