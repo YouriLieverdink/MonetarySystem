@@ -138,7 +138,7 @@ export class Command {
          */
         create: async (sender: string, receiver: string, amount: number): Promise<Transaction> => {
             //
-            const transaction: Transaction = { id: uuidv1(), sender, receiver, amount };
+            const transaction: Transaction = { id: uuidv1(), sender, receiver, amount, signature: '' };
 
             this.pending.add(transaction);
 

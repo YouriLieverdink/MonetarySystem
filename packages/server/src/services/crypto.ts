@@ -32,13 +32,16 @@ export class Crypto {
      * 
      * @param data The data to sign.
      * @param privateKey The private key to sign the data with.
+     * @param except The keys to exclude.
      * @returns A signature.
      */
     public createSignature<T>(
         data: T,
         privateKey: string,
+        except: string[] = [],
     ): string {
         //
+        data = _.omit(data as Object, except) as T;
         const verifiable = JSON.stringify(data);
 
         const signature = sign(
@@ -79,14 +82,17 @@ export class Crypto {
      * @param data The data to verify.
      * @param signature The signature that was provided with the data.
      * @param publicKey The public key of the 'claiming' sender.
+     * @param except The keys to exclude.
      * @returns Whether the signature is correct.
      */
     public verifySignature<T>(
         data: T,
         signature: string,
         publicKey: string,
+        except: string[] = [],
     ): boolean {
         //
+        data = _.omit(data as Object, except) as T;
         const verifiable = JSON.stringify(data);
 
         return verify(

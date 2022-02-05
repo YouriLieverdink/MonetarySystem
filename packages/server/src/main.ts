@@ -26,12 +26,8 @@ const main = async (): Promise<void> => {
     const pending = new Collection<Transaction>();
 
     new Command(pending, server, storage);
-
-    new Signal(computers, 100, me, server);
-
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-
-    new Blab(computers, 1000, me, pending, server, storage);
+    new Signal(computers, 500, me, server);
+    new Blab(computers, 500, me, pending, server, storage);
 };
 
 main();

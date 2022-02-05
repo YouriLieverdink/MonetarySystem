@@ -11,7 +11,6 @@ export type _Event<T> = Event<T> & {
     timestamp?: number;
     consensus?: boolean;
     index?: number;
-    prune?: boolean;
 }
 
 export type Index<T> = {
@@ -36,10 +35,11 @@ export class Consensus<T> {
      * Performs the consensus algorithm.
      * 
      * @param events The available events.
-     * @param n The number of computers.
      */
-    public do(events: _Event<T>[], n: number): _Event<T>[] {
+    public do(events: _Event<T>[]): _Event<T>[] {
         //
+        const n = this.calculateN(events);
+
         let index: Index<T> = {};
 
         index = this.createIndex(this.index, events);
@@ -49,19 +49,29 @@ export class Consensus<T> {
         index = this.setOrder(index);
 
         // We update the internal state for the next `do` call.
-        this.index = _.omitBy(index, (item) => item.prune);
-
-        // We set the consensus event to be pruned next round.
-        const keys = Object.keys(this.index);
-
-        for (let i = 0; i < keys.length; i++) {
-            //
-            const key = keys[i];
-            this.index[key].prune = true;
-        }
+        this.index = _.omitBy(index, (item) => item.consensus);
 
         return Object.values(index);
     }
+
+    /**
+     * Calculates the current number of computers in the network who are 
+     * trying to reach consensus.
+     *
+     * @param events The provided events. 
+     */
+    public calculateN<T>(events: Event<T>[]): number {
+        //
+        const publicKeys = new Set<string>();
+
+        for (let i = 0; i < events.length; i++) {
+            //
+            const event = events[i];
+            publicKeys.add(event.publicKey);
+        }
+
+        return publicKeys.size;
+    };
 
     /**
      * Creates an index for all the events that have been provided. This index 

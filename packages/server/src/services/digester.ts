@@ -1,14 +1,19 @@
 import { Transaction } from "../types/transaction";
 import { _Event } from "./consensus";
+import { Crypto } from "./crypto";
 import { Storage } from "./storage";
 
 export class Digester {
     /**
      * Class constructor.
      * 
+     * @param crypto Used for cryptographic operations.
      * @param storage The interface for the database.
      */
-    constructor(private storage: Storage) { }
+    constructor(
+        private crypto: Crypto,
+        private storage: Storage,
+    ) { }
 
     /**
      * Digests all the events on which consensus has been reached.
@@ -47,7 +52,7 @@ export class Digester {
                 .map((transaction) => transaction.amount)
                 .reduce((p, c) => p + c, 0);
 
-            const isValid = await this.helpers.isValid(balance, transaction, event.publicKey);
+            const isValid = await this.helpers.isValid(balance, transaction);
 
             if (isValid) {
                 //
@@ -68,9 +73,8 @@ export class Digester {
          * 
          * @param balance The current balance of `sender`.
          * @param transaction The transaction in question.
-         * @param creator The creator of the event which held the transaction.
          */
-        isValid: async (balance: number, transaction: Transaction, creator: string): Promise<boolean> => {
+        isValid: async (balance: number, transaction: Transaction): Promise<boolean> => {
             //
             if (transaction.sender === `~`) {
                 // TODO: Validate whether user can receive a coin again.
@@ -78,6 +82,11 @@ export class Digester {
             }
 
             if (transaction.amount > balance) {
+                return false;
+            }
+
+            // We verify the transaction signature to ensure the owner created it.
+            if (!this.crypto.verifySignature(transaction, transaction.signature, transaction.sender, ['signature'])) {
                 return false;
             }
 

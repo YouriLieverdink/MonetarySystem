@@ -5,4 +5,5 @@ export type Transaction = {
     amount: number;
     index?: number;
     timestamp?: number;
+    signature: string;
 };

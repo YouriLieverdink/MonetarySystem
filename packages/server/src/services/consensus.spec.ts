@@ -36,7 +36,7 @@ describe('Consensus', () => {
         [0, 8, 13, 15, 18, 22, 28, 30].forEach((i) => events[i].publicKey = 'Alice');
         [1, 5, 7, 11, 14, 20, 21, 24, 27, 29, 31, 34].forEach((i) => events[i].publicKey = 'Bob');
         [2, 10, 17, 26].forEach((i) => events[i].publicKey = 'Carol');
-        [3, 4, 6, 9, 12, 16, 19, 23, 25, 32, 33].forEach((i) => events[i].publicKey = 'Dave');
+        [3, 6, 9, 12, 16, 19, 23, 25, 32, 33].forEach((i) => events[i].publicKey = 'Dave');
 
         // Set the parents for each event.
         c(events, 4, 3, 1);
@@ -880,7 +880,7 @@ describe('Consensus', () => {
                 const chunks = _.chunk(events, 4);
 
                 for (let j = 0; j < chunks.length; j++) {
-                    consensus.do(chunks[j], 4);
+                    consensus.do(chunks[j]);
                 }
             };
 
@@ -890,7 +890,7 @@ describe('Consensus', () => {
         describe('sets the round', () => {
 
             it('of an event to r when it a genesis event', () => {
-                const cEvents = consensus.do(events, 4);
+                const cEvents = consensus.do(events);
 
                 const event = cEvents.find((cEvent) => cEvent.id === '1');
 
@@ -898,7 +898,7 @@ describe('Consensus', () => {
             });
 
             it('of an event to r+1 when it can see the supermajority of witnesses in r', () => {
-                const cEvents = consensus.do(events, 4);
+                const cEvents = consensus.do(events);
 
                 const event = cEvents.find((cEvent) => cEvent.id === '14');
 
@@ -906,7 +906,7 @@ describe('Consensus', () => {
             });
 
             it('of an event to r when it can\'t see the supermajority of witnesses in r', () => {
-                const cEvents = consensus.do(events, 4);
+                const cEvents = consensus.do(events);
 
                 const event = cEvents.find((cEvent) => cEvent.id === '11');
 
@@ -917,7 +917,7 @@ describe('Consensus', () => {
         describe('sets the witness', () => {
 
             it('of an event to `true` when it is a genesis event', () => {
-                const cEvents = consensus.do(events, 4);
+                const cEvents = consensus.do(events);
 
                 const event = cEvents.find((cEvent) => cEvent.id === '1');
 
@@ -925,7 +925,7 @@ describe('Consensus', () => {
             });
 
             it('of an event to `true` when it is the creator\'s first event in a round', () => {
-                const cEvents = consensus.do(events, 4);
+                const cEvents = consensus.do(events);
 
                 const event = cEvents.find((cEvent) => cEvent.id === '14');
 
@@ -933,7 +933,7 @@ describe('Consensus', () => {
             });
 
             it('of an event to `false` when it is not the creator\'s first event in a round', () => {
-                const cEvents = consensus.do(events, 4);
+                const cEvents = consensus.do(events);
 
                 const event = cEvents.find((cEvent) => cEvent.id === '16');
 
@@ -947,7 +947,7 @@ describe('Consensus', () => {
             it.each(['0', '1', '2', '3', '12', '13', '14'])(
                 'of x=%i to `true` when it is famous',
                 (id) => {
-                    const cEvents = consensus.do(events, 4);
+                    const cEvents = consensus.do(events);
 
                     const event = cEvents.find((cEvent) => cEvent.id === id);
 
@@ -958,7 +958,7 @@ describe('Consensus', () => {
             it.each(['17'])(
                 'of x=%i to `false` when it is not famous but voted on',
                 (id) => {
-                    const cEvents = consensus.do(events, 4);
+                    const cEvents = consensus.do(events);
 
                     const event = cEvents.find((cEvent) => cEvent.id === id);
 
@@ -969,7 +969,7 @@ describe('Consensus', () => {
             it.each(['7', '21'])(
                 'of an event to undefined when it has not yet been voted on',
                 (id) => {
-                    const cEvents = consensus.do(events, 4);
+                    const cEvents = consensus.do(events);
 
                     const event = cEvents.find((cEvent) => cEvent.id === id);
 
@@ -982,7 +982,7 @@ describe('Consensus', () => {
         describe('sets the received round', () => {
 
             it('of an event to r when all the famous witnesses in round r can see it', () => {
-                const cEvents = consensus.do(events, 4);
+                const cEvents = consensus.do(events);
 
                 const event = cEvents.find((event) => event.id === '0');
 
@@ -993,7 +993,7 @@ describe('Consensus', () => {
         describe('sets the timestamp', () => {
 
             it('of an event to the median timestamp of the creators\' event who saw it first', () => {
-                const cEvents = consensus.do(events, 4);
+                const cEvents = consensus.do(events);
 
                 const event = cEvents.find((event) => event.id === '8');
 
@@ -1006,7 +1006,7 @@ describe('Consensus', () => {
         describe('sets the index', () => {
 
             it('of an event to 0 when it has the lowest median timestamp', () => {
-                const cEvents = consensus.do(events, 4);
+                const cEvents = consensus.do(events);
 
                 const event = cEvents.find((event) => event.id === '1');
 
@@ -1014,7 +1014,7 @@ describe('Consensus', () => {
             });
 
             it('of an event to 1 by comparing whithened signatures when timestamps are equal', () => {
-                const cEvents = consensus.do(events, 4);
+                const cEvents = consensus.do(events);
 
                 const event = cEvents.find((event) => event.id === '4');
 

@@ -151,9 +151,9 @@ describe('Storage', () => {
     describe('transactions', () => {
 
         const items: Transaction[] = [
-            { id: '0', timestamp: 0, index: 0, sender: `~`, receiver: 'Monkey', amount: 1 },
-            { id: '1', timestamp: 0, index: 1, sender: `~`, receiver: 'Dog', amount: 1 },
-            { id: '2', timestamp: 0, index: 2, sender: `~`, receiver: 'Sheep', amount: 1 },
+            { id: '0', timestamp: 0, index: 0, sender: `~`, receiver: 'Monkey', amount: 1, signature: '' },
+            { id: '1', timestamp: 0, index: 1, sender: `~`, receiver: 'Dog', amount: 1, signature: '' },
+            { id: '2', timestamp: 0, index: 2, sender: `~`, receiver: 'Sheep', amount: 1, signature: '' },
         ];
 
         describe('index', () => {

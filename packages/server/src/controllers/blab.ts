@@ -53,7 +53,7 @@ export class Blab extends Gossip<Event<Transaction[]>> {
 
         this.consensus = new Consensus();
         this.crypto = new Crypto();
-        this.digester = new Digester(this.storage);
+        this.digester = new Digester(this.crypto, this.storage);
         this.keys = this.crypto.createKeys();
         this.known = [];
 
@@ -75,19 +75,13 @@ export class Blab extends Gossip<Event<Transaction[]>> {
      */
     public onTick(): void {
         //
-        const items = this.consensus.do(
-            this.items.all(),
-            // TODO: Find a way to calculate n.
-            2,
-        );
+        const items = this.consensus.do(this.items.all());
 
-        // We only care about the items on which consensus has been reached.
+        // The items which have the `consensus` flag can be processed.
         const cItems = items.filter((item) => item.consensus);
 
-        for (let i = 0; i < cItems.length; i++) {
+        for (const cItem of cItems) {
             //
-            const cItem = cItems[i];
-
             this.known.push(cItem.id);
             this.items.remove(_.omit(cItem as Object, this.except()) as Event<Transaction[]>);
         }
@@ -202,6 +196,8 @@ export class Blab extends Gossip<Event<Transaction[]>> {
          */
         addEvent: async (selfParent?: string, otherParent?: string): Promise<void> => {
             //
+            const addresses = await this.storage.addresses.index();
+
             const event: Event<Transaction[]> = {
                 id: uuidv1(),
                 createdAt: Date.now(),
@@ -217,10 +213,18 @@ export class Blab extends Gossip<Event<Transaction[]>> {
 
             // Add a transaction when available.
             const transactions = this.pending.all();
-            if (transactions.length > 0) {
-                event.data = transactions;
-                this.pending.remove(...transactions);
-            }
+            this.pending.remove(...transactions);
+
+            event.data = transactions.map((transaction) => {
+                // We sign each transaction individually as well.
+                let { privateKey } = addresses.find((address) => address.publicKey === transaction.sender);
+                if (!privateKey) privateKey = this.keys.privateKey;
+
+                // Sign the transaction.
+                transaction.signature = this.crypto.createSignature(transaction, privateKey);
+
+                return transaction;
+            });
 
             // Sign the message to ensure validity.
             event.signature = this.crypto.createSignature(event, this.keys.privateKey);
