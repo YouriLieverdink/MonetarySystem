@@ -7,6 +7,17 @@
         <resize-button disabled />
       </div>
       <div class="action_buttons">
+        <el-tooltip class="header_item" content="Node unreachable, retry" placement="bottom">
+          <el-button
+            plain
+            circle
+            type="danger"
+            size="large"
+            v-show="!connected"
+            @click="retryConnection"
+            class="action_button mdi mdi-connection"
+          />
+        </el-tooltip>
         <el-tooltip class="header_item" content="Generate invoice" placement="bottom">
           <el-button
             plain
@@ -172,7 +183,8 @@ export default {
         createTx: false,
         genInvoice: false
       },
-      tab: 'overview'
+      tab: 'overview',
+      connected: true
     }
   },
   computed: {
@@ -210,7 +222,8 @@ export default {
         await apiRequest.addresses.remove(pubKey)
         this.removeAddress(pubKey)
       } catch(e) {
-        this.$message.error('Error - Address not removed')
+        this.$message.error('Address not removed')
+        this.connected = e.response !== undefined
       }
     },
     async refreshAddresses() {
@@ -218,7 +231,8 @@ export default {
         const res = await apiRequest.addresses.get()
         this.setAddresses(res.data)
       } catch (e) {
-        this.$message('Error updating your addresses')
+        this.$message.error('Error updating your addresses')
+        this.connected = e.response !== undefined
       }
     },
     async refreshTransactions() {
@@ -239,7 +253,8 @@ export default {
 
         this.setTransactions(txs)
       } catch (e) {
-        this.$message('Error updating your transactions')
+        this.$message.error('Error updating your transactions')
+        this.connected = e.response !== undefined
       }
     },
     async refreshBalance() {
@@ -247,20 +262,26 @@ export default {
         const res = await apiRequest.balances.get()
         this.setBalance(res.data.map(v => typeof v === 'number' ? v : 0).reduce((a, b) => a + b, 0))
       } catch (e) {
-        this.$message('Error updating your balance')
+        this.$message.error('Error updating your balance')
+        this.connected = e.response !== undefined
       }
     },
     dateString(date) {
       return date != null ? moment(date).format('lll') : 'unknown'
     },
     refreshDispatcher() {
-      this.refreshAll()
-      setTimeout(this.refreshDispatcher, 2000)
+      const refreshAll = () => {
+        if (this.connected) {
+          this.refreshAddresses()
+          this.refreshTransactions()
+          this.refreshBalance()
+        }
+        this.refreshDispatcher()
+      }
+      setTimeout(refreshAll, 2000)
     },
-    refreshAll() {
-      this.refreshAddresses()
-      this.refreshTransactions()
-      this.refreshBalance()
+    retryConnection() {
+      this.connected = true
     }
   }
 }

@@ -10,10 +10,15 @@ import { Computer, Transaction } from './types/_';
 const main = async (): Promise<void> => {
     // Initialise the express server for incoming connections.
     const server = express();
-    server.use(cors({
+
+    // CORS configuration
+    const corsSettings = cors({
         origin: 'http://localhost:3000',
-        methods: "GET, POST, PUT, OPTIONS"
-    }))
+        optionsSuccessStatus: 200
+    })
+    server.options("*", corsSettings);
+    server.use(corsSettings);
+
     server.use(express.json({ limit: '5mb' }));
     server.listen(config.port, '0.0.0.0');
 

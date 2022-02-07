@@ -2,7 +2,7 @@ import axiosInstance  from '../axios'
 
 const node_port = new URLSearchParams(window.location.search).get('node') ?? 3001
 const api = axiosInstance({
-  baseURL: 'http://localhost:'+ node_port +'/api/'
+  baseURL: 'http://0.0.0.0:'+ node_port +'/api/'
 })
 
 export const apiRequest = {
