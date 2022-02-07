@@ -24,9 +24,6 @@ export const apiRequest = {
     get() {
       return api.get("transactions")
     },
-    getForAddress(pubKey: string) {
-      return api.get("transactions?address=" + pubKey)
-    },
     create(sender: string, receiver: string, amount: number) {
       return api.post('transactions?address=' + sender, {
         to: receiver, amount
@@ -37,5 +34,10 @@ export const apiRequest = {
     get() {
       return api.get("balance")
     },
+  },
+  settings: {
+    mirror(enabled: boolean) {
+      return api.post('mirror', { enabled })
+    }
   }
 }

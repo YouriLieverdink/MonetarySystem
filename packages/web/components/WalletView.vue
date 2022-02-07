@@ -52,6 +52,14 @@
         <span slot="label">Wallet Overview <i class="el-icon-wallet"></i></span>
         <el-card shadow="never" v-show="tab === 'overview'">
           <table style="width: 400px; margin: 24px auto">
+            <tr class="summary_row" style="border-bottom: 1px solid #555">
+              <td colspan="2" style="text-align: center"><strong>Wallet Overview</strong></td>
+            </tr>
+            <tr>
+              <td colspan="2">
+                <el-divider />
+              </td>
+            </tr>
             <tr class="summary_row">
               <td>Balance</td>
               <td>{{ walletSummary.balance }}</td>
@@ -86,6 +94,7 @@
                 <el-button
                   size="mini"
                   type="danger"
+                  :disabled="!connected"
                   @click="handleRemoveAddress(row.publicKey)">Remove</el-button>
               </template>
             </el-table-column>
@@ -147,7 +156,41 @@
         <span slot="label">Settings <i class="el-icon-setting"></i></span>
         <transition name="el-fade-in-linear">
           <div v-show="tab === 'settings'">
-            <el-skeleton :rows="5" animated />
+            <el-card shadow="never">
+              <el-row type="flex" align="middle">
+                <el-col :span=10>Save full transaction history</el-col>
+                <el-col :span=5>
+                  <el-switch
+                    :value="settings.mirror"
+                    :disabled="!connected"
+                    @change="settings.mirror = $event"
+                  />
+                </el-col>
+              </el-row>
+              <el-divider />
+              <el-row type="flex" align="middle">
+                <el-col :span=10>Clear data</el-col>
+                <el-col :span=5>
+                  <el-popconfirm
+                    title="This action can not be undone!"
+                    confirm-button-text='Proceed'
+                    cancel-button-text='Cancel'
+                    icon="el-icon-info"
+                    icon-color="red"
+                    @confirm="clearData"
+                  >
+                    <el-button
+                      slot="reference"
+                      type="danger"
+                      :disabled="!connected"
+                      plain
+                      size="mini">
+                      Clear data
+                    </el-button>
+                  </el-popconfirm>
+                </el-col>
+              </el-row>
+            </el-card>
           </div>
         </transition>
       </el-tab-pane>
@@ -184,7 +227,10 @@ export default {
         genInvoice: false
       },
       tab: 'overview',
-      connected: true
+      connected: true,
+      settings: {
+        mirror: true
+      }
     }
   },
   computed: {
@@ -270,18 +316,21 @@ export default {
       return date != null ? moment(date).format('lll') : 'unknown'
     },
     refreshDispatcher() {
-      const refreshAll = () => {
-        if (this.connected) {
-          this.refreshAddresses()
-          this.refreshTransactions()
-          this.refreshBalance()
-        }
-        this.refreshDispatcher()
+      setTimeout(this.refreshDispatcher, 2000)
+
+      if (this.connected) {
+        this.refreshAddresses()
+        this.refreshTransactions()
+        this.refreshBalance()
       }
-      setTimeout(refreshAll, 2000)
     },
     retryConnection() {
       this.connected = true
+    },
+    clearData() {
+      Promise.all(this.addresses.map(a => this.handleRemoveAddress(a.publicKey)))
+        .then(() => this.$message.success('Cleared application data'))
+        .catch(() => this.$message.error('Could not clear application data'))
     }
   }
 }
