@@ -2,8 +2,8 @@ import express from 'express';
 import ip from 'ip';
 import { Database } from 'sqlite3';
 import { config } from './config';
-import { Blab, Command, Signal } from './controllers/_';
-import { Collection, Storage } from './services/_';
+import { Signal, Blab } from './controllers/_';
+import { Collection, Crypto, Storage } from './services/_';
 import { Computer, Transaction } from './types/_';
 
 const main = async (): Promise<void> => {
@@ -24,10 +24,11 @@ const main = async (): Promise<void> => {
     const database = new Database('db.sqlite3');
     const storage = new Storage(database);
     const pending = new Collection<Transaction>();
+    const crypto = new Crypto();
 
-    new Command(pending, server, storage);
-    new Signal(computers, 500, me, server);
-    new Blab(computers, 500, me, pending, server, storage);
+    // new Command(pending, server, storage);
+    new Signal(computers, 100, me, server, crypto);
+    new Blab(computers, 100, me, server, pending, crypto, storage);
 };
 
 main();

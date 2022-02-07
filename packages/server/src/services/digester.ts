@@ -7,13 +7,16 @@ export class Digester {
     /**
      * Class constructor.
      * 
-     * @param crypto Used for cryptographic operations.
      * @param storage The interface for the database.
+     * @param crypto Used for cryptographic operations.
      */
     constructor(
-        private crypto: Crypto,
         private storage: Storage,
-    ) { }
+        private crypto?: Crypto,
+    ) {
+        //
+        this.crypto = crypto || new Crypto();
+    }
 
     /**
      * Digests all the events on which consensus has been reached.

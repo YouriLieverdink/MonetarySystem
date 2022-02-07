@@ -18,7 +18,7 @@ describe('Digester', () => {
         crypto = new Crypto();
         database = new Database(':memory:');
         storage = new Storage(database);
-        digester = new Digester(crypto, storage);
+        digester = new Digester(storage, crypto);
 
         events = [];
 

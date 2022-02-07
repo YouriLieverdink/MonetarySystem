@@ -11,6 +11,8 @@ export type _Event<T> = Event<T> & {
     timestamp?: number;
     consensus?: boolean;
     index?: number;
+    publicKey?: string;
+    signature?: string;
 }
 
 export type Index<T> = {
@@ -60,7 +62,7 @@ export class Consensus<T> {
      *
      * @param events The provided events. 
      */
-    public calculateN<T>(events: Event<T>[]): number {
+    public calculateN<T>(events: _Event<T>[]): number {
         //
         const publicKeys = new Set<string>();
 
