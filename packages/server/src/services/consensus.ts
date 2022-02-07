@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import _, { has, values } from 'lodash';
 import { Crypto } from '../services/_';
 import { Event } from '../types/_';
 
@@ -55,15 +55,22 @@ export class Consensus<T> {
         index = this.findOrder(index);
         index = this.setOrder(index);
 
+        let items = Object.entries(index);
+
+        // DEBUG
+        const first = items.filter(([_, ex]) => !ex.consensus)[0];
+        console.log(first[1]);
+
+        // We filter out all items which can be deleted.
+        items = items.filter(([hx, ex]) => ex.consensus);
+
         // We update the internal state for the next `do` call.
-        this.index = _.omitBy(index, (item) => item.consensus);
+        this.index = _.omitBy(index, (item) => {
+            //
+            return items.some(([_, ex]) => item === ex);
+        });
 
-        const values = Object.values(index);
-
-        // const first = values.filter((item) => !item.consensus)[0];
-        // console.log(first);
-
-        return values.filter((item) => item.consensus);
+        return items.map((item) => item[1]);
     }
 
     /**
@@ -139,8 +146,8 @@ export class Consensus<T> {
             // When there are parents, we take the max round of both.
             if (ex.selfParent && ex.otherParent) {
                 //
-                const self = index[ex.selfParent]?.round;
-                const other = index[ex.otherParent]?.round;
+                const self = index[ex.selfParent].round;
+                const other = index[ex.otherParent].round;
 
                 round = Math.max(self, other);
             }

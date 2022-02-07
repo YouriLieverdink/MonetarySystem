@@ -83,7 +83,7 @@ export class Blab extends Gossip<Event<Transaction[]>> {
                     // We don't have both parents.
                     continue;
                 }
-            }
+            } //
 
             this.items.add(item);
         }

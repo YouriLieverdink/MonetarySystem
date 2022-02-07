@@ -179,7 +179,7 @@ export abstract class Gossip<T> {
             if (data.values[key] > sequence) {
                 // We have a higher sequence number, add the missing items.
                 const items = this.items.all().filter((item) => {
-                    return item.sequence >= sequence && item.sequence <= data.values[key];
+                    return item.sequence > sequence;
                 });
 
                 response.items.push(...items);

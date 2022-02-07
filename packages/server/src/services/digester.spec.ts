@@ -75,7 +75,6 @@ describe('Digester', () => {
                 createdAt: 0,
                 timestamp: 0,
                 publicKey: keys[i].publicKey,
-                signature: '',
                 data: [transaction],
             });
         }

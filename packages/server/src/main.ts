@@ -27,7 +27,7 @@ const main = async (): Promise<void> => {
 
     new Command(pending, server, storage);
     new Signal(computers, 100, me, server, crypto);
-    new Blab(computers, 100, me, server, pending, crypto, storage);
+    new Blab(computers, 500, me, server, pending, crypto, storage);
 };
 
 main();
