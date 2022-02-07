@@ -22,7 +22,7 @@ export class Signal extends Gossip<Computer> {
         protected crypto: Crypto,
     ) {
         //
-        super(computers, 'signal', interval, me, server, crypto);
+        super(computers, 'signal', interval, me, server, crypto, 'ip');
 
         // Set the initial items to bootstrap.
         this.computers.all()
@@ -37,6 +37,7 @@ export class Signal extends Gossip<Computer> {
 
     public onTick(): void {
         //
+        // console.log(this.computers.all().length);
     }
 
     public onItems(items: Computer[], publicKey: string): void {

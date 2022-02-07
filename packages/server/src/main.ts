@@ -2,7 +2,7 @@ import express from 'express';
 import ip from 'ip';
 import { Database } from 'sqlite3';
 import { config } from './config';
-import { Signal, Blab } from './controllers/_';
+import { Blab, Command, Signal } from './controllers/_';
 import { Collection, Crypto, Storage } from './services/_';
 import { Computer, Transaction } from './types/_';
 
@@ -13,9 +13,8 @@ const main = async (): Promise<void> => {
     server.listen(config.port, '0.0.0.0');
 
     // We provide a multiple seed computers to bootstrap.
-    const computers = new Collection<Computer>();
+    const computers = new Collection<Computer>('ip');
     computers.add({ ip: '10.5.0.5', port: 3001 });
-    // computers.add({ ip: '192.168.178.95', port: 3001 });
 
     const me: Computer = { ip: ip.address(), port: config.port };
     computers.add(me);
@@ -26,7 +25,7 @@ const main = async (): Promise<void> => {
     const pending = new Collection<Transaction>();
     const crypto = new Crypto();
 
-    // new Command(pending, server, storage);
+    new Command(pending, server, storage);
     new Signal(computers, 100, me, server, crypto);
     new Blab(computers, 100, me, server, pending, crypto, storage);
 };

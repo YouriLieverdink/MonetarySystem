@@ -1,5 +1,5 @@
-import { createHash } from 'crypto';
 import _ from 'lodash';
+import { Crypto } from '../services/_';
 import { Event } from '../types/_';
 
 export type _Event<T> = Event<T> & {
@@ -12,7 +12,6 @@ export type _Event<T> = Event<T> & {
     consensus?: boolean;
     index?: number;
     publicKey?: string;
-    signature?: string;
 }
 
 export type Index<T> = {
@@ -20,6 +19,11 @@ export type Index<T> = {
 };
 
 export class Consensus<T> {
+    /**
+     * Used for cryptographic operations.
+     */
+    private crypto: Crypto;
+
     /**
      * The index of events on which consensus has not been reached (yet).
      */
@@ -30,6 +34,7 @@ export class Consensus<T> {
      */
     constructor() {
         //
+        this.crypto = new Crypto();
         this.index = {};
     };
 
@@ -53,7 +58,12 @@ export class Consensus<T> {
         // We update the internal state for the next `do` call.
         this.index = _.omitBy(index, (item) => item.consensus);
 
-        return Object.values(index);
+        const values = Object.values(index);
+
+        // const first = values.filter((item) => !item.consensus)[0];
+        // console.log(first);
+
+        return values.filter((item) => item.consensus);
     }
 
     /**
@@ -88,8 +98,10 @@ export class Consensus<T> {
 
         for (let i = 0; i < events.length; i++) {
             //
-            const hashable = JSON.stringify(events[i]);
-            const hash = createHash('sha256').update(hashable).digest('hex');
+            const hash = this.crypto.createHash(
+                events[i],
+                ['round', 'witness', 'vote', 'famous', 'roundReceived', 'timestamp', 'consensus', 'index'],
+            );
 
             // We set the event if we don't know it already.
             if (!(hash in index)) {
@@ -344,9 +356,9 @@ export class Consensus<T> {
             if (ex.timestamp > ey.timestamp) return 1;
             if (ex.timestamp < ey.timestamp) return -1;
 
-            // 3. When that ties, we sort by a whithened signature.
+            // 3. When that ties, we sort by a whithened public key.
             const random = Math.random();
-            if ((parseInt(ex.signature) ^ random) > (parseInt(ey.signature) ^ random)) return 1;
+            if ((parseInt(ex.publicKey) ^ random) > (parseInt(ey.publicKey) ^ random)) return 1;
 
             return -1;
         });

@@ -45,9 +45,10 @@ export abstract class Gossip<T> {
         private me: Computer,
         server: Express,
         protected crypto: Crypto,
+        unique: string,
     ) {
         //
-        this.items = new Collection();
+        this.items = new Collection(unique);
         this.keys = this.crypto.createKeys();
 
         // Initialise the listener.
@@ -77,7 +78,7 @@ export abstract class Gossip<T> {
         this.onTick();
 
         const computer = this.computers.random(this.me);
-        if (!computer || computer.ip === this.me.ip) return;
+        if (!computer) return;
 
         await this.doHandshake(computer);
     };
@@ -108,6 +109,11 @@ export abstract class Gossip<T> {
 
             data = await this.handleHandshake(response.data);
             data = this.helpers.sign(data);
+
+            if (data.items.length === 0) {
+                // We don't have anything newer, so just move on.
+                return;
+            }
 
             await axios.post(
                 `http://${computer.ip}:${computer.port}/${this.endpoint}`,
@@ -145,7 +151,7 @@ export abstract class Gossip<T> {
             let items = data.items.map((item) => _.omit(item, this.except) as Item<T>);
 
             items = _.differenceWith(
-                data.items,
+                items,
                 this.items.all(),
                 // We use full equality when no `unique` key was provided.
                 this.unique ? (a, b) => a[this.unique] === b[this.unique] : _.isEqual,
@@ -173,7 +179,7 @@ export abstract class Gossip<T> {
             if (data.values[key] > sequence) {
                 // We have a higher sequence number, add the missing items.
                 const items = this.items.all().filter((item) => {
-                    return item.sequence > sequence && item.sequence <= data.values[key];
+                    return item.sequence >= sequence && item.sequence <= data.values[key];
                 });
 
                 response.items.push(...items);
@@ -330,7 +336,7 @@ export abstract class Gossip<T> {
      * @param items The newly received items.
      * @param publicKey The public key of the other computer.
      */
-    protected abstract onItems(items: T[], publicKey: string): void;
+    protected abstract onItems(items: Item<T>[], publicKey: string): void;
 
     /**
      * This method is called whenever the axios post request to another computer
