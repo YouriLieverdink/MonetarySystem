@@ -32,5 +32,10 @@ export const apiRequest = {
         to: receiver, amount
       })
     }
+  },
+  balances: {
+    get() {
+      return api.get("balance")
+    },
   }
 }
