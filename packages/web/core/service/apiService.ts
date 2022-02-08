@@ -20,7 +20,7 @@ export const apiRequest = {
     get: (publicKey: string) =>
       api.get('transactions', { params: { publicKey } }),
     create: (sender: string, receiver: string, amount: number) =>
-      api.post('transactions?publicKey=' + sender, { receiver, amount }, { params: { publicKey: sender } })
+      api.post('transactions', { receiver, amount }, { params: { publicKey: sender } })
   },
   balance: {
     get: (publicKey: string) =>

@@ -62,7 +62,9 @@ export class Digester {
                 transaction.index = index += 1;
                 transaction.timestamp = event.timestamp;
 
-                await this.storage.transactions.create(transaction);
+                try {
+                    await this.storage.transactions.create(transaction);
+                } catch (_) { }
             }
         }
     }

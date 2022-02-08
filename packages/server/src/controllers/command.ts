@@ -160,7 +160,11 @@ export class Command {
             const transactions = await this.storage.transactions.index(publicKey);
 
             const sum = transactions
-                .map((transaction) => transaction.amount)
+                .map((transaction) => {
+                    //
+                    const multiplier = transaction.sender === publicKey ? -1 : 1;
+                    return multiplier * transaction.amount;
+                })
                 .reduce((p, c) => p + c, 0);
 
             return sum;

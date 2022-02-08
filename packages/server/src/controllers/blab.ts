@@ -56,9 +56,9 @@ export class Blab extends Gossip<Event<Transaction[]>> {
 
         this.digester.do(items);
 
-        // console.log(`Current: ${this.items.all().length}`);
-        // console.log(`Consensus: ${this.total += items.length}`);
-        // console.log();
+        console.log(`Current: ${this.items.all().length}`);
+        console.log(`Consensus: ${this.total += items.length}`);
+        console.log();
     }
 
     private total = 0;
@@ -135,7 +135,10 @@ export class Blab extends Gossip<Event<Transaction[]>> {
             if (!privateKey) privateKey = this.keys.privateKey;
 
             // Sign the transaction.
-            transaction.signature = this.crypto.createSignature(transaction, privateKey);
+            transaction.signature = this.crypto.createSignature(
+                transaction,
+                privateKey, ['signature'],
+            );
 
             return transaction;
         });
