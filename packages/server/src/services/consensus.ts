@@ -59,7 +59,7 @@ export class Consensus<T> {
 
         // DEBUG
         const first = items.filter(([_, ex]) => !ex.consensus)[0];
-        console.log(first[1]);
+        // console.log(first[1]);
 
         // We filter out all items which can be deleted.
         items = items.filter(([hx, ex]) => ex.consensus);

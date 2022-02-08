@@ -1,5 +1,5 @@
 <template>
-  <el-card class="view" :body-style="{padding: 0}" shadow="always">
+  <el-card class="view" :body-style="{ padding: 0 }" shadow="always">
     <div class="wallet_header">
       <div class="dialog_controls">
         <close-button disabled />
@@ -7,24 +7,32 @@
         <resize-button disabled />
       </div>
       <div class="action_buttons">
-        <el-tooltip class="header_item" content="Node unreachable, retry" placement="bottom">
+        <el-tooltip
+          class="header_item"
+          content="Node unreachable, retry"
+          placement="bottom"
+        >
           <el-button
+            v-show="!connected"
             plain
             circle
             type="danger"
             size="large"
-            v-show="!connected"
-            @click="retryConnection"
             class="action_button mdi mdi-connection"
+            @click="retryConnection"
           />
         </el-tooltip>
-        <el-tooltip class="header_item" content="Generate invoice" placement="bottom">
+        <el-tooltip
+          class="header_item"
+          content="Generate invoice"
+          placement="bottom"
+        >
           <el-button
             plain
             circle
             size="large"
-            @click="showDialog.genInvoice = true"
             class="action_button mdi mdi-qrcode"
+            @click="showDialog.genInvoice = true"
           />
         </el-tooltip>
         <el-tooltip class="header_item" content="Send funds" placement="bottom">
@@ -32,28 +40,40 @@
             plain
             circle
             size="medium"
-            @click="showDialog.createTx = true"
             class="action_button el-icon-money"
+            @click="showDialog.createTx = true"
           />
         </el-tooltip>
-        <el-tooltip class="header_item" content="Add address" placement="bottom">
+        <el-tooltip
+          class="header_item"
+          content="Add address"
+          placement="bottom"
+        >
           <el-button
             plain
             circle
             size="medium"
-            @click="showDialog.walletSetup = true"
             class="action_button el-icon-plus"
+            @click="showDialog.walletSetup = true"
           />
         </el-tooltip>
       </div>
     </div>
-    <el-tabs type="border-card" tab-position="left" class="tabs" stretch v-model="tab">
+    <el-tabs
+      v-model="tab"
+      type="border-card"
+      tab-position="left"
+      class="tabs"
+      stretch
+    >
       <el-tab-pane name="overview">
-        <span slot="label">Wallet Overview <i class="el-icon-wallet"></i></span>
-        <el-card shadow="never" v-show="tab === 'overview'">
+        <span slot="label">Wallet Overview <i class="el-icon-wallet" /></span>
+        <el-card v-show="tab === 'overview'" shadow="never">
           <table style="width: 400px; margin: 24px auto">
             <tr class="summary_row" style="border-bottom: 1px solid #555">
-              <td colspan="2" style="text-align: center"><strong>Wallet Overview</strong></td>
+              <td colspan="2" style="text-align: center">
+                <strong>Wallet Overview</strong>
+              </td>
             </tr>
             <tr>
               <td colspan="2">
@@ -76,53 +96,67 @@
         </el-card>
       </el-tab-pane>
       <el-tab-pane name="addresses">
-        <span slot="label">Addresses <i class="el-icon-notebook-1"></i></span>
+        <span slot="label">Addresses <i class="el-icon-notebook-1" /></span>
         <transition name="el-fade-in-linear">
-          <el-table v-show="tab === 'addresses'" :data="addresses" max-height="468px" :row-style="{'border-right': '1px solid #ff0000'}">
-            <el-table-column
-              label="Public key">
-              <template v-slot="{row}">
+          <el-table
+            v-show="tab === 'addresses'"
+            :data="addresses"
+            max-height="468px"
+            :row-style="{ 'border-right': '1px solid #ff0000' }"
+          >
+            <el-table-column label="Public key">
+              <template #default="{ row }">
                 {{ shortenKeyString(row.publicKey, 40) }}
               </template>
             </el-table-column>
-            <el-table-column
-              align="right">
-              <template #header>
-                Total: {{addresses.length}}
-              </template>
+            <el-table-column align="right">
+              <template #header> Total: {{ addresses.length }} </template>
               <template slot-scope="{ row }">
                 <el-button
                   size="mini"
                   type="danger"
                   :disabled="!connected"
-                  @click="handleRemoveAddress(row.publicKey)">Remove</el-button>
+                  @click="handleRemoveAddress(row.publicKey)"
+                >
+                  Remove
+                </el-button>
               </template>
             </el-table-column>
           </el-table>
         </transition>
       </el-tab-pane>
       <el-tab-pane name="transactions">
-        <span slot="label">Transactions <i class="el-icon-coin"></i></span>
+        <span slot="label">Transactions <i class="el-icon-coin" /></span>
         <transition name="el-fade-in-linear">
           <el-table
             v-show="tab === 'transactions'"
             :data="transactions"
-            max-height="468px">
+            max-height="468px"
+          >
             <el-table-column label="Sender" width="220">
-              <template v-slot="{row}">
+              <template #default="{ row }">
                 {{
-                  shortenKeyString(row.sender, 15)
-                    .concat(addresses.filter(address =>
-                      address.publicKey === row.sender).length > 0 ? ' (You)' : '')
+                  shortenKeyString(row.sender, 15).concat(
+                    addresses.filter(
+                      (address) => address.publicKey === row.sender
+                    ).length > 0
+                      ? " (You)"
+                      : ""
+                  )
                 }}
               </template>
             </el-table-column>
             <el-table-column label="Receiver">
-              <template v-slot="{row}">
+              <template #default="{ row }">
                 {{
-                  shortenKeyString(row.receiver, 15)
-                    .concat(addresses.filter(address =>
-                      address.publicKey === row.receiver).length > 0 ? ' (You)' : '')}}
+                  shortenKeyString(row.receiver, 15).concat(
+                    addresses.filter(
+                      (address) => address.publicKey === row.receiver
+                    ).length > 0
+                      ? " (You)"
+                      : ""
+                  )
+                }}
               </template>
             </el-table-column>
             <el-table-column
@@ -131,25 +165,22 @@
               sortable
               width="100"
             />
-            <el-table-column
-              label="When"
-              sortable
-              :sort-by="(row,i) => i">
-              <template v-slot="{row}">
-                {{dateString(row.timestamp)}}
+            <el-table-column label="When" sortable :sort-by="(row, i) => i">
+              <template #default="{ row }">
+                {{ dateString(row.timestamp) }}
               </template>
             </el-table-column>
           </el-table>
         </transition>
       </el-tab-pane>
       <el-tab-pane name="settings">
-        <span slot="label">Settings <i class="el-icon-setting"></i></span>
+        <span slot="label">Settings <i class="el-icon-setting" /></span>
         <transition name="el-fade-in-linear">
           <div v-show="tab === 'settings'">
             <el-card shadow="never">
               <el-row type="flex" align="middle">
-                <el-col :span=10>Save full transaction history</el-col>
-                <el-col :span=5>
+                <el-col :span="10"> Save full transaction history </el-col>
+                <el-col :span="5">
                   <el-switch
                     :value="settings.mirror"
                     :disabled="!connected"
@@ -159,12 +190,12 @@
               </el-row>
               <el-divider />
               <el-row type="flex" align="middle">
-                <el-col :span=10>Clear data</el-col>
-                <el-col :span=5>
+                <el-col :span="10"> Clear data </el-col>
+                <el-col :span="5">
                   <el-popconfirm
                     title="This action can not be undone!"
-                    confirm-button-text='Proceed'
-                    cancel-button-text='Cancel'
+                    confirm-button-text="Proceed"
+                    cancel-button-text="Cancel"
                     icon="el-icon-info"
                     icon-color="red"
                     @confirm="clearData"
@@ -174,7 +205,8 @@
                       type="danger"
                       :disabled="!connected"
                       plain
-                      size="mini">
+                      size="mini"
+                    >
                       Clear data
                     </el-button>
                   </el-popconfirm>
@@ -201,132 +233,145 @@
 </template>
 
 <script>
-import moment from 'moment';
-import { mapActions, mapState } from 'vuex';
-import { apiRequest } from '@/core/service/apiService';
-import stringMixin from '@/components/mixin/stringMixin';
+import moment from "moment";
+import { mapActions, mapState } from "vuex";
+import { apiRequest } from "@/core/service/apiService";
+import stringMixin from "@/components/mixin/stringMixin";
 
 export default {
-  name: 'WalletView',
+  name: "WalletView",
   mixins: [stringMixin],
   data() {
     return {
       showDialog: {
         walletSetup: false,
         createTx: false,
-        genInvoice: false
+        genInvoice: false,
       },
-      tab: 'overview',
+      tab: "overview",
       connected: true,
       settings: {
-        mirror: true
-      }
-    }
+        mirror: true,
+      },
+    };
   },
   computed: {
     ...mapState("wallet", {
-      addresses: state => state.addresses,
-      transactions: state => state.transactions,
-      balance: state => state.balance,
+      addresses: (state) => state.addresses,
+      transactions: (state) => state.transactions,
+      balance: (state) => state.balance,
     }),
     walletSummary() {
-      const lastActivity = Math.max(...this.transactions.map(e => e?.timestamp ?? 0))
+      const lastActivity = Math.max(
+        ...this.transactions.map((e) => e?.timestamp ?? 0)
+      );
       return {
         balance: this.balance,
         transactionCount: this.transactions.length,
-        lastActivity: this.transactions.length > 0
-          ? lastActivity > 0
-            ? moment(new Date(lastActivity), "YYYYMMDD").fromNow()
-            : 'unknown'
-          : 'never'
-      }
+        lastActivity:
+          this.transactions.length > 0
+            ? lastActivity > 0
+              ? moment(new Date(lastActivity), "YYYYMMDD").fromNow()
+              : "unknown"
+            : "never",
+      };
     },
   },
   mounted() {
-    this.refreshDispatcher()
+    this.refreshDispatcher();
   },
   methods: {
     ...mapActions("wallet", [
       "removeAddress",
       "setAddresses",
       "setTransactions",
-      "setBalance"
+      "setBalance",
     ]),
     async handleRemoveAddress(pubKey) {
       try {
-        await apiRequest.addresses.remove(pubKey)
-        this.removeAddress(pubKey)
-      } catch(e) {
-        this.$message.error('Address not removed')
-        this.connected = e.response !== undefined
+        await apiRequest.addresses.remove(pubKey);
+        this.removeAddress(pubKey);
+      } catch (e) {
+        this.$message.error("Address not removed");
+        this.connected = e.response !== undefined;
       }
     },
     async refreshAddresses() {
       try {
-        const res = await apiRequest.addresses.get()
-        this.setAddresses(res.data)
+        const res = await apiRequest.addresses.get();
+        this.setAddresses(res.data);
       } catch (e) {
-        this.$message.error('Error updating your addresses')
-        this.connected = e.response !== undefined
+        this.$message.error("Error updating your addresses");
+        this.connected = e.response !== undefined;
       }
     },
     async refreshTransactions() {
-      let txs = []
       try {
-        this.addresses.map(async ({ publicKey }) => {
-          const res = await apiRequest.transactions.get(publicKey)
-          txs = [...txs, res.data.map(({ sender, receiver, amount }) => ({
-            sender,
-            receiver,
-            amount
-          }))]
-        })
+        const txs = [];
 
-        const newTxsAmount = txs.length - this.transactions.length
-        if (newTxsAmount > 0)
+        this.addresses.forEach(async ({ publicKey }) => {
+          const res = await apiRequest.transactions.get(publicKey);
+          txs.push(...res.data);
+        });
+
+        const newTxsAmount = txs.length - this.transactions.length;
+        if (newTxsAmount > 0) {
           this.$notify.info({
-            title: 'Info',
-            message: newTxsAmount + ' new transactions'
-          })
+            title: "Info",
+            message: newTxsAmount + " new transactions",
+          });
+        }
 
-        console.log(txs.length)
-        this.setTransactions(txs)
+        this.setTransactions(txs);
       } catch (e) {
-        this.$message.error('Error updating your transactions')
-        this.connected = e.response !== undefined
+        this.$message.error("Error updating your transactions");
+        this.connected = e.response !== undefined;
       }
     },
     async refreshBalance() {
       try {
-        const res = await apiRequest.balances.get()
-        this.setBalance(typeof res.data === 'number' ? res.data : 0)
+        let balance = 0;
+
+        for (const address of this.addresses) {
+          const res = await apiRequest.balance.get(address.publicKey);
+          balance += res.data;
+        }
+        // this.addresses.forEach(async ({ publicKey }) => {
+        //   const res = await apiRequest.balance.get(publicKey);
+        //   // balance += res.data;
+        // });
+
+        this.setBalance(balance);
       } catch (e) {
-        this.$message.error('Error updating your balance')
-        this.connected = e.response !== undefined
+        console.log(e);
+        this.$message.error("Error updating your balance");
+        this.connected = e.response !== undefined;
       }
     },
     dateString(date) {
-      return date != null ? moment(date).format('lll') : 'unknown'
+      return date != null ? moment(date).format("lll") : "unknown";
     },
     refreshDispatcher() {
-      setTimeout(this.refreshDispatcher, 2000)
+      setTimeout(this.refreshDispatcher, 2000);
 
       if (this.connected) {
-        this.refreshAddresses()
-        this.refreshTransactions()
-        this.refreshBalance()
+        this.refreshAddresses();
+        this.refreshTransactions();
+        this.refreshBalance();
       }
     },
     retryConnection() {
-      this.connected = true
+      this.connected = true;
     },
     clearData() {
-      Promise.all(this.addresses.map(a => this.handleRemoveAddress(a.publicKey)))
-        .then(() => this.$message.success('Cleared application data'))
-        .catch(() => this.$message.error('Could not clear application data'))
-    }
-  }
-}
+      Promise.all(
+        this.addresses.map((a) => this.handleRemoveAddress(a.publicKey))
+      )
+        .then(() => this.$message.success("Cleared application data"))
+        .catch(() => this.$message.error("Could not clear application data"));
+    },
+  },
+};
 </script>
 
 <style scoped>
@@ -354,8 +399,8 @@ export default {
   margin-left: 12px;
 }
 .action_button {
-  padding:5px;
-  font-size: 18px
+  padding: 5px;
+  font-size: 18px;
 }
 .summary_row {
   font-size: 16px;

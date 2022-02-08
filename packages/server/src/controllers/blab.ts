@@ -56,9 +56,9 @@ export class Blab extends Gossip<Event<Transaction[]>> {
 
         this.digester.do(items);
 
-        console.log(`Current: ${this.items.all().length}`);
-        console.log(`Consensus: ${this.total += items.length}`);
-        console.log();
+        // console.log(`Current: ${this.items.all().length}`);
+        // console.log(`Consensus: ${this.total += items.length}`);
+        // console.log();
     }
 
     private total = 0;
@@ -130,7 +130,8 @@ export class Blab extends Gossip<Event<Transaction[]>> {
 
         event.data = transactions.map((transaction) => {
             // We sign each transaction individually.
-            let { privateKey } = addresses.find((address) => address.publicKey === transaction.sender);
+            let address = addresses.find((address) => address.publicKey === transaction.sender);
+            let privateKey = address?.privateKey;
             if (!privateKey) privateKey = this.keys.privateKey;
 
             // Sign the transaction.

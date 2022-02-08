@@ -40,7 +40,7 @@ export class Command {
 
                 this.transactions.create(`~`, value, 1);
             },
-            1000 * 10 * 60,
+            1000 * 10,
         );
     }
 
