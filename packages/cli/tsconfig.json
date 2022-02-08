@@ -1,7 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": { "*": ["types/*"] },
     "esModuleInterop": true,
     "module": "commonjs",
     "declaration": true,
@@ -12,7 +10,9 @@
     "experimentalDecorators": true,
     "target": "es6",
     "sourceMap": true,
-    "lib": ["es6"]
+    "lib": ["es6"],
+    "outDir": "./lib"
   },
+  "include": ["./src"],
   "exclude": ["node_modules", "**/*.spec.ts"]
 }
