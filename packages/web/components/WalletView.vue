@@ -309,7 +309,7 @@ export default {
       return date != null ? moment(date).format('lll') : 'unknown'
     },
     refreshDispatcher() {
-      setTimeout(this.refreshDispatcher, 5000)
+      setTimeout(this.refreshDispatcher, 2000)
 
       if (this.connected) {
         this.refreshAddresses()
