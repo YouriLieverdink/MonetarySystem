@@ -1,559 +1,257 @@
+import { Database } from 'sqlite3';
+import { Storage } from '../services/_';
+import { Address, Transaction } from '../types/_';
 
-describe('Storage', () => it.todo('Write tests'));
+describe('Storage', () => {
+    //
+    let database: Database;
+    let storage: Storage;
 
-// import { Database } from 'sqlite3';
-// import { Address, Event } from '../../types';
-// import { StorageService } from './index';
+    beforeEach(() => {
+        // Initialise a new in-memory database for every test.
+        database = new Database(':memory:');
+        storage = new Storage(database);
+    });
 
-// describe('StorageService', () => {
-// 	//
-// 	let database: Database;
-// 	let storage: StorageService;
+    describe('addresses', () => {
+        const items: Address[] = [
+            { publicKey: `1`, privateKey: 'key' },
+            { publicKey: `2`, privateKey: 'key' },
+            { publicKey: `3`, privateKey: 'key' }
+        ];
 
-// 	beforeEach(() => {
-// 		// Initialise a new in-memory datbase for every test.
-// 		database = new Database(':memory:');
-// 		storage = new StorageService(database);
-// 	});
+        describe('index', () => {
 
-// 	describe('addresses', () => {
-// 		const publicKey = 'mock-public-key';
-// 		const privateKey = 'mock-private-key';
-// 		const isDefault = 0;
+            it('should call database.all', async () => {
+                const spy = jest.spyOn(database, 'all');
 
-// 		const items: Address[] = [
-// 			{ publicKey: `${publicKey}-1`, privateKey: privateKey, isDefault: isDefault },
-// 			{ publicKey: `${publicKey}-2`, privateKey: privateKey, isDefault: isDefault },
-// 			{ publicKey: `${publicKey}-3`, privateKey: privateKey, isDefault: isDefault }
-// 		];
+                await storage.addresses.index();
 
-// 		describe('index', () => {
+                expect(spy).toBeCalled();
+            });
 
-// 			it('should call database.all', async () => {
-// 				const spy = jest.spyOn(database, 'all');
+            it('should return an empty list when no items are stored in the database', async () => {
+                const result = await storage.addresses.index();
 
-// 				await storage.addresses.index();
+                expect(result.length).toEqual(0);
+            });
 
-// 				expect(spy).toBeCalled();
-// 			});
+            it('should return a populated list when items are stored in the database', async () => {
+                for (const { publicKey, privateKey } of items) {
+                    await storage.query.run(
+                        'INSERT INTO addresses VALUES (?, ?)',
+                        publicKey, privateKey,
+                    );
+                }
 
-// 			it('should return an empty list when no items are stored in the database', async () => {
-// 				const result = await storage.addresses.index();
+                const result = await storage.addresses.index();
 
-// 				expect(result.length).toEqual(0);
-// 			});
+                expect(result.length).toEqual(items.length);
+            });
+        });
 
-// 			it('should return a populated list when items are stored in the database', async () => {
-// 				// Add via the databse directly.
-// 				database.serialize(() => {
-// 					const statement = database.prepare('INSERT INTO addresses VALUES (?, ?, ?)');
+        describe('read', () => {
 
-// 					items.forEach((address) => {
-// 						statement.run(address.publicKey, address.privateKey, address.isDefault);
-// 					});
+            it('should call database.get', async () => {
+                const spy = jest.spyOn(database, 'get');
 
-// 					statement.finalize();
-// 				});
+                await storage.addresses.read('0');
 
-// 				const result = await storage.addresses.index();
+                expect(spy).toBeCalled();
+            });
 
-// 				expect(result.length).toEqual(items.length);
-// 			});
-// 		});
+            it('should return undefined when the item was not found', async () => {
+                const result = await storage.addresses.read('0');
 
-// 		describe('read', () => {
+                expect(result).toBeUndefined();
+            });
 
-// 			it('should call database.get', async () => {
-// 				const spy = jest.spyOn(database, 'get');
+            it('should return the correct item', async () => {
+                for (const { publicKey, privateKey } of items) {
+                    await storage.query.run(
+                        'INSERT INTO addresses VALUES (?, ?)',
+                        publicKey, privateKey,
+                    );
+                }
 
-// 				await storage.addresses.read(publicKey);
+                const item = items[0];
 
-// 				expect(spy).toBeCalled();
-// 			});
+                const result = await storage.addresses.read(item.publicKey);
 
-// 			it('should return undefined when the item was not found', async () => {
-// 				const result = await storage.addresses.read(publicKey);
+                expect(result.publicKey).toEqual(item.publicKey);
+                expect(result.privateKey).toEqual(item.privateKey);
+            });
+        });
 
-// 				expect(result).toBeUndefined();
-// 			});
+        describe('create', () => {
 
-// 			it('should return the correct item', async () => {
-// 				// Add via the databse directly.
-// 				database.serialize(() => {
-// 					const statement = database.prepare('INSERT INTO addresses VALUES (?, ?, ?)');
+            it('should call database.run', async () => {
+                const spy = jest.spyOn(database, 'run');
 
-// 					items.forEach((address) => {
-// 						statement.run(address.publicKey, address.privateKey, address.isDefault);
-// 					});
+                await storage.addresses.create({ publicKey: '4', privateKey: 'key' });
 
-// 					statement.finalize();
-// 				});
+                expect(spy).toBeCalled();
+            });
 
-// 				const item = items[0];
+            it('should create and store the item in the database', async () => {
+                const item = items[0];
 
-// 				const result = await storage.addresses.read(item.publicKey);
+                await storage.addresses.create(item);
 
-// 				expect(result.publicKey).toEqual(item.publicKey);
-// 				expect(result.privateKey).toEqual(item.privateKey);
-// 				expect(result.isDefault).toEqual(item.isDefault);
-// 			});
-// 		});
+                const address = await storage.query.get(
+                    'SELECT * FROM addresses WHERE publicKey=?',
+                    item.publicKey,
+                )
 
-// 		describe('create', () => {
+                expect(address).toEqual(item);
+            });
 
-// 			it('should call database.run', async () => {
-// 				const spy = jest.spyOn(database, 'run');
+            it('should throw an error when the public key already exists', async () => {
+                const item = items[0];
 
-// 				await storage.addresses.create(publicKey, privateKey, isDefault);
+                await storage.query.run(
+                    'INSERT INTO addresses VALUES (?, ?)',
+                    item.publicKey, item.privateKey,
+                );
 
-// 				expect(spy).toBeCalled();
-// 			});
+                expect(() => storage.addresses.create(item)).rejects;
+            });
+        });
 
-// 			it('should create and store the item in the database', async () => {
-// 				const item = items[0];
+        describe('destroy', () => {
 
-// 				await storage.addresses.create(item.publicKey, item.privateKey, item.isDefault);
+            it('should call database.run', async () => {
+                const spy = jest.spyOn(database, 'run');
 
-// 				// Read from the databse directly.
-// 				database.serialize(() => {
+                await storage.addresses.destroy('0');
 
-// 					database.get(
-// 						'SELECT * FROM addresses WHERE publicKey=?',
-// 						[item.publicKey],
-// 						(_, res) => {
-// 							const result: Address = res;
+                expect(spy).toBeCalled();
+            });
 
-// 							expect(result.publicKey).toEqual(item.publicKey);
-// 							expect(result.privateKey).toEqual(item.privateKey);
-// 							expect(result.isDefault).toEqual(item.isDefault);
-// 						}
-// 					);
-// 				});
-// 			});
+            it('should delete the item from the database', async () => {
+                const item = items[0];
 
-// 			it('should throw an error when the public key already exists', async () => {
-// 				// Add via the databse directly.
-// 				database.run(
-// 					'INSERT INTO addresses VALUES (?, ?, ?)',
-// 					[publicKey, privateKey, isDefault]
-// 				);
+                await storage.query.run(
+                    'INSERT INTO addresses VALUES (?, ?)',
+                    item.publicKey, item.privateKey,
+                );
 
-// 				expect(() => storage.addresses.create(publicKey, privateKey, isDefault)).rejects;
-// 			});
-// 		});
+                await storage.addresses.destroy('1');
 
-// 		describe('update', () => {
+                const address = await storage.query.get(
+                    'SELECT * FROM addresses WHERE publicKey=?',
+                    item.publicKey,
+                );
 
-// 			it('should call database.run', async () => {
-// 				const spy = jest.spyOn(database, 'run');
+                expect(address).toBe(undefined);
+            });
+        });
+    });
 
-// 				await storage.addresses.update(publicKey, isDefault);
+    describe('transactions', () => {
 
-// 				expect(spy).toBeCalled();
-// 			});
+        const items: Transaction[] = [
+            { id: '0', timestamp: 0, index: 0, sender: `~`, receiver: 'Monkey', amount: 1, signature: '' },
+            { id: '1', timestamp: 0, index: 1, sender: `~`, receiver: 'Dog', amount: 1, signature: '' },
+            { id: '2', timestamp: 0, index: 2, sender: `~`, receiver: 'Sheep', amount: 1, signature: '' },
+        ];
 
-// 			it('should update the item in the database', async () => {
-// 				// Add via the databse directly.
-// 				database.run(
-// 					'INSERT INTO addresses VALUES (?, ?, ?)',
-// 					[publicKey, privateKey, isDefault],
-// 				);
+        describe('index', () => {
 
-// 				await storage.addresses.update(publicKey, 1);
+            it('calls database.all', async () => {
+                const spy = jest.spyOn(database, 'all');
 
-// 				const result = await storage.addresses.read(publicKey);
+                await storage.transactions.index();
 
-// 				expect(result.isDefault).toEqual(1);
-// 			});
-// 		});
+                expect(spy).toBeCalled();
+            });
 
-// 		describe('destroy', () => {
+            it('returns only transactions of `publicKey` when provided', async () => {
+                for (const item of items) {
+                    await storage.query.run(
+                        'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?)',
+                        item.id, item.timestamp, item.index, item.receiver, item.sender, item.amount,
+                    );
+                }
 
-// 			it('should call database.run', async () => {
-// 				const spy = jest.spyOn(database, 'run');
+                const result = await storage.transactions.index('Monkey');
 
-// 				await storage.addresses.destroy(publicKey);
+                expect(result.length).toBe(1);
+            });
 
-// 				expect(spy).toBeCalled();
-// 			});
+            it('returns transactions ordered by `index`', async () => {
+                for (const item of items) {
+                    await storage.query.run(
+                        'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?)',
+                        item.id, item.timestamp, item.index, item.receiver, item.sender, item.amount,
+                    );
+                }
 
-// 			it('should delete the item from the database', async () => {
-// 				const item = items[0];
+                const result = await storage.transactions.index();
 
-// 				// Add via the databse directly.
-// 				database.run(
-// 					'INSERT INTO addresses VALUES (?, ?, ?)',
-// 					[item.publicKey, item.privateKey, item.isDefault],
-// 				);
+                const indexes = result.map((v) => v.index);
 
-// 				await storage.addresses.destroy(publicKey);
+                expect(indexes).toEqual([2, 1, 0]);
+            });
 
-// 				// Read from the databse directly.
-// 				database.serialize(() => {
+            it('returns a limited amount when limit is provided', async () => {
+                for (const item of items) {
+                    await storage.query.run(
+                        'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?)',
+                        item.id, item.timestamp, item.index, item.receiver, item.sender, item.amount,
+                    );
+                }
 
-// 					database.get(
-// 						'SELECT * FROM addresses WHERE publicKey=?',
-// 						[item.publicKey],
-// 						(_, res) => {
-// 							const result: Address = res;
+                const result = await storage.transactions.index(null, 1);
 
-// 							expect(result.publicKey).toEqual(item.publicKey);
-// 							expect(result.privateKey).toEqual(item.privateKey);
-// 							expect(result.isDefault).toEqual(item.isDefault);
-// 						}
-// 					);
-// 				});
-// 			});
-// 		});
-// 	});
+                expect(result.length).toBe(1);
+            });
 
-// 	describe('events', () => {
-// 		const type = 'transaction';
-// 		const data = {};
-// 		const otherParent = 'mock-other-parent';
-// 		const selfParent = 'mock-self-parent';
-// 		const signature = 'mock-signature';
-// 		const date = new Date();
-// 		const consensusReached = false;
+            it('returns the transactions after offset when offset is provided', async () => {
+                for (const item of items) {
+                    await storage.query.run(
+                        'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?)',
+                        item.id, item.timestamp, item.index, item.receiver, item.sender, item.amount,
+                    );
+                }
 
-// 		const items: Event[] = [
-// 			{ type: type, signature: `${signature}1`, selfParent: selfParent, otherParent: otherParent, date: date, data: data, consensusReached: consensusReached },
-// 			{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: data, consensusReached: consensusReached },
-// 			{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: data, consensusReached: consensusReached }
-// 		];
+                const result = await storage.transactions.index(null, 3, 2);
 
-// 		describe('index', () => {
+                expect(result.length).toBe(1);
+            });
+        });
 
-// 			it('should call database.all', async () => {
-// 				const spy = jest.spyOn(database, 'all');
+        describe('create', () => {
 
-// 				await storage.events.index();
+            it('should call database.run', async () => {
+                const spy = jest.spyOn(database, 'run');
 
-// 				expect(spy).toBeCalled();
-// 			});
+                await storage.transactions.create(items[0]);
 
-// 			it('should return an empty list when no items are stored in the database', async () => {
-// 				const result = await storage.events.index();
+                expect(spy).toBeCalled();
+            });
 
-// 				expect(result).toEqual(result);
-// 			});
+            it('should create and store the item in the database', async () => {
+                await storage.transactions.create(items[0]);
 
-// 			it('should return a populated list when items are stored in the database', async () => {
-// 				// Add via the databse directly.
-// 				database.serialize(() => {
-// 					const statement = database.prepare('INSERT INTO events (type, data, otherParent, selfParent, signature, date) VALUES (?, ?, ?, ?, ?, ?)');
+                const transaction = await storage.query.get(
+                    'SELECT * FROM transactions WHERE id=?',
+                    items[0].id,
+                )
 
-// 					items.forEach((event) => {
-// 						statement.run(event.type, event.data, event.otherParent, event.selfParent, event.signature, event.date);
-// 					});
+                expect(transaction).toEqual(items[0]);
+            });
 
-// 					statement.finalize();
-// 				});
+            it('should throw an error when the id already exists', async () => {
+                const item = items[0];
 
-// 				const result = await storage.events.index();
+                await storage.query.run(
+                    'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?)',
+                    item.id, item.timestamp, item.index, item.receiver, item.sender, item.amount,
+                );
 
-// 				expect(result.length).toEqual(3);
-// 			});
-// 		});
-
-// 		describe('read', () => {
-
-// 			it('should call database.get', async () => {
-// 				const spy = jest.spyOn(database, 'get');
-
-// 				await storage.events.read(0);
-
-// 				expect(spy).toBeCalled();
-// 			});
-
-// 			it('should return undefined when the item was not found', async () => {
-// 				const result = await storage.events.read(0);
-
-// 				expect(result === undefined).toBeTruthy();
-// 			});
-
-// 			it('should return the correct item', async () => {
-// 				// Add via the databse directly.
-// 				database.serialize(() => {
-// 					const statement = database.prepare('INSERT INTO events (type, data, otherParent, selfParent, signature, date) VALUES (?, ?, ?, ?, ?, ?)');
-
-// 					items.forEach((event) => {
-// 						statement.run(event.type, event.data, event.otherParent, event.selfParent, event.signature, event.date);
-// 					});
-
-// 					statement.finalize();
-// 				});
-
-// 				const item = items[0];
-
-// 				const result = await storage.events.read(1);
-
-// 				expect(result.type).toEqual(item.type);
-// 				expect(result.signature).toEqual(item.signature);
-// 				expect(result.selfParent).toEqual(item.selfParent);
-// 				expect(result.otherParent).toEqual(item.otherParent);
-// 			});
-// 		});
-
-// 		describe('create', () => {
-
-// 			it('should call database.run', async () => {
-// 				const spy = jest.spyOn(database, 'run');
-
-// 				await storage.events.create(type, data, otherParent, selfParent, signature, date);
-
-// 				expect(spy).toBeCalled();
-// 			});
-
-// 			it('should create and store the item in the database', async () => {
-// 				const item = items[0];
-
-// 				await storage.events.create(item.type, item.data, item.otherParent, item.selfParent, item.signature, item.date);
-
-// 				// Read from the databse directly.
-// 				database.serialize(() => {
-
-// 					database.get(
-// 						'SELECT * FROM events WHERE id=?',
-// 						[1],
-// 						(_, res) => {
-// 							const result: Event = res;
-
-// 							expect(result.type).toEqual(item.type);
-// 							expect(result.signature).toEqual(item.signature);
-// 							expect(result.selfParent).toEqual(item.selfParent);
-// 							expect(result.otherParent).toEqual(item.otherParent);
-// 						}
-// 					);
-// 				});
-// 			});
-// 		});
-
-// 		describe('update', () => {
-
-// 			it('should call database.run', async () => {
-// 				const spy = jest.spyOn(database, 'run');
-
-// 				await storage.events.update(1, date);
-
-// 				expect(spy).toBeCalled();
-// 			});
-
-// 			it('should update the item in the database', async () => {
-// 				const item = items[0];
-
-// 				// Add via the databse directly.
-// 				database.run(
-// 					'INSERT INTO events (type, data, otherParent, selfParent, signature, date) VALUES (?, ?, ?, ?, ?, ?)',
-// 					[item.type, item.data, item.otherParent, item.selfParent, item.signature, undefined],
-// 				);
-
-// 				await storage.events.update(1, new Date());
-
-// 				const result = await storage.events.read(1);
-
-// 				expect(result.date).not.toBeUndefined();
-// 			});
-// 		});
-
-// 		describe('destroy', () => {
-
-// 			it('should call database.run', async () => {
-// 				const spy = jest.spyOn(database, 'run');
-
-// 				await storage.events.destroy(1);
-
-// 				expect(spy).toBeCalled();
-// 			});
-
-// 			it('should delete the item from the database', async () => {
-// 				const item = items[0];
-
-// 				// Add via the databse directly.
-// 				database.run(
-// 					'INSERT INTO events (type, data, otherParent, selfParent, signature, date) VALUES (?, ?, ?, ?, ?, ?)',
-// 					[item.type, item.data, item.otherParent, item.selfParent, item.signature, undefined],
-// 				);
-
-// 				await storage.events.destroy(1);
-
-// 				// Read from the databse directly.
-// 				database.serialize(() => {
-
-// 					database.get(
-// 						'SELECT * FROM events WHERE id=?',
-// 						[1],
-// 						(_, res) => {
-// 							expect(res).toBeUndefined();
-// 						}
-// 					);
-// 				});
-// 			});
-// 		});
-// 	});
-
-// 	describe('nodes', () => {
-
-// 		describe('index', () => {
-
-// 			it.todo('should call database.all');
-
-// 			it.todo('should return an empty list when no items are stored in the database');
-
-// 			it.todo('should return a populated list when items are stored in the database');
-// 		});
-
-// 		describe('read', () => {
-
-// 			it.todo('should call database.get');
-
-// 			it.todo('should return undefined when the item was not found');
-
-// 			it.todo('should return the correct item');
-// 		});
-
-// 		describe('create', () => {
-
-// 			it.todo('should call database.run');
-
-// 			it.todo('should create and store the item in the database');
-
-// 			it.todo('should throw an error when the host already exists');
-// 		});
-
-// 		describe('update', () => {
-
-// 			it.todo('should call database.run');
-
-// 			it.todo('should update the item in the database');
-// 		});
-
-// 		describe('destroy', () => {
-
-// 			it.todo('should call database.run');
-
-// 			it.todo('should delete the item from the database');
-// 		});
-// 	});
-
-// 	describe('states', () => {
-
-// 		describe('index', () => {
-
-// 			it.todo('should call database.all');
-
-// 			it.todo('should return an empty list when no items are stored in the database');
-
-// 			it.todo('should return a populated list when items are stored in the database');
-// 		});
-
-// 		describe('read', () => {
-
-// 			it.todo('should call database.get');
-
-// 			it.todo('should return undefined when the item was not found');
-
-// 			it.todo('should return the correct item');
-// 		});
-
-// 		describe('create', () => {
-
-// 			it.todo('should call database.run');
-
-// 			it.todo('should create and store the item in the database');
-
-// 			it.todo('should throw an error when the address already exists');
-// 		});
-
-// 		describe('update', () => {
-
-// 			it.todo('should call database.run');
-
-// 			it.todo('should update the item in the database');
-// 		});
-
-// 		describe('destroy', () => {
-
-// 			it.todo('should call database.run');
-
-// 			it.todo('should delete the item from the database');
-// 		});
-// 	});
-
-// 	describe('transactions', () => {
-// 		const publicKey = 'mock-public-key';
-// 		const type = 'transaction';
-// 		const otherParent = 'mock-other-parent';
-// 		const selfParent = 'mock-self-parent';
-// 		const signature = 'mock-signature';
-// 		const date = new Date();
-// 		const consensusReached = false;
-
-// 		describe('index', () => {
-
-// 			it('should call database.all', async () => {
-// 				const spy = jest.spyOn(database, 'all');
-
-// 				await storage.transactions.index(publicKey);
-
-// 				expect(spy).toBeCalled();
-// 			});
-
-// 			it('should return an empty list when no items are stored in the database', async () => {
-// 				const result = await storage.transactions.index(publicKey);
-
-// 				expect(result.length).toBe(0);
-// 			});
-
-// 			it('should only return events of type \'transastion\'', async () => {
-// 				const items: Event[] = [
-// 					{ type: 'transaction', signature: `${signature}1`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached },
-// 					{ type: 'transaction', signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached },
-// 					{ type: 'state', signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached }
-// 				];
-
-// 				// Add via the databse directly.
-// 				database.serialize(() => {
-// 					const statement = database.prepare('INSERT INTO events (type, data, otherParent, selfParent, signature, date) VALUES (?, ?, ?, ?, ?, ?)');
-
-// 					items.forEach((event) => {
-// 						const stringData = JSON.stringify(event.data);
-
-// 						statement.run(event.type, stringData, event.otherParent, event.selfParent, event.signature, event.date);
-// 					});
-
-// 					statement.finalize();
-// 				});
-
-// 				const result = await storage.transactions.index(publicKey);
-
-// 				expect(result.length).toEqual(2);
-// 			});
-
-// 			it('should only return events associated with the provided public key', async () => {
-// 				const items: Event[] = [
-// 					{ type: type, signature: `${signature}1`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached },
-// 					{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: 'other-public-key' }, consensusReached: consensusReached },
-// 					{ type: type, signature: `${signature}2`, selfParent: selfParent, otherParent: otherParent, date: date, data: { from: publicKey }, consensusReached: consensusReached }
-// 				];
-
-// 				// Add via the databse directly.
-// 				database.serialize(() => {
-// 					const statement = database.prepare('INSERT INTO events (type, data, otherParent, selfParent, signature, date) VALUES (?, ?, ?, ?, ?, ?)');
-
-// 					items.forEach((event) => {
-// 						const stringData = JSON.stringify(event.data);
-
-// 						statement.run(event.type, stringData, event.otherParent, event.selfParent, event.signature, event.date);
-// 					});
-
-// 					statement.finalize();
-// 				});
-
-// 				const result = await storage.transactions.index(publicKey);
-
-// 				expect(result.length).toEqual(2);
-// 			});
-// 		});
-// 	});
-// });
+                expect(() => storage.transactions.create(item)).rejects;
+            });
+        });
+    });
+});

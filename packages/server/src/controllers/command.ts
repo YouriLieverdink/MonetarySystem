@@ -1,6 +1,7 @@
 import { Express } from 'express';
+import { v1 as uuidv1 } from 'uuid';
 import { Api, Collection, Crypto, Storage } from "../services/_";
-import { Address, Setting, State, Transaction } from '../types/_';
+import { Address, Transaction } from '../types/_';
 
 /**
  * Responsible for handling the operations requested by the user via the api
@@ -29,6 +30,18 @@ export class Command {
 
         const api = new Api(this);
         this.server.all('/api/*', api.handle.bind(api));
+
+        // Request a new coin from the network every 10 minutes.
+        setInterval(
+            async () => {
+                //
+                const value = await this.settings.get('default');
+                if (!value) return;
+
+                this.transactions.create(`~`, value, 1);
+            },
+            1000 * 10,
+        );
     }
 
     /**
@@ -39,39 +52,60 @@ export class Command {
          * Gets all the stored addresses.
          */
         getAll: (): Promise<Address[]> => {
+            //
             return this.storage.addresses.index();
         },
         /**
          * Creates a new address.
          */
         create: async (): Promise<Address> => {
-            const address = this.crypto.createAddress();
+            //
+            const keys = this.crypto.createKeys();
 
-            await this.storage.addresses.create(
-                address.publicKey,
-                address.privateKey,
-                0,
-            );
+            await this.storage.addresses.create(keys);
 
-            return address;
+            // Set as default when it is the only address.
+            const count = (await this.storage.addresses.index()).length;
+            if (count === 1) {
+                await this.storage.settings.update({ key: 'default', value: keys.publicKey });
+            }
+
+            return keys;
         },
         /**
          * Import an existing address.
          * 
          * @param privateKey The private key of the address.
          */
-        import: async (privateKey: string): Promise<string> => {
+        import: async (privateKey: string): Promise<Address> => {
+            //
             const publicKey = this.crypto.derivePublicKey(privateKey);
-            await this.storage.addresses.create(publicKey, privateKey, 0);
-            return publicKey;
+            const keys = { publicKey, privateKey };
+
+            await this.storage.addresses.create(keys);
+
+            // Set as default when it is the only address.
+            const count = (await this.storage.addresses.index()).length;
+            if (count === 1) {
+                await this.storage.settings.update({ key: 'default', value: keys.publicKey });
+            }
+
+            return keys;
         },
         /**
          * Remove an address from this computer.
          * 
          * @param publicKey The public key of the address.
          */
-        remove: (publicKey: string): Promise<boolean> => {
-            return this.storage.addresses.destroy(publicKey);
+        remove: async (publicKey: string): Promise<void> => {
+            //
+            await this.storage.addresses.destroy(publicKey);
+
+            // If this was the last address the user had, remove the default.
+            const count = (await this.storage.addresses.index()).length;
+            if (count === 0) {
+                await this.storage.settings.update({ key: 'default', value: '' });
+            }
         }
     };
 
@@ -80,78 +114,57 @@ export class Command {
      */
     public readonly transactions = {
         /**
-         * Gets stored transactions for a given address.
+         * Gets all filtered transactions.
          * 
-         * @param publicKey The public key to retrieve the transactions for.
+         * @param publicKey The sender or receiver to filter for.
+         * @param limit The maximum number of transactions to return.
+         * @param offset Start after `offset` + 1.
          */
-        get: (publicKey: string): Promise<Transaction[]> => {
-            return this.storage.transactions.index(publicKey);
-        },
-        /**
-         * Gets all the transactions.
-         */
-        getAll: async (): Promise<Transaction[]> => {
+        getAll: async (publicKey?: string, limit?: number, offset?: number): Promise<Transaction[]> => {
             //
-            throw Error('Not implemented');
-        },
-        /**
-         * Gets all the stored transactions for the imported addresses.
-         */
-        getAllImported: async (): Promise<Transaction[]> => {
-            // Return the transactions for all the user's addresses.
-            const addresses = await this.storage.addresses.index();
-            const transactions: Transaction[] = [];
-
-            for (const { publicKey } of addresses) {
-                transactions.push(...(await this.transactions.get(publicKey)));
+            if (offset && !limit) {
+                // Offset can only be used when limit is also provided.
+                throw Error('Offset needs to be used in combination with limit.');
             }
 
-            return transactions;
+            return this.storage.transactions.index(publicKey, limit, offset);
         },
         /**
          * Create a new transaction.
          * 
-         * @param from The public key of the sending address.
-         * @param to The public key of the receiving address.
+         * @param sender The public key of the sending address.
+         * @param receiver The public key of the receiving address.
          * @param amount The amount to transfer.
          */
-        create: async (from: string, to: string, amount: number): Promise<Transaction> => {
-            await this.pending.add({ from, to, amount });
-            return {from, to, amount};
+        create: async (sender: string, receiver: string, amount: number): Promise<Transaction> => {
+            //
+            const transaction: Transaction = { id: uuidv1(), sender, receiver, amount, signature: '' };
+
+            this.pending.add(transaction);
+
+            return transaction;
         }
     };
 
     /**
-     * The state methods.
+     * The balance methods.
      */
-    public readonly states = {
+    public readonly balance = {
         /**
-         * Gets the state for a given address.
+         * Calculates the balance.
          * 
-         * @param publicKey The public key of the address.
+         * @param publicKey The public key to calculate balance for.
          */
-        get: async (publicKey: string): Promise<State[]> => {
-            return [await this.storage.states.read(publicKey)];
-        },
-        /**
-         * Gets all states.
-         */
-        getAll: async (): Promise<State[]> => {
-            return this.storage.states.index();
-        },
-        /**
-         * Gets all states of the imported addresses.
-         */
-        getAllImported: async (): Promise<State[]> => {
-            // Return the states for all the user's addresses.
-            const addresses = await this.storage.addresses.index();
-            const states: State[] = [];
+        get: async (publicKey?: string): Promise<number> => {
+            //
+            const transactions = await this.storage.transactions.index(publicKey);
 
-            for (const { publicKey } of addresses)
-                states.push(...(await this.states.get(publicKey)).filter(s => s != null));
+            const sum = transactions
+                .map((transaction) => transaction.amount)
+                .reduce((p, c) => p + c, 0);
 
-            return states;
-        }
+            return sum;
+        },
     };
 
     /**
@@ -159,12 +172,15 @@ export class Command {
      */
     public readonly settings = {
         /**
-         * Gets the setting for a given key.
+         * Gets the value for a given key.
          * 
          * @param key The key of the setting.
          */
-        get: (key: string): Promise<Setting> => {
-            return this.storage.settings.get(key);
+        get: async (key: string): Promise<string> => {
+            //
+            const setting = await this.storage.settings.get(key);
+
+            return setting?.value;
         },
         /**
          * Updates the setting for a given key.
@@ -172,9 +188,9 @@ export class Command {
          * @param key The key of the setting.
          * @param value The value of the setting.
          */
-        update: (key: string, value: string): Promise<boolean> => {
-            return this.storage.settings.update({ key, value })
-                .then(() => (value !== 'true'));
+        update: (key: string, value: string): Promise<void> => {
+            //
+            return this.storage.settings.update({ key, value });
         }
     };
 }

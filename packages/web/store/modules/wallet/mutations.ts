@@ -7,6 +7,7 @@ import {
   SET_ADDRESSES,
   SET_TRANSACTIONS,
   CREATE_TRANSACTION,
+  SET_BALANCE
 } from '~/store/modules/wallet/types';
 
 export const walletMutations: MutationTree<WalletState> = {
@@ -24,5 +25,8 @@ export const walletMutations: MutationTree<WalletState> = {
   },
   [CREATE_TRANSACTION](state, { transaction }) {
     state.transactions = [...state.transactions, transaction]
+  },
+  [SET_BALANCE](state, { balance }) {
+    state.balance = balance
   }
 };

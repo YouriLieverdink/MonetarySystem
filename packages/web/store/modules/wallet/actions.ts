@@ -8,6 +8,7 @@ import {
   SET_ADDRESSES,
   SET_TRANSACTIONS,
   CREATE_TRANSACTION,
+  SET_BALANCE
 } from '~/store/modules/wallet/types';
 
 export const walletActions: ActionTree<WalletState, RootState> = {
@@ -39,6 +40,12 @@ export const walletActions: ActionTree<WalletState, RootState> = {
     commit({
       type: CREATE_TRANSACTION,
       transaction
+    })
+  },
+  setBalance({ commit }, balance) {
+    commit({
+      type: SET_BALANCE,
+      balance
     })
   },
 }

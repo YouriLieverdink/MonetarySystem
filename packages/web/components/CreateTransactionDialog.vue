@@ -128,15 +128,9 @@ export default {
         this.amountInput = 0;
         this.receiverInput = this.senderInput = ""
 
-        this.$message({
-          message: 'Transaction created',
-          type: 'success'
-        })
+        this.$message.success('Transaction created')
       } catch(error) {
-          this.$message({
-            message: error,
-            type: 'error'
-          })
+        this.$message.error(error)
       } finally {
         this.sendLoading = false
       }

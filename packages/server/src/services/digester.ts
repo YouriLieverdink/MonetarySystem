@@ -1,121 +1,99 @@
-import { _Event } from "./consensus";
-import { Storage } from "./storage";
 import { Transaction } from "../types/transaction";
-import { State } from "../types/state";
+import { _Event } from "./consensus";
+import { Crypto } from "./crypto";
+import { Storage } from "./storage";
 
-export class Digester<T> {
-
+export class Digester {
     /**
      * Class constructor.
-     *
-     * @param storage the interface for storage
+     * 
+     * @param storage The interface for the database.
+     * @param crypto Used for cryptographic operations.
      */
-    constructor(private storage: Storage) {
-
+    constructor(
+        private storage: Storage,
+        private crypto?: Crypto,
+    ) {
+        //
+        this.crypto = crypto || new Crypto();
     }
 
     /**
-     * Digests all the events that have reached consensus
+     * Digests all the events on which consensus has been reached.
      *
-     * @param events All events that are not yet processed and have reached consensus
-     *
+     * @param events All events that are not yet processed. 
      */
-    public async digest(events: _Event<Transaction[]>[]): Promise<void> {
+    public async do(events: _Event<Transaction[]>[]): Promise<void> {
+        // Ensure the events are processed in the right order.
+        events.sort((a, b) => a.index - b.index);
+
         for (let i = 0; i < events.length; i++) {
+            //
             const event = events[i];
+            await this.handleEvent(event);
+        }
+    }
 
-            await this.handleTransactions(event.data, event.publicKey)
+    /**
+     * Extracts and processes the transactions from an event.
+     *
+     * @param event The event to process.
+     */
+    private async handleEvent(event: _Event<Transaction[]>): Promise<void> {
+        //
+        if (!event.data) return;
 
+        // We need the last index to start counting from.
+        const last = await this.storage.transactions.index(null, 1);
+        let index = last[0]?.index || 0;
 
-            if (await this.mirrorIsActive()) {
-                this.mirror(event);
+        for (const transaction of event.data) {
+            // We need to balance to verify whether a user can transfer funds.
+            const transactions = await this.storage.transactions.index(transaction.sender);
+
+            const balance = transactions
+                .map((transaction) => transaction.amount)
+                .reduce((p, c) => p + c, 0);
+
+            const isValid = await this.helpers.isValid(balance, transaction);
+
+            if (isValid) {
+                //
+                transaction.index = index += 1;
+                transaction.timestamp = event.timestamp;
+
+                await this.storage.transactions.create(transaction);
             }
         }
     }
 
     /**
-     * handles all the transactions from an event
-     *
-     * @param transactions
-     * @param creator the creator of the event
-     *
+     * The helper methods.
      */
-    public async handleTransactions(transactions: Transaction[], creator: string): Promise<void> {
-
-        for (let i = 0; i < transactions.length; i++) {
-            const from = await this.storage.states.read(transactions[i].from)
-            const to = await this.storage.states.read(transactions[i].to)
-
-            if (await this.validate(from, to, transactions[i], creator)) {
-                await this.executeTransaction(from, to, transactions[i]);
+    private readonly helpers = {
+        /**
+         * Checks if a transaction can be made.
+         * 
+         * @param balance The current balance of `sender`.
+         * @param transaction The transaction in question.
+         */
+        isValid: async (balance: number, transaction: Transaction): Promise<boolean> => {
+            //
+            if (transaction.sender === `~`) {
+                // TODO: Validate whether user can receive a coin again.
+                return true;
             }
-        }
 
-    }
+            if (transaction.amount > balance) {
+                return false;
+            }
 
-    /**
-     * Checks if a transaction from a consensus event can be made
-     *
-     * @returns boolean if the transaction is possible return true
-     *
-     * @param from
-     * @param to
-     * @param transaction
-     * @param creator the creator of the event
-     */
-    private async validate(from: State, to: State, transaction: Transaction, creator: String): Promise<boolean> {
+            // We verify the transaction signature to ensure the owner created it.
+            if (!this.crypto.verifySignature(transaction, transaction.signature, transaction.sender, ['signature'])) {
+                return false;
+            }
 
-        if (!from && !to) {
-            return false
-        }
-
-        if (from.balance < transaction.amount) {
-            return false
-        }
-
-        if (from.publicKey != creator) {
-            return false
-        }
-
-        return true
-    }
-
-    /**
-     * updates the state depending on a validated transaction
-     *
-     *
-     * @param from
-     * @param to
-     * @param transaction
-     */
-    private async executeTransaction(from: State, to: State, transaction: Transaction): Promise<void> {
-        from.balance -= transaction.amount
-        to.balance += transaction.amount
-
-        await this.storage.states.update(from)
-        await this.storage.states.update(to)
-    }
-
-    /**
-     * checks if the mirror setting is active
-     *
-     * @returns whether the mirror setting is active
-     *
-     */
-    public async mirrorIsActive(): Promise<boolean> {
-        const setting = await this.storage.settings.get('mirror')
-        return (setting.value === 'true');
-    }
-
-    /**
-     * Makes sure all the events go in the database
-     *
-     * @param event
-     *
-     */
-    public mirror(event: _Event<Transaction[]>): void {
-        //put event in database
-    }
-
-
+            return true;
+        },
+    };
 }

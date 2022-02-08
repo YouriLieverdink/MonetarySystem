@@ -111,15 +111,9 @@ export default {
         this.importAddress(res.data)
         this.privateKeyOutput = res.data.privateKey
         this.showPrivateKeyOutput = true
-        this.$message({
-          message: 'Added generated key to wallet',
-          type: 'success'
-        })
+        this.$message.success('Added generated key to wallet')
       } catch(error) {
-          this.$message({
-            message: error,
-            type: 'error'
-          })
+          this.$message.error(error)
       } finally {
         this.generateLoading = false
       }
@@ -138,10 +132,7 @@ export default {
           isDefault: false
         })
         this.privateKeyInput = ""
-        this.$message({
-          message: 'Import successful',
-          type: 'success'
-        })
+        this.$message.success('Import successful')
       } catch(error) {
         const already_exists = error.response.data.includes('UNIQUE')
         this.$message({
