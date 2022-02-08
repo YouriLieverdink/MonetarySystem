@@ -69,30 +69,21 @@
       <el-tab-pane name="overview">
         <span slot="label">Wallet Overview <i class="el-icon-wallet" /></span>
         <el-card v-show="tab === 'overview'" shadow="never">
-          <table style="width: 400px; margin: 24px auto">
-            <tr class="summary_row" style="border-bottom: 1px solid #555">
-              <td colspan="2" style="text-align: center">
-                <strong>Wallet Overview</strong>
-              </td>
-            </tr>
-            <tr>
-              <td colspan="2">
-                <el-divider />
-              </td>
-            </tr>
-            <tr class="summary_row">
-              <td>Balance</td>
-              <td>{{ walletSummary.balance }}</td>
-            </tr>
-            <tr class="summary_row">
-              <td>Transactions</td>
-              <td>{{ walletSummary.transactionCount }}</td>
-            </tr>
-            <tr class="summary_row">
-              <td>Last activity</td>
-              <td>{{ walletSummary.lastActivity }}</td>
-            </tr>
-          </table>
+          <template #header>
+            <el-row class="summary_header">Wallet Overview</el-row>
+          </template>
+          <el-row class="summary_row">
+            <el-col :span=12>Balance</el-col>
+            <el-col :span=12>{{ walletSummary.balance }}</el-col>
+          </el-row>
+          <el-row class="summary_row">
+            <el-col :span=12>Transactions</el-col>
+            <el-col :span=12>{{ walletSummary.transactionCount }}</el-col>
+          </el-row>
+          <el-row class="summary_row">
+            <el-col :span=12>Last activity</el-col>
+            <el-col :span=12>{{ walletSummary.lastActivity }}</el-col>
+          </el-row>
         </el-card>
       </el-tab-pane>
       <el-tab-pane name="addresses">
@@ -278,6 +269,7 @@ export default {
     },
   },
   mounted() {
+    this.refreshAddresses();
     this.refreshDispatcher();
   },
   methods: {
@@ -307,14 +299,15 @@ export default {
     },
     async refreshTransactions() {
       try {
-        const txs = [];
+        let txs = [];
 
-        this.addresses.forEach(async ({ publicKey }) => {
+        for (const { publicKey } of this.addresses) {
           const res = await apiRequest.transactions.get(publicKey);
-          txs.push(...res.data);
-        });
+          txs = [...txs, ...res.data];
+        }
 
         const newTxsAmount = txs.length - this.transactions.length;
+        console.log('::', txs.length, '-', this.transactions.length)
         if (newTxsAmount > 0) {
           this.$notify.info({
             title: "Info",
@@ -355,7 +348,6 @@ export default {
       setTimeout(this.refreshDispatcher, 2000);
 
       if (this.connected) {
-        this.refreshAddresses();
         this.refreshTransactions();
         this.refreshBalance();
       }
@@ -402,8 +394,13 @@ export default {
   padding: 5px;
   font-size: 18px;
 }
+.summary_header {
+  text-align: center;
+  font-size: 18px;
+}
 .summary_row {
+  margin: 12px auto 12px;
+  width: 400px;
   font-size: 16px;
-  height: 36px;
 }
 </style>
