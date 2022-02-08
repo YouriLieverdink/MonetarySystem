@@ -307,7 +307,6 @@ export default {
         }
 
         const newTxsAmount = txs.length - this.transactions.length;
-        console.log('::', txs.length, '-', this.transactions.length)
         if (newTxsAmount > 0) {
           this.$notify.info({
             title: "Info",
@@ -336,7 +335,6 @@ export default {
 
         this.setBalance(balance);
       } catch (e) {
-        console.log(e);
         this.$message.error("Error updating your balance");
         this.connected = e.response !== undefined;
       }
