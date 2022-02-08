@@ -136,19 +136,9 @@
               sortable
               :sort-by="(row,i) => i">
               <template v-slot="{row}">
-                {{dateString(row.date)}}
+                {{dateString(row.timestamp)}}
               </template>
             </el-table-column>
-<!--            <el-table-column-->
-<!--              align="right">-->
-<!--              <template #header>-->
-<!--                Total: {{transactions.length}}-->
-<!--              </template>-->
-<!--              <template v-slot="{row}">-->
-<!--                <el-tag v-if="row.confirmed === true" type="success">Confirmed</el-tag>-->
-<!--                <el-tag v-else type="info">Unconfirmed</el-tag>-->
-<!--              </template>-->
-<!--            </el-table-column>-->
           </el-table>
         </transition>
       </el-tab-pane>
@@ -240,14 +230,13 @@ export default {
       balance: state => state.balance,
     }),
     walletSummary() {
-      const lastActivity = new Date(Math.max(...this.transactions.filter(e => e != null).map(e => new Date(e.date))))
-
+      const lastActivity = Math.max(...this.transactions.map(e => e?.timestamp ?? 0))
       return {
         balance: this.balance,
         transactionCount: this.transactions.length,
         lastActivity: this.transactions.length > 0
-          ? lastActivity != null
-            ? moment(lastActivity, "YYYYMMDD").fromNow()
+          ? lastActivity > 0
+            ? moment(new Date(lastActivity), "YYYYMMDD").fromNow()
             : 'unknown'
           : 'never'
       }
@@ -282,13 +271,16 @@ export default {
       }
     },
     async refreshTransactions() {
+      let txs = []
       try {
-        const res = await apiRequest.transactions.get()
-        const txs = res.data.map(tx => ({
-          sender: tx.from,
-          receiver: tx.to,
-          amount: tx.amount
-        }))
+        this.addresses.map(async ({ publicKey }) => {
+          const res = await apiRequest.transactions.get(publicKey)
+          txs = [...txs, res.data.map(({ sender, receiver, amount }) => ({
+            sender,
+            receiver,
+            amount
+          }))]
+        })
 
         const newTxsAmount = txs.length - this.transactions.length
         if (newTxsAmount > 0)
@@ -297,6 +289,7 @@ export default {
             message: newTxsAmount + ' new transactions'
           })
 
+        console.log(txs.length)
         this.setTransactions(txs)
       } catch (e) {
         this.$message.error('Error updating your transactions')
@@ -306,7 +299,7 @@ export default {
     async refreshBalance() {
       try {
         const res = await apiRequest.balances.get()
-        this.setBalance(res.data.map(v => typeof v === 'number' ? v : 0).reduce((a, b) => a + b, 0))
+        this.setBalance(typeof res.data === 'number' ? res.data : 0)
       } catch (e) {
         this.$message.error('Error updating your balance')
         this.connected = e.response !== undefined
@@ -316,7 +309,7 @@ export default {
       return date != null ? moment(date).format('lll') : 'unknown'
     },
     refreshDispatcher() {
-      setTimeout(this.refreshDispatcher, 2000)
+      setTimeout(this.refreshDispatcher, 5000)
 
       if (this.connected) {
         this.refreshAddresses()

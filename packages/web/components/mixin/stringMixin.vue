@@ -4,6 +4,7 @@ import Vue from 'vue';
 export default Vue.mixin({
   methods: {
     shortenKeyString(key: string, length = 12) {
+      if (key == null) return ''
       const k = key.toString()
       return k.substring(0, (length / 2) - 1)
         .concat("……")

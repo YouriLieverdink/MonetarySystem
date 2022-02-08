@@ -2,42 +2,31 @@ import axiosInstance  from '../axios'
 
 const node_port = new URLSearchParams(window.location.search).get('node') ?? 3001
 const api = axiosInstance({
-  baseURL: 'http://0.0.0.0:'+ node_port +'/api/'
+  baseURL: 'http://localhost:'+ node_port +'/api/'
 })
 
 export const apiRequest = {
   addresses: {
-    generate() {
-      return api.post("generate")
-    },
-    import(privateKeys: string[]) {
-      return api.post("import", privateKeys)
-    },
-    remove(pubKey: string) {
-      return api.post("address/remove", { publicKey: pubKey })
-    },
-    get() {
-      return api.get("address")
-    }
+    generate: () =>
+      api.post("generate"),
+    import: (privateKeys: string[]) =>
+      api.post("import", privateKeys),
+    remove: (pubKey: string) =>
+      api.post("address/remove", { publicKey: pubKey }),
+    get: () =>
+      api.get("address")
   },
   transactions: {
-    get() {
-      return api.get("transactions")
-    },
-    create(sender: string, receiver: string, amount: number) {
-      return api.post('transactions?address=' + sender, {
-        to: receiver, amount
-      })
-    }
+    get: (publicKey: string) =>
+      api.get("transactions", { params: { publicKey }}),
+    create: (sender: string, receiver: string, amount: number) =>
+      api.post('transactions?publicKey=' + sender, { to: receiver, amount }, { params: { publicKey: sender } })
   },
   balances: {
-    get() {
-      return api.get("balance")
-    },
+    get: () =>
+      api.get("balance"),
   },
   settings: {
-    mirror(enabled: boolean) {
-      return api.post('mirror', { enabled })
-    }
+    mirror: (enabled: boolean) => api.post('mirror', { enabled })
   }
 }
