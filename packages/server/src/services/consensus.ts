@@ -1,5 +1,5 @@
-import { createHash } from 'crypto';
-import _ from 'lodash';
+import _, { has, values } from 'lodash';
+import { Crypto } from '../services/_';
 import { Event } from '../types/_';
 
 export type _Event<T> = Event<T> & {
@@ -11,6 +11,7 @@ export type _Event<T> = Event<T> & {
     timestamp?: number;
     consensus?: boolean;
     index?: number;
+    publicKey?: string;
 }
 
 export type Index<T> = {
@@ -18,6 +19,11 @@ export type Index<T> = {
 };
 
 export class Consensus<T> {
+    /**
+     * Used for cryptographic operations.
+     */
+    private crypto: Crypto;
+
     /**
      * The index of events on which consensus has not been reached (yet).
      */
@@ -28,6 +34,7 @@ export class Consensus<T> {
      */
     constructor() {
         //
+        this.crypto = new Crypto();
         this.index = {};
     };
 
@@ -35,10 +42,11 @@ export class Consensus<T> {
      * Performs the consensus algorithm.
      * 
      * @param events The available events.
-     * @param n The number of computers.
      */
-    public do(events: _Event<T>[], n: number): _Event<T>[] {
+    public do(events: _Event<T>[]): _Event<T>[] {
         //
+        const n = this.calculateN(events);
+
         let index: Index<T> = {};
 
         index = this.createIndex(this.index, events);
@@ -47,11 +55,42 @@ export class Consensus<T> {
         index = this.findOrder(index);
         index = this.setOrder(index);
 
-        // We update the internal state for the next `do` call.
-        this.index = _.omitBy(index, (item) => item.consensus);
+        let items = Object.entries(index);
 
-        return Object.values(index);
+        // DEBUG
+        const first = items.filter(([_, ex]) => !ex.consensus)[0];
+        console.log(first[1]);
+
+        // We filter out all items which can be deleted.
+        items = items.filter(([hx, ex]) => ex.consensus);
+
+        // We update the internal state for the next `do` call.
+        this.index = _.omitBy(index, (item) => {
+            //
+            return items.some(([_, ex]) => item === ex);
+        });
+
+        return items.map((item) => item[1]);
     }
+
+    /**
+     * Calculates the current number of computers in the network who are 
+     * trying to reach consensus.
+     *
+     * @param events The provided events. 
+     */
+    public calculateN<T>(events: _Event<T>[]): number {
+        //
+        const publicKeys = new Set<string>();
+
+        for (let i = 0; i < events.length; i++) {
+            //
+            const event = events[i];
+            publicKeys.add(event.publicKey);
+        }
+
+        return publicKeys.size;
+    };
 
     /**
      * Creates an index for all the events that have been provided. This index 
@@ -66,8 +105,10 @@ export class Consensus<T> {
 
         for (let i = 0; i < events.length; i++) {
             //
-            const hashable = JSON.stringify(events[i]);
-            const hash = createHash('sha256').update(hashable).digest('hex');
+            const hash = this.crypto.createHash(
+                events[i],
+                ['round', 'witness', 'vote', 'famous', 'roundReceived', 'timestamp', 'consensus', 'index'],
+            );
 
             // We set the event if we don't know it already.
             if (!(hash in index)) {
@@ -126,7 +167,7 @@ export class Consensus<T> {
                 witness = true;
             } //
             else {
-                witness = round > index[ex.selfParent].round;
+                witness = round > index[ex.selfParent]?.round;
             }
 
             index[hx] = { ...ex, round, witness };
@@ -322,9 +363,9 @@ export class Consensus<T> {
             if (ex.timestamp > ey.timestamp) return 1;
             if (ex.timestamp < ey.timestamp) return -1;
 
-            // 3. When that ties, we sort by a whithened signature.
+            // 3. When that ties, we sort by a whithened public key.
             const random = Math.random();
-            if ((parseInt(ex.signature) ^ random) > (parseInt(ey.signature) ^ random)) return 1;
+            if ((parseInt(ex.publicKey) ^ random) > (parseInt(ey.publicKey) ^ random)) return 1;
 
             return -1;
         });

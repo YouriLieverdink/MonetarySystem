@@ -1,5 +1,5 @@
 import { Database } from 'sqlite3';
-import { Address, Computer, Event, Setting, State, Transaction } from '../types/_';
+import { Address, Setting, Transaction } from '../types/_';
 
 export class Storage {
     /**
@@ -21,37 +21,18 @@ export class Storage {
             this.database.run(`
                 CREATE TABLE IF NOT EXISTS addresses (
                     publicKey VARCHAR(64) PRIMARY KEY,
-                    privateKey VARCHAR(64),
-                    isDefault BOOLEAN NOT NULL DEFAULT 0
+                    privateKey VARCHAR(64)
                 )
             `);
 
             this.database.run(`
-                CREATE TABLE IF NOT EXISTS events (
-                    id VARCHAR(64),
-                    createdAt DATETIME,
-                    timestamp DATETIME,
-                    publicKey VARCHAR(64),
-                    signature VARCHAR(64),
-                    selfParent VARCHAR(64),
-                    otherParent VARCHAR(64),
-                    data VARCHAR(255)
-                )
-            `);
-
-            this.database.run(`
-                CREATE TABLE IF NOT EXISTS computers (
-                    ip VARCHAR(32) PRIMARY KEY,
-                    port INT,
-                    name VARCHAR(32)
-                )
-            `);
-
-            this.database.run(`
-                CREATE TABLE IF NOT EXISTS states (
-                    publicKey VARCHAR(64) PRIMARY KEY,
-                    balance FLOAT,
-                    date DATETIME
+                CREATE TABLE IF NOT EXISTS transactions (
+                    id VARCHAR(64) PRIMARY KEY,
+                    timestamp INT,
+                    \`index\` INT,
+                    receiver VARCHAR(64),
+                    sender VARCHAR(64),
+                    amount INT
                 )
             `);
 
@@ -63,15 +44,14 @@ export class Storage {
             `);
         });
 
-        //input default settings
-        const setting = {key: 'mirror', value: 'false'}
-        this.settings.create(setting)
+        // Initialise the default settings.
+        this.settings.create({ key: 'default', value: '' }).catch(() => { });
     }
 
     /**
      * The query methods.
      */
-    private readonly query = {
+    public readonly query = {
         /**
          * Insert, update, and delete queries.
          *
@@ -151,200 +131,33 @@ export class Storage {
         /**
          * Store a newly created resource in storage.
          *
-         * @param publicKey The public key of the address.
-         * @param privateKey The private key of the address.
-         * @param isDefault Whether the address should be used as default.
+         * @param address The address object.
          *
          * @throws {Error} When an exception occurs.
          */
-        create: (publicKey: string, privateKey: string, isDefault: 0 | 1): Promise<void> => {
-            return this.query.run('INSERT INTO addresses VALUES (?, ?, ?)', publicKey, privateKey, isDefault);
+        create: (address: Address): Promise<void> => {
+            return this.query.run('INSERT INTO addresses VALUES (?, ?)', address.publicKey, address.privateKey);
         },
         /**
          * Update the specified resource in storage.
          *
-         * @param publicKey The public key of the address.
-         * @param isDefault Whether the address should be used as default.
+         * @param address The address object.
          *
          * @throws {Error} When an exception occurs.
          */
-        update: (publicKey: string, isDefault: 0 | 1): Promise<void> => {
-            return this.query.run('UPDATE addresses SET isDefault=? WHERE publicKey=?', isDefault, publicKey);
-        },
-        /**
-         * Remove the specified resource from storage.
-         *
-         * @param publicKey The public key of the address.
-         *
-         * @throws {Error} When an exception occurs.
-         */
-        destroy: async (publicKey: string): Promise<boolean> => {
-            return await this.query.run('DELETE FROM addresses WHERE publicKey=?', publicKey)
-                .then(() => true)
-                .catch(() => false);
-        }
-    };
-
-    /**
-     * The events methods.
-     */
-    public readonly events = {
-        /**
-         * Display a listing of the resource.
-         *
-         * @throws {Error} When an exception occurs.
-         */
-        index: <T>(): Promise<Event<T>[]> => {
-            return this.query.all<Event<T>>('SELECT * FROM events');
-        },
-        /**
-         * Display the specified resource.
-         *
-         * @param id The id of the event.
-         *
-         * @throws {Error} When an exception occurs.
-         */
-        read: <T>(id: number): Promise<Event<T>> => {
-            return this.query.get<Event<T>>('SELECT * FROM events WHERE id=?', id);
-        },
-        /**
-         * Store a newly created resource in storage.
-         *
-         * @param event The event object.
-         *
-         * @throws {Error} When an exception occurs.
-         */
-        create: <T>(event: Event<T>): Promise<void> => {
-            const data = JSON.stringify(event.data);
-            return this.query.run('INSERT INTO events VALUES (?, ?, ?, ?, ?, ?, ?)', event.id, event.createdAt, event.publicKey, event.signature, event.selfParent, event.otherParent, data);
-        },
-        /**
-         * Update the specified resource in storage.
-         *
-         * @throws {Error} When an exception occurs.
-         */
-        update: (): Promise<void> => {
+        update: (address: Address): Promise<void> => {
             //
             throw Error('Not implemented');
         },
         /**
          * Remove the specified resource from storage.
          *
-         * @param id The id of the event.
-         *
-         * @throws {Error} When an exception occurs.
-         */
-        destroy: (id: number): Promise<void> => {
-            return this.query.run('DELETE FROM events WHERE id=?', id);
-        }
-    };
-
-    /**
-     * The computers methods.
-     */
-    public readonly computers = {
-        /**
-         * Display a listing of the resource.
-         *
-         * @throws {Error} When an exception occurs.
-         */
-        index: (): Promise<Computer[]> => {
-            return this.query.all<Computer>('SELECT * FROM computers');
-        },
-        /**
-         * Display the specified resource.
-         *
-         * @param ip The ip of the computer.
-         * @param port The port of the computer.
-         *
-         * @throws {Error} When an exception occurs.
-         */
-        read: (ip: string, port: number): Promise<Computer> => {
-            return this.query.get<Computer>('SELECT * FROM computers WHERE ip=? AND port=?', ip, port);
-        },
-        /**
-         * Store a newly created resource in storage.
-         *
-         * @param computer The computer to store.
-         *
-         * @throws {Error} When an exception occurs.
-         */
-        create: (computer: Computer): Promise<void> => {
-            return this.query.run('INSERT INTO computers VALUES (?, ?, ?)', computer.ip, computer.port, computer.name);
-        },
-        /**
-         * Update the specified resource in storage.
-         *
-         * @param computer The computer to update.
-         *
-         * @throws {Error} When an exception occurs.
-         */
-        update: (computer: Computer): Promise<void> => {
-            return this.query.run('UPDATE nodes SET name=? WHERE host=? AND port=?', computer.name, computer.ip, computer.port);
-        },
-        /**
-         * Remove the specified resource from storage.
-         *
-         * @param host The host of the node.
-         *
-         * @throws {Error} When an exception occurs.
-         */
-        destroy: (host: string): Promise<void> => {
-            return this.query.run('DELETE FROM nodes WHERE host=?', host);
-        }
-    };
-
-    /**
-     * The state methods.
-     */
-    public readonly states = {
-        /**
-         * Display a listing of the resource.
-         *
-         * @throws {Error} When an exception occurs.
-         */
-        index: (): Promise<State[]> => {
-            return this.query.all<State>('SELECT * FROM states');
-        },
-        /**
-         * Display the specified resource.
-         *
-         * @param publicKey The public key associated with the state.
-         *
-         * @throws {Error} When an exception occurs.
-         */
-        read: (publicKey: string): Promise<State> => {
-            return this.query.get<State>('SELECT * FROM states WHERE publicKey=?', publicKey);
-        },
-        /**
-         * Store a newly created resource in storage.
-         *
-         * @param state The state to store.
-         *
-         * @throws {Error} When an exception occurs.
-         */
-        create: (state: State): Promise<void> => {
-            return this.query.run('INSERT INTO states VALUES (?, ?, ?)', state.publicKey, state.balance, state.date);
-        },
-        /**
-         * Update the specified resource in storage.
-         *
-         * @param state The state to update.
-         *
-         * @throws {Error} When an exception occurs.
-         */
-        update: (state: State): Promise<void> => {
-            return this.query.run('UPDATE states SET balance=?, date=? WHERE publicKey=?', state.balance, state.date, state.publicKey);
-        },
-        /**
-         * Remove the specified resource from storage.
-         *
-         * @param publicKey The publicKey associated with the state.
+         * @param publicKey The public key of the address.
          *
          * @throws {Error} When an exception occurs.
          */
         destroy: (publicKey: string): Promise<void> => {
-            return this.query.run('DELETE FROM states WHERE publicKey=?', publicKey);
+            return this.query.run('DELETE FROM addresses WHERE publicKey=?', publicKey);
         }
     };
 
@@ -353,17 +166,73 @@ export class Storage {
      */
     public readonly transactions = {
         /**
-         * Display a listing of the resource.
+          * Display a listing of the resource.
+          *
+          * @param publicKey The receiver and or sender to filter for.
+          * @param limit The maximum number of transactions to return.
+          * @param offset Starts at `offset` + 1.
+          * 
+          * @throws {Error} When an exception occurs.
+          */
+        index: (publicKey?: string, limit?: number, offset?: number): Promise<Transaction[]> => {
+            //
+            let query = 'SELECT * FROM transactions';
+            let params: string[] = [];
+
+            if (publicKey) {
+                query += ' WHERE sender=? OR receiver=?';
+                params.push(...[publicKey, publicKey]);
+            }
+
+            // Ensure the latest transactions are shown as first.
+            query += ' ORDER BY `index` DESC';
+
+            if (limit) {
+                query += ' LIMIT ?';
+                params.push(`${limit}`);
+            }
+
+            if (limit && offset) {
+                query += ' OFFSET ?';
+                params.push(`${offset}`);
+            }
+
+            return this.query.all(query, ...params);
+        },
+        /**
+         * Store a newly created resource in storage.
          *
-         * @param publicKey The public key of the address.
-         * 
+         * @param transaction The transaction object.
+         *
          * @throws {Error} When an exception occurs.
          */
-        index: async (publicKey: string): Promise<Transaction[]> => {
-            const events = await this.query.all<Event<Transaction>>('SELECT * FROM events WHERE data LIKE ? OR data LIKE ?', `%"to":"${publicKey}"%`, `%"from":"${publicKey}"%`);
-            return events.map(({ data }) =>
-                JSON.parse(String(data)) as Transaction
+        create: (transaction: Transaction): Promise<void> => {
+            //
+            return this.query.run(
+                'INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?)',
+                transaction.id, transaction.timestamp, transaction.index, transaction.receiver, transaction.sender, transaction.amount,
             );
+        },
+        /**
+         * Update the specified resource in storage.
+         *
+         * @param transaction The transaction object.
+         *
+         * @throws {Error} When an exception occurs.
+         */
+        update: (transaction: Transaction): Promise<void> => {
+            //
+            throw Error('Not implemented');
+        },
+        /**
+         * Remove the specified resource from storage.
+         *
+         * @param id The id of the transaction.
+         *
+         * @throws {Error} When an exception occurs.
+         */
+        destroy: (id: string): Promise<void> => {
+            return this.query.run('DELETE FROM transactions WHERE id=?', id);
         }
     };
 

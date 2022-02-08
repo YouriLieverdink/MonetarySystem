@@ -8,8 +8,12 @@ export class Collection<T> {
 
     /**
      * Class constructor.
+     * 
+     * @param _unique The key to uniquely identify objects.
      */
-    constructor() {
+    constructor(
+        private _unique = 'id',
+    ) {
         this._items = [];
     }
 
@@ -27,7 +31,7 @@ export class Collection<T> {
      */
     public add(...items: T[]): void {
         items.forEach((item) => {
-            const exists = this._items.some((i) => _.isEqual(item, i));
+            const exists = this._items.some((i) => i[this._unique] === item[this._unique]);
             if (exists) return;
 
             this._items.push(item);
@@ -41,7 +45,7 @@ export class Collection<T> {
      */
     public remove(...items: T[]): void {
         items.forEach((item) => {
-            _.remove(this._items, (i) => _.isEqual(item, i));
+            _.remove(this._items, (i) => item[this._unique] === i[this._unique]);
         });
     }
 
@@ -52,7 +56,7 @@ export class Collection<T> {
      */
     public random(exclude: T): T | null {
         if (this._items.length === 0) return null;
-        return _.sample(this._items.filter((i) => !_.isEqual(exclude, i)));
+        return _.sample(this._items.filter((i) => i[this._unique] !== exclude[this._unique]));
     }
 
     /**
@@ -61,5 +65,12 @@ export class Collection<T> {
     public shift(): T | null {
         if (this._items.length === 0) return null;
         return this._items.shift();
+    }
+
+    /**
+     * The number of items in the collection.
+     */
+    public size(): number {
+        return this._items.length;
     }
 }
